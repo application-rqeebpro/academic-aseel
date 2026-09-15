@@ -1,0 +1,160 @@
+{
+  "users": [
+    {
+      "id": "user-admin-1",
+      "name": "مدير الأكاديمية",
+      "phone": "785502919",
+      "email": "admin@mechatronics.ye",
+      "passwordHash": "$2b$10$LulNxyNDDuBKMWPE4Utfi.9ZJe5Iue0JP7f9e18JQRrz/Zfvz7Os.",
+      "university": "أكاديمية الميكاترونكس اليمنية",
+      "studyLevel": "السنة الأولى",
+      "major": "إدارة المنصة والهندسة",
+      "role": "admin",
+      "createdAt": "2026-09-15T18:56:53.699Z"
+    },
+    {
+      "id": "user-student-demo",
+      "name": "محمد عبدالله الشامي",
+      "phone": "771234567",
+      "email": "student@example.com",
+      "passwordHash": "$2b$10$A9bcR.U4Peim8v/.DfUhjOvcUYkrwEEJzgEDrHC3oPRBURj.zUIN.",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studyLevel": "السنة الأولى",
+      "major": "هندسة الميكاترونكس",
+      "role": "student",
+      "createdAt": "2026-09-15T18:56:53.699Z",
+      "lastLoginAt": "2026-09-15T19:30:31.814Z"
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "sub-demo-1",
+      "userId": "user-student-demo",
+      "plan": "yearly",
+      "status": "active",
+      "startDate": "2026-09-15T18:56:53.699Z",
+      "expiryDate": "2027-09-15T18:56:53.699Z",
+      "createdAt": "2026-09-15T18:56:53.699Z",
+      "activatedAt": "2026-09-15T18:56:53.699Z",
+      "activationMethod": "admin_direct",
+      "notes": "حساب تجريبي نشط للتقييم الأكاديمي"
+    }
+  ],
+  "activationCodes": [
+    {
+      "id": "code-7820",
+      "code": "7820",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 10,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود أكاديمي سنوي معتمد من مالك المنصة"
+    },
+    {
+      "id": "code-7829",
+      "code": "7829",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 10,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود أكاديمي سنوي معتمد من مالك المنصة"
+    },
+    {
+      "id": "code-7782",
+      "code": "7782",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 10,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود أكاديمي سنوي معتمد من مالك المنصة"
+    },
+    {
+      "id": "code-7735",
+      "code": "7735",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 10,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود أكاديمي سنوي معتمد من مالك المنصة"
+    },
+    {
+      "id": "code-mct-2191",
+      "code": "MCT-2191",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 5,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود تفعيل سنوي للنخبة"
+    },
+    {
+      "id": "code-mct-7855",
+      "code": "MCT-7855",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 5,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود تفعيل سنوي رسمي"
+    },
+    {
+      "id": "code-mct-30d",
+      "code": "MCT-30D1",
+      "planType": "monthly",
+      "durationDays": 30,
+      "maxUses": 10,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [],
+      "createdAt": "2026-09-15T19:00:00.000Z",
+      "notes": "كود تجربة شهري (30 يوم)"
+    }
+  ],
+  "subscriptionRequests": [],
+  "studentProgress": {
+    "user-student-demo": {
+      "studentId": "user-student-demo",
+      "completedLessons": [
+        "phys-lesson-1"
+      ],
+      "quizScores": {
+        "phys-lesson-1": 100
+      },
+      "savedProjects": [],
+      "simulatorSettings": {},
+      "updatedAt": "2026-09-15T18:56:53.700Z"
+    }
+  },
+  "studentLessons": [],
+  "settings": {
+    "whatsappNumber": "785502919",
+    "monthlyPriceUSD": 20,
+    "yearlyPriceUSD": 200,
+    "exchangeRateYR": 535,
+    "academicYear": "2024 - 2025",
+    "announcementText": "مرحبًا بكم في أكاديمية الميكاترونكس اليمنية – افهم الميكاترونكس بطريقة سهلة"
+  }
+}

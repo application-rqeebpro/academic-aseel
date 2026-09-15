@@ -1,0 +1,503 @@
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+
+export interface DBUser {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  passwordHash: string;
+  university: string;
+  studyLevel: string;
+  major: string;
+  role: 'student' | 'admin';
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
+export interface DBSubscription {
+  id: string;
+  userId: string;
+  plan: 'monthly' | 'yearly';
+  status: 'pending' | 'active' | 'expired' | 'suspended';
+  startDate: string;
+  expiryDate: string;
+  createdAt: string;
+  activatedAt?: string;
+  activationMethod?: 'admin_direct' | 'activation_code' | 'whatsapp';
+  notes?: string;
+}
+
+export interface DBActivationCode {
+  id: string;
+  code: string;
+  planType: 'monthly' | 'yearly' | 'custom';
+  durationDays: number;
+  maxUses: number;
+  timesUsed: number;
+  isUsed: boolean;
+  isActive: boolean;
+  usedByStudents: Array<{
+    studentId: string;
+    studentName: string;
+    usedAt: string;
+  }>;
+  expiresAt?: string;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface DBSubscriptionRequest {
+  id: string;
+  userId: string;
+  studentName: string;
+  phone: string;
+  university: string;
+  plan: 'monthly' | 'yearly';
+  priceUSD: number;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  notes?: string;
+}
+
+export interface DBStudentProgress {
+  studentId: string;
+  completedLessons: string[];
+  quizScores: Record<string, number>;
+  savedProjects: any[];
+  simulatorSettings: Record<string, any>;
+  updatedAt: string;
+}
+
+export interface DBSchema {
+  users: DBUser[];
+  subscriptions: DBSubscription[];
+  activationCodes: DBActivationCode[];
+  subscriptionRequests: DBSubscriptionRequest[];
+  studentProgress: Record<string, DBStudentProgress>;
+  studentLessons: any[];
+  settings: {
+    whatsappNumber: string;
+    monthlyPriceUSD: number;
+    yearlyPriceUSD: number;
+    exchangeRateYR: number;
+    academicYear: string;
+    announcementText: string;
+  };
+}
+
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'mechatronics_db.json');
+
+// Ensure data directory exists
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (isVercel && !fs.existsSync(DB_FILE)) {
+    const sourceFile = path.join(process.cwd(), 'data', 'mechatronics_db.json');
+    if (fs.existsSync(sourceFile)) {
+      fs.copyFileSync(sourceFile, DB_FILE);
+    }
+  }
+} catch (e) {
+  console.warn('Storage directory initialization warning:', e);
+}
+
+function getDefaultDB(): DBSchema {
+  const adminPasswordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin', 10);
+  const demoStudentPasswordHash = bcrypt.hashSync('123456', 10);
+
+  const initialAdmin: DBUser = {
+    id: 'user-admin-1',
+    name: 'مدير الأكاديمية',
+    phone: '785502919',
+    email: 'admin@mechatronics.ye',
+    passwordHash: adminPasswordHash,
+    university: 'أكاديمية الميكاترونكس اليمنية',
+    studyLevel: 'السنة الأولى',
+    major: 'إدارة المنصة والهندسة',
+    role: 'admin',
+    createdAt: new Date().toISOString(),
+  };
+
+  const initialStudent: DBUser = {
+    id: 'user-student-demo',
+    name: 'محمد عبدالله الشامي',
+    phone: '771234567',
+    email: 'student@example.com',
+    passwordHash: demoStudentPasswordHash,
+    university: 'الجامعة الإماراتية الدولية – صنعاء',
+    studyLevel: 'السنة الأولى',
+    major: 'هندسة الميكاترونكس',
+    role: 'student',
+    createdAt: new Date().toISOString(),
+  };
+
+  const initialSub: DBSubscription = {
+    id: 'sub-demo-1',
+    userId: initialStudent.id,
+    plan: 'yearly',
+    status: 'active',
+    startDate: new Date().toISOString(),
+    expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date().toISOString(),
+    activatedAt: new Date().toISOString(),
+    activationMethod: 'admin_direct',
+    notes: 'حساب تجريبي نشط للتقييم الأكاديمي',
+  };
+
+  const ownerCodes: DBActivationCode[] = [
+    {
+      id: 'code-7820',
+      code: '7820',
+      planType: 'yearly',
+      durationDays: 365,
+      maxUses: 10,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: new Date().toISOString(),
+      notes: 'كود أكاديمي سنوي معتمد من مالك المنصة',
+    },
+    {
+      id: 'code-7829',
+      code: '7829',
+      planType: 'yearly',
+      durationDays: 365,
+      maxUses: 10,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: new Date().toISOString(),
+      notes: 'كود أكاديمي سنوي معتمد من مالك المنصة',
+    },
+    {
+      id: 'code-7782',
+      code: '7782',
+      planType: 'yearly',
+      durationDays: 365,
+      maxUses: 10,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: new Date().toISOString(),
+      notes: 'كود أكاديمي سنوي معتمد من مالك المنصة',
+    },
+    {
+      id: 'code-7735',
+      code: '7735',
+      planType: 'yearly',
+      durationDays: 365,
+      maxUses: 10,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: new Date().toISOString(),
+      notes: 'كود أكاديمي سنوي معتمد من مالك المنصة',
+    },
+    {
+      id: 'code-mct-2191',
+      code: 'MCT-2191',
+      planType: 'yearly',
+      durationDays: 365,
+      maxUses: 5,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: new Date().toISOString(),
+      notes: 'كود تفعيل سنوي رسمي',
+    },
+  ];
+
+  return {
+    users: [initialAdmin, initialStudent],
+    subscriptions: [initialSub],
+    activationCodes: ownerCodes,
+    subscriptionRequests: [],
+    studentProgress: {
+      [initialStudent.id]: {
+        studentId: initialStudent.id,
+        completedLessons: ['phys-lesson-1'],
+        quizScores: { 'phys-lesson-1': 100 },
+        savedProjects: [],
+        simulatorSettings: {},
+        updatedAt: new Date().toISOString(),
+      },
+    },
+    studentLessons: [],
+    settings: {
+      whatsappNumber: process.env.WHATSAPP_NUMBER || '785502919',
+      monthlyPriceUSD: 20,
+      yearlyPriceUSD: 200,
+      exchangeRateYR: 530,
+      academicYear: '2024 - 2025',
+      announcementText: 'مرحبًا بكم في أكاديمية الميكاترونكس اليمنية – الفصل الدراسي الأول 2024 - 2025',
+    },
+  };
+}
+
+let cachedDB: DBSchema | null = null;
+
+export function getDB(): DBSchema {
+  if (cachedDB) {
+    return cachedDB;
+  }
+
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+      cachedDB = JSON.parse(raw);
+      return cachedDB!;
+    } catch (e) {
+      console.error('Error reading DB file, initializing default:', e);
+    }
+  }
+
+  cachedDB = getDefaultDB();
+  saveDB(cachedDB);
+  return cachedDB;
+}
+
+export function saveDB(data: DBSchema): void {
+  cachedDB = data;
+  try {
+    const tempFile = `${DB_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempFile, DB_FILE);
+  } catch (err) {
+    console.error('Failed to write DB file:', err);
+  }
+}
+
+// Helper Repository Functions
+export const db = {
+  // Users
+  findUserById(id: string): DBUser | undefined {
+    return getDB().users.find((u) => u.id === id);
+  },
+  findUserByPhone(phone: string): DBUser | undefined {
+    const clean = phone.replace(/[^0-9]/g, '');
+    return getDB().users.find((u) => u.phone.replace(/[^0-9]/g, '') === clean);
+  },
+  findUserByEmail(email: string): DBUser | undefined {
+    if (!email) return undefined;
+    return getDB().users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+  },
+  createUser(user: DBUser): DBUser {
+    const data = getDB();
+    data.users.push(user);
+    saveDB(data);
+    return user;
+  },
+  updateUser(id: string, updates: Partial<DBUser>): DBUser | null {
+    const data = getDB();
+    const idx = data.users.findIndex((u) => u.id === id);
+    if (idx === -1) return null;
+    data.users[idx] = { ...data.users[idx], ...updates };
+    saveDB(data);
+    return data.users[idx];
+  },
+  getAllUsers(): DBUser[] {
+    return getDB().users;
+  },
+  deleteUser(id: string): boolean {
+    const data = getDB();
+    const initLen = data.users.length;
+    data.users = data.users.filter((u) => u.id !== id);
+    saveDB(data);
+    return data.users.length !== initLen;
+  },
+  getDB,
+  saveDB,
+
+  // Subscriptions
+  getSubscriptionByUserId(userId: string): DBSubscription | undefined {
+    return getDB().subscriptions.find((s) => s.userId === userId);
+  },
+  getAllSubscriptions(): DBSubscription[] {
+    return getDB().subscriptions;
+  },
+  createOrUpdateSubscription(sub: DBSubscription): DBSubscription {
+    const data = getDB();
+    const idx = data.subscriptions.findIndex((s) => s.userId === sub.userId);
+    if (idx >= 0) {
+      data.subscriptions[idx] = sub;
+    } else {
+      data.subscriptions.push(sub);
+    }
+    saveDB(data);
+    return sub;
+  },
+  updateSubscriptionStatus(
+    userId: string,
+    status: 'pending' | 'active' | 'expired' | 'suspended',
+    durationDays?: number,
+    plan?: 'monthly' | 'yearly'
+  ): DBSubscription | null {
+    const data = getDB();
+    const idx = data.subscriptions.findIndex((s) => s.userId === userId);
+    const now = new Date();
+    if (idx === -1) {
+      // Create new
+      const days = durationDays || 30;
+      const newSub: DBSubscription = {
+        id: `sub-${Date.now()}`,
+        userId,
+        plan: plan || 'monthly',
+        status,
+        startDate: now.toISOString(),
+        expiryDate: new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: now.toISOString(),
+        activatedAt: status === 'active' ? now.toISOString() : undefined,
+        activationMethod: 'admin_direct',
+      };
+      data.subscriptions.push(newSub);
+      saveDB(data);
+      return newSub;
+    }
+
+    const current = data.subscriptions[idx];
+    current.status = status;
+    if (plan) current.plan = plan;
+
+    if (status === 'active') {
+      const days = durationDays || (current.plan === 'yearly' ? 365 : 30);
+      current.startDate = now.toISOString();
+      current.expiryDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+      current.activatedAt = now.toISOString();
+    }
+
+    saveDB(data);
+    return current;
+  },
+
+  // Activation Codes
+  findActivationCode(code: string): DBActivationCode | undefined {
+    const clean = code.trim().toUpperCase();
+    return getDB().activationCodes.find((c) => c.code.trim().toUpperCase() === clean);
+  },
+  getAllActivationCodes(): DBActivationCode[] {
+    return getDB().activationCodes;
+  },
+  createActivationCode(codeRecord: DBActivationCode): DBActivationCode {
+    const data = getDB();
+    data.activationCodes.unshift(codeRecord);
+    saveDB(data);
+    return codeRecord;
+  },
+  updateActivationCode(code: string, updates: Partial<DBActivationCode>): DBActivationCode | null {
+    const data = getDB();
+    const clean = code.trim().toUpperCase();
+    const idx = data.activationCodes.findIndex((c) => c.code.trim().toUpperCase() === clean);
+    if (idx === -1) return null;
+    data.activationCodes[idx] = { ...data.activationCodes[idx], ...updates };
+    saveDB(data);
+    return data.activationCodes[idx];
+  },
+  deleteActivationCode(code: string): boolean {
+    const data = getDB();
+    const clean = code.trim().toUpperCase();
+    const initialLen = data.activationCodes.length;
+    data.activationCodes = data.activationCodes.filter((c) => c.code.trim().toUpperCase() !== clean);
+    saveDB(data);
+    return data.activationCodes.length !== initialLen;
+  },
+
+  // Subscription Requests (WhatsApp)
+  getAllRequests(): DBSubscriptionRequest[] {
+    return getDB().subscriptionRequests;
+  },
+  createRequest(req: DBSubscriptionRequest): DBSubscriptionRequest {
+    const data = getDB();
+    data.subscriptionRequests.unshift(req);
+    saveDB(data);
+    return req;
+  },
+  updateRequestStatus(requestId: string, status: 'pending' | 'approved' | 'rejected'): DBSubscriptionRequest | null {
+    const data = getDB();
+    const req = data.subscriptionRequests.find((r) => r.id === requestId);
+    if (!req) return null;
+    req.status = status;
+    saveDB(data);
+    return req;
+  },
+
+  // Student Lessons (Explained Lessons)
+  getStudentLessons(studentId: string): any[] {
+    return getDB().studentLessons.filter((l) => l.studentId === studentId);
+  },
+  saveStudentLesson(lesson: any): any {
+    const data = getDB();
+    const idx = data.studentLessons.findIndex((l) => l.id === lesson.id);
+    if (idx >= 0) {
+      data.studentLessons[idx] = lesson;
+    } else {
+      data.studentLessons.unshift(lesson);
+      if (data.studentLessons.length > 500) {
+        data.studentLessons = data.studentLessons.slice(0, 500);
+      }
+    }
+    saveDB(data);
+    return lesson;
+  },
+  deleteStudentLesson(lessonId: string, studentId?: string): boolean {
+    const data = getDB();
+    const initialLen = data.studentLessons.length;
+    data.studentLessons = data.studentLessons.filter((l) => {
+      if (studentId) {
+        return !(l.id === lessonId && l.studentId === studentId);
+      }
+      return l.id !== lessonId;
+    });
+    saveDB(data);
+    return data.studentLessons.length !== initialLen;
+  },
+
+  // Student Progress
+  getStudentProgress(studentId: string): DBStudentProgress {
+    const data = getDB();
+    if (!data.studentProgress[studentId]) {
+      data.studentProgress[studentId] = {
+        studentId,
+        completedLessons: [],
+        quizScores: {},
+        savedProjects: [],
+        simulatorSettings: {},
+        updatedAt: new Date().toISOString(),
+      };
+      saveDB(data);
+    }
+    return data.studentProgress[studentId];
+  },
+  saveStudentProgress(studentId: string, updates: Partial<DBStudentProgress>): DBStudentProgress {
+    const data = getDB();
+    const current = this.getStudentProgress(studentId);
+    data.studentProgress[studentId] = {
+      ...current,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    saveDB(data);
+    return data.studentProgress[studentId];
+  },
+
+  // Settings
+  getSettings() {
+    return getDB().settings;
+  },
+  updateSettings(updates: Partial<DBSchema['settings']>) {
+    const data = getDB();
+    data.settings = { ...data.settings, ...updates };
+    saveDB(data);
+    return data.settings;
+  },
+};

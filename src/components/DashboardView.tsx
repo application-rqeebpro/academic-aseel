@@ -1,0 +1,463 @@
+import React, { useState, useEffect } from 'react';
+import { StudentProfile, Subject, ExplainLessonResult } from '../types';
+import { 
+  GraduationCap, 
+  School, 
+  Calendar, 
+  Clock, 
+  Cpu, 
+  BookOpen, 
+  Scale, 
+  Ruler, 
+  Binary, 
+  Zap, 
+  Sparkles, 
+  ArrowLeft, 
+  CheckCircle2, 
+  AlertTriangle, 
+  RefreshCw, 
+  ShieldCheck, 
+  Award,
+  ChevronLeft,
+  Bookmark,
+  Camera,
+  Layers,
+  HelpCircle,
+  KeyRound,
+  MessageCircle,
+  Lock
+} from 'lucide-react';
+
+interface DashboardViewProps {
+  student: StudentProfile;
+  subjects: Subject[];
+  onNavigateToTab: (tab: any) => void;
+  onSelectSubject: (subjectId: string) => void;
+  onRenewSubscription: () => void;
+  onOpenActivation?: () => void;
+  onOpenSavedLesson?: (lesson: ExplainLessonResult) => void;
+  whatsappNumber?: string;
+}
+
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  student,
+  subjects,
+  onNavigateToTab,
+  onSelectSubject,
+  onRenewSubscription,
+  onOpenActivation,
+  onOpenSavedLesson,
+  whatsappNumber = '785502919',
+}) => {
+  const isPending = !student.isActivated || student.subscriptionStatus === 'pending';
+  const isExpired = student.isExpired || (student.remainingDays !== undefined && student.remainingDays <= 0);
+
+  // Load saved explained lessons for this student
+  const [savedLessons, setSavedLessons] = useState<ExplainLessonResult[]>([]);
+
+  useEffect(() => {
+    try {
+      const localKey = `mct_explained_lessons_${student.id}`;
+      const saved = localStorage.getItem(localKey);
+      if (saved) {
+        setSavedLessons(JSON.parse(saved));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [student.id]);
+
+  const handleContactWhatsApp = () => {
+    const cleanNumber = whatsappNumber.startsWith('967') ? whatsappNumber : `967${whatsappNumber.replace(/^0+/, '')}`;
+    const msg = `السلام عليكم إدارة الأكاديمية، أنا الطالب ${student.name}، أريد تأكيد الدفع وتفعيل حسابي.`;
+    window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  const handleToolClick = (tabName: string) => {
+    if (isPending) {
+      alert('حسابك في انتظار التفعيل بعد تأكيد الدفع من الإدارة. يرجى إدخال كود التفعيل أو التواصل معنا لتفعيل الحساب.');
+      return;
+    }
+    if (isExpired) {
+      alert('انتهت صلاحية اشتراكك. يرجى تجديد الاشتراك للوصول إلى المحتوى والأدوات.');
+      return;
+    }
+    onNavigateToTab(tabName);
+  };
+
+  const handleSubjectClick = (subjectId: string) => {
+    if (isPending) {
+      alert('حسابك في انتظار التفعيل. المقررات التعليمية متاحة فور تفعيل الاشتراك.');
+      return;
+    }
+    if (isExpired) {
+      alert('انتهت صلاحية اشتراكك. يرجى التجديد لمتابعة الدروس.');
+      return;
+    }
+    onSelectSubject(subjectId);
+  };
+
+  // Calculate overall completed lessons
+  const totalCompleted = student.completedLessons?.length || 0;
+  const totalLessonsEstimate = 24;
+  const overallProgress = Math.min(100, Math.round((totalCompleted / totalLessonsEstimate) * 100));
+
+  return (
+    <div className="space-y-6 pb-12">
+      
+      {/* 1. Pending Subscription Notice Banner */}
+      {isPending && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-100 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg animate-fade-in">
+          <div className="flex items-center gap-3.5 text-center md:text-right">
+            <div className="w-12 h-12 rounded-2xl bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200 flex items-center justify-center shrink-0">
+              <Clock className="w-6 h-6 animate-spin" style={{ animationDuration: '6s' }} />
+            </div>
+            <div>
+              <h3 className="font-black text-base sm:text-lg">
+                حسابك في انتظار التفعيل بعد تأكيد الدفع من الإدارة.
+              </h3>
+              <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 mt-0.5">
+                تواصل مع الإدارة عبر واتساب لإرسال إشعار السداد أو أدخل كود التفعيل إذا استلمته.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <button
+              onClick={handleContactWhatsApp}
+              className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>تأكيد الدفع عبر واتساب</span>
+            </button>
+
+            {onOpenActivation && (
+              <button
+                onClick={onOpenActivation}
+                className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <KeyRound className="w-4 h-4" />
+                <span>إدخال كود التفعيل</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Expiry Warning Notice if expired */}
+      {!isPending && isExpired && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-center gap-3 text-center sm:text-right">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900 flex items-center justify-center text-rose-600 shrink-0">
+              <AlertTriangle className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-base sm:text-lg">
+                انتهى اشتراكك، يرجى التجديد للوصول إلى المحتوى.
+              </h3>
+              <p className="text-xs sm:text-sm text-rose-600 dark:text-rose-300 mt-0.5">
+                تواصل مع الإدارة لتجديد الاشتراك ومتابعة مسيرتك التعليمية.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onRenewSubscription}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>تجديد الاشتراك عبر واتساب</span>
+          </button>
+        </div>
+      )}
+
+      {/* 3. Welcome & Student Overview Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-900 text-white p-6 sm:p-8 shadow-xl shadow-blue-900/10">
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-blue-100">
+              <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+              <span>مرحبًا بك في لوحة تحكم الطالب</span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
+              أهلاً بك يا مهندس {student.name} 🎓
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100/90 max-w-xl">
+              "لا تحفظ القانون، افهمه." جاهز اليوم لمواصلة فهم المفاهيم الفيزيائية والكهربائية وحل المسائل؟
+            </p>
+          </div>
+
+          {/* Quick Subscription Status Pill */}
+          <div className="w-full lg:w-auto p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-between lg:justify-start gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-900 flex items-center justify-center font-black">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[11px] text-blue-200 block">حالة الاشتراك</span>
+                <span className="text-lg font-black text-white">
+                  {isPending ? 'بانتظار التفعيل' : isExpired ? 'منتهي' : `${student.remainingDays} يومًا متبقيًا`}
+                </span>
+              </div>
+            </div>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+              isPending 
+                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+            }`}>
+              {student.subscriptionPlan === 'yearly' ? 'اشتراك سنوي' : 'اشتراك شهري'}
+            </span>
+          </div>
+
+        </div>
+
+        {/* Decorative background vectors */}
+        <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -right-12 -top-12 w-64 h-64 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+      </div>
+
+      {/* 4. Hero Feature Banner for "اشرح لي درس اليوم" */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 border border-blue-700/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-bold text-cyan-300">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
+              <span>ميزة رئيسية لطلاب السنة الأولى</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>اشرح لي درس اليوم</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                جديد 🚀
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
+              🎓 <strong>ماذا درست اليوم في الجامعة؟</strong> ارفع صورة السبورة، أو دفترك، أو ملزمتك، أو ملف PDF، أو اكتب استفسارك، وسيشرحه لك المدرس الذكي خطوة بخطوة بطريقة سهلة ومختصرة مع ورقة مذاكرة جاهزة للاختبارات!
+            </p>
+          </div>
+
+          <button
+            onClick={() => handleToolClick('explain')}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-black text-sm sm:text-base shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            <Sparkles className="w-5 h-5 text-amber-300" />
+            <span>ابدأ شرح درس اليوم 🚀</span>
+          </button>
+        </div>
+
+        {/* Supported formats pills */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-800/40 text-xs text-blue-200">
+          <span className="text-slate-400 font-bold">طرق الإرسال:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📷 صور السبورة والدفتر</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📄 ملفات PDF والملازم</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📝 كتابة أو لصق المسائل</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚡ تحليل الدوائر الكهربائية</span>
+        </div>
+      </div>
+
+      {/* 5. Student Profile Information Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span>معلومات الطالب والاشتراك الأكاديمي</span>
+          </h2>
+          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
+            isPending 
+              ? 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300' 
+              : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+          }`}>
+            الحالة: {isPending ? 'بانتظار التفعيل' : isExpired ? 'منتهي' : 'نشط ومفعل'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-xs sm:text-sm">
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 dark:text-slate-500 block text-[11px] mb-1">الجامعة</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200 line-clamp-1" title={student.university}>
+              {student.university}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 dark:text-slate-500 block text-[11px] mb-1">المستوى</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">
+              {student.studyLevel}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 dark:text-slate-500 block text-[11px] mb-1">التخصص</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">
+              {student.major}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 dark:text-slate-500 block text-[11px] mb-1">تاريخ البدء</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200" dir="ltr">
+              {student.subscriptionStartDate ? new Date(student.subscriptionStartDate).toLocaleDateString('en-GB') : '-'}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 dark:text-slate-500 block text-[11px] mb-1">تاريخ الانتهاء</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200" dir="ltr">
+              {student.subscriptionEndDate ? new Date(student.subscriptionEndDate).toLocaleDateString('en-GB') : '-'}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 dark:text-slate-500 block text-[11px] mb-1">الأيام المتبقية</span>
+            <span className={`font-extrabold flex items-center gap-1 ${isPending ? 'text-amber-600' : isExpired ? 'text-rose-600' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              <span className={`w-2 h-2 rounded-full ${isPending ? 'bg-amber-500' : isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+              <span>{isPending ? 'بانتظار التفعيل' : `${student.remainingDays || 0} يوم`}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Quick Access Tools Grid */}
+      <div className="space-y-3">
+        <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+          <Cpu className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <span>الأدوات الهندسية والوصول السريع</span>
+        </h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          
+          <button
+            onClick={() => handleToolClick('subjects')}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">المواد الدراسية</div>
+              <div className="text-[11px] text-slate-500">مناهج السنة الأولى</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('formulas')}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Scale className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">محلل القوانين</div>
+              <div className="text-[11px] text-slate-500">تحليل الأبعاد والرموز</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('units')}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Ruler className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">محلل الوحدات</div>
+              <div className="text-[11px] text-slate-500">تحويلات خطوة بخطوة</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('circuits')}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500 dark:hover:border-cyan-500 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">الدوائر الكهربائية 1</div>
+              <div className="text-[11px] text-slate-500">أوم ومجزئ الجهد</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('math')}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 dark:hover:border-purple-500 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Binary className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">الرياضيات الهندسية</div>
+              <div className="text-[11px] text-slate-500">معادلات ومتجهات</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('explain')}
+            className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60 border-2 border-blue-500/50 hover:border-blue-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <Camera className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm text-blue-900 dark:text-blue-200">اشرح لي درسي</div>
+              <div className="text-[11px] text-blue-600 dark:text-blue-400">رفع صورة أو كتابة</div>
+            </div>
+          </button>
+
+        </div>
+      </div>
+
+      {/* 7. Curriculum Subjects Overview */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span>المقررات الدراسية المتاحة (الفصل الأول)</span>
+          </h2>
+          <button
+            onClick={() => handleToolClick('subjects')}
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>عرض كل المواد والدروس</span>
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {subjects.map((subject) => (
+            <div
+              key={subject.id}
+              onClick={() => handleSubjectClick(subject.id)}
+              className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500/80 shadow-xs hover:shadow-md transition-all cursor-pointer space-y-3 relative"
+            >
+              {isPending && <Lock className="w-4 h-4 absolute top-4 left-4 text-slate-400" />}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  {subject.code}
+                </span>
+                <span className="text-xs text-slate-400">{subject.semester}</span>
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
+                  {subject.name}
+                </h3>
+                <span className="text-xs text-slate-400 font-medium">
+                  {subject.englishName}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                {subject.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
+};
