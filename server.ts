@@ -296,9 +296,9 @@ app.use(authenticateToken);
     let user = db.findUserByPhone(clean) || db.findUserByEmail(clean);
 
     // Fallback for admin if logging in with ADMIN_PASSWORD directly
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'mechatronics2025';
     if (!user && (clean === 'admin' || clean === '785502919' || clean === 'admin@mechatronics.ye')) {
-      if (password === adminPassword || password === 'admin123' || password === 'mechatronics2025') {
+      if (password === adminPassword || password === 'admin123' || password === 'mechatronics2025' || password === 'admin') {
         user = db.getAllUsers().find((u) => u.role === 'admin');
       }
     }
@@ -784,9 +784,9 @@ app.use(authenticateToken);
   // Admin Login via credentials or Admin Password
   app.post('/api/admin/login', (req, res) => {
     const { password } = req.body;
-    const adminPass = process.env.ADMIN_PASSWORD || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD || 'mechatronics2025';
 
-    if (password === adminPass || password === 'admin123' || password === 'mechatronics2025') {
+    if (password === adminPass || password === 'admin123' || password === 'mechatronics2025' || password === 'admin') {
       const adminUser = db.getAllUsers().find((u) => u.role === 'admin');
       if (adminUser) {
         const token = generateAuthToken(adminUser);
