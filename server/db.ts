@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import bundledDbSeed from '../data/mechatronics_db.json';
 
 export interface DBUser {
   id: string;
@@ -109,10 +110,12 @@ try {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
-  if (isVercel && !fs.existsSync(DB_FILE)) {
+  if (!fs.existsSync(DB_FILE)) {
     const sourceFile = path.join(process.cwd(), 'data', 'mechatronics_db.json');
     if (fs.existsSync(sourceFile)) {
       fs.copyFileSync(sourceFile, DB_FILE);
+    } else if (bundledDbSeed) {
+      fs.writeFileSync(DB_FILE, JSON.stringify(bundledDbSeed, null, 2), 'utf-8');
     }
   }
 } catch (e) {
@@ -239,6 +242,12 @@ export function getDB(): DBSchema {
     } catch (e) {
       console.error('Error reading DB file, initializing default:', e);
     }
+  }
+
+  if (bundledDbSeed && typeof bundledDbSeed === 'object') {
+    cachedDB = JSON.parse(JSON.stringify(bundledDbSeed));
+    saveDB(cachedDB!);
+    return cachedDB!;
   }
 
   cachedDB = getDefaultDB();

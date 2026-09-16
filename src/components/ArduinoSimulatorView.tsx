@@ -324,20 +324,15 @@ export const ArduinoSimulatorView: React.FC = () => {
     setIsExplaining(true);
     setAiExplanation(null);
     try {
-      const response = await fetch('/api/assignment/refine', {
+      const response = await fetch('/api/assignments/refine-section', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instruction: `أنت أستاذ ومحاضر ميكاترونكس وهندسة كهربائية تشرح لطالب مبتدئ. 
-اشرح بأسلوب مبسط وممتع بالعربية:
-1. وظيفة العناصر الموجودة في الدائرة (${components.map((c) => c.name).join(', ') || 'لا توجد مكونات بعد'}).
-2. كيف تتدفق الإلكترونات من Arduino إلى Breadboard.
-3. لماذا نستخدم مقاومة حماية مع الـ LED.
-4. تفسير الأخطاء إن وُجدت (${validationErrors.map((e) => e.title).join(' | ') || 'الدائرة سليمة'}).
-5. نصيحة للمهندس في هذا المشروع.`,
+          instructionType: 'simplify',
           sectionTitle: 'شرح هندسي لدائرة الأردوينو',
-          currentContent: 'شرح مبسط لمكونات الدائرة',
+          currentContent: `مكونات الدائرة: ${components.map((c) => c.name).join(', ') || 'لا توجد مكونات'}. الأخطاء: ${validationErrors.map((e) => e.title).join(' | ') || 'سليمة'}.`,
           subject: 'محاكي الأردوينو والدوائر الإلكترونية',
+          major: 'هندسة الميكاترونكس',
         }),
       });
       const data = await response.json();

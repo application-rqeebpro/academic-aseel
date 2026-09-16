@@ -746,6 +746,12 @@ router.get('/student-lessons', requireAuth, (req: AuthenticatedRequest, res) => 
   res.json({ lessons: userLessons });
 });
 
+router.get('/student-lessons/:studentId', (req, res) => {
+  const { studentId } = req.params;
+  const userLessons = db.getStudentLessons(studentId);
+  res.json({ lessons: userLessons });
+});
+
 // Save Student Explained Lesson
 router.post('/student-lessons', requireAuth, (req: AuthenticatedRequest, res) => {
   const { lesson } = req.body;
@@ -760,10 +766,24 @@ router.post('/student-lessons', requireAuth, (req: AuthenticatedRequest, res) =>
   res.json({ success: true, lesson: saved });
 });
 
+router.post('/student-lessons/save', (req, res) => {
+  const { lesson, studentId } = req.body;
+  if (!lesson) return res.status(400).json({ error: 'بيانات الدرس مطلوبة.' });
+
+  const saved = db.saveStudentLesson({
+    ...lesson,
+    studentId: studentId || lesson.studentId || 'guest',
+    savedAt: new Date().toISOString(),
+  });
+
+  res.json({ success: true, lesson: saved });
+});
+
 // Delete student explained lesson
-router.delete('/student-lessons/:lessonId', requireAuth, (req: AuthenticatedRequest, res) => {
+router.delete('/student-lessons/:lessonId', (req: AuthenticatedRequest, res) => {
   const { lessonId } = req.params;
-  const success = db.deleteStudentLesson(lessonId, req.user!.id);
+  const studentId = req.user?.id || req.body?.studentId || '';
+  const success = db.deleteStudentLesson(lessonId, studentId);
   res.json({ success });
 });
 
