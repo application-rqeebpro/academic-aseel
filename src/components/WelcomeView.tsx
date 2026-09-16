@@ -16,7 +16,8 @@ import {
   FileText,
   ShieldCheck,
   Check,
-  HelpCircle
+  HelpCircle,
+  Bot
 } from 'lucide-react';
 import { Subject } from '../types';
 
@@ -216,7 +217,20 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+              <Bot className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+              <span>محاكي Arduino التفاعلي</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500 text-black font-bold">جديد</span>
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              مختبر إلكترونيات كامل: تركيب لوحة Arduino و Breadboard، توصيل الأسلاك باللمس، فحص الأخطاء والقصر، وتشغيل الكود مع Serial Monitor.
+            </p>
+          </div>
+
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Zap className="w-6 h-6" />
@@ -334,6 +348,39 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
           ].map((feat, i) => (
             <div key={i} className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-xs font-bold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+              <span>{feat}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ========================================== */}
+      {/* 4.1 منشئ التكليفات الهندسية (ASSIGNMENTS GENERATOR) */}
+      {/* ========================================== */}
+      <section className="p-6 sm:p-10 rounded-3xl bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 text-white shadow-xl space-y-6 border border-emerald-800/40">
+        <div className="max-w-2xl space-y-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+            <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+            <span>خدمة التكليفات والأبحاث الهندسية</span>
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-black text-white">
+            🎓 منشئ التكليفات والتقارير الهندسية
+          </h2>
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+            أنشئ تقارير المختبرات، ومشاريع Arduino والـ PLC، وبحوث الميكاترونكس بنقرة واحدة، مع غلاف أكاديمي رسمي وتصدير PDF متقن للطباعة والتسليم:
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2">
+          {[
+            'غلاف جامعي رسمي مع الشعار',
+            'نماذج مخصصة للمختبر والمشاريع',
+            'محرر تفاعلي لتعديل كل قسم',
+            'أدوات صياغة وتلخيص هندسي',
+            'تصدير PDF جاهز للطباعة',
+          ].map((feat, i) => (
+            <div key={i} className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{feat}</span>
             </div>
           ))}

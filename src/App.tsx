@@ -16,6 +16,8 @@ import { FormulaAnalyzerView } from './components/FormulaAnalyzerView';
 import { UnitConverterView } from './components/UnitConverterView';
 import { CircuitsHelperView } from './components/CircuitsHelperView';
 import { MathHelperView } from './components/MathHelperView';
+import { AssignmentGeneratorView } from './components/AssignmentGeneratorView';
+import { ArduinoSimulatorView } from './components/ArduinoSimulatorView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
@@ -308,6 +310,16 @@ export default function App() {
           setSelectedLessonId(null);
           setSelectedExplainedLesson(null);
         }}
+        onOpenAssignments={() => {
+          setActiveTab('assignments');
+          setSelectedLessonId(null);
+          setSelectedExplainedLesson(null);
+        }}
+        onOpenArduino={() => {
+          setActiveTab('arduino');
+          setSelectedLessonId(null);
+          setSelectedExplainedLesson(null);
+        }}
         onOpenLogin={handleOpenLogin}
         onOpenRegister={handleStartRegistration}
         onOpenActivation={() => setOnboardingStep('code')}
@@ -455,7 +467,7 @@ export default function App() {
                   <ExplainLessonView
                     student={student}
                     onNavigateToTool={(toolId) => {
-                      if (['circuits', 'formulas', 'units', 'math'].includes(toolId)) {
+                      if (['circuits', 'formulas', 'units', 'math', 'assignments'].includes(toolId)) {
                         setActiveTab(toolId as any);
                       } else if (toolId === 'ai') {
                         handleOpenAiWithTopic('');
@@ -466,6 +478,22 @@ export default function App() {
                     onOpenAiChat={(topic) => handleOpenAiWithTopic(topic)}
                     initialLessonToOpen={selectedExplainedLesson}
                   />
+                )}
+
+                {/* 2.5 Engineering Assignment Generator Tab ("منشئ التكليفات الهندسية") */}
+                {activeTab === 'assignments' && (
+                  <AssignmentGeneratorView
+                    student={student}
+                    onNavigateToTab={(tab) => {
+                      setActiveTab(tab as any);
+                      setSelectedLessonId(null);
+                    }}
+                  />
+                )}
+
+                {/* 2.6 Arduino & Electronic Circuit Simulator Tab ("محاكي Arduino والدوائر الإلكترونية") */}
+                {activeTab === 'arduino' && (
+                  <ArduinoSimulatorView />
                 )}
 
                 {/* 3. Subjects Tab */}

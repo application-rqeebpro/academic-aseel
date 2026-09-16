@@ -26,7 +26,9 @@ import {
   KeyRound,
   MessageCircle,
   Lock,
-  User
+  User,
+  FileText,
+  Bot
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -268,6 +270,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* 4.1 Engineering Assignment Creator Feature Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 border border-emerald-700/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-xs font-bold text-emerald-300">
+              <GraduationCap className="w-4 h-4 text-amber-300" />
+              <span>خدمة متكاملة لطلاب الهندسة والميكاترونكس</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>🎓 منشئ التكليفات الهندسية</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-black shadow-xs">
+                جديد متاح مجانًا
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
+              أنشئ <strong>تقارير المختبرات، واجبات الدوائر والرياضيات، مشاريع Arduino و PLC والـ Robotics</strong> بضغطة زر مع غلاف أكاديمي رسمي، ومحرر كامل لتعديل كل التفاصيل وتصدير ملف <strong>PDF احترافي جاهز للطباعة</strong> والتسليم لجامعتك!
+            </p>
+          </div>
+
+          <button
+            onClick={() => handleToolClick('assignments')}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-sm sm:text-base shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            <FileText className="w-5 h-5 text-amber-300" />
+            <span>فتح منشئ التكليفات 🎓</span>
+          </button>
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-emerald-800/40 text-xs text-emerald-200">
+          <span className="text-slate-400 font-bold">النماذج المدعومة:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🧪 تقارير تجارب المختبر</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🔌 مشاريع Arduino</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚙️ أنظمة PLC</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🔢 حل مسائل وقوانين</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📄 تصدير PDF متعدد الصفحات</span>
+        </div>
+      </div>
+
       {/* 5. Student Profile Information Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -420,6 +461,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="font-extrabold text-xs sm:text-sm text-blue-900 dark:text-blue-200">اشرح لي درسي</div>
               <div className="text-[11px] text-blue-600 dark:text-blue-400">رفع صورة أو كتابة</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('assignments')}
+            className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/60 dark:to-teal-950/60 border-2 border-emerald-500/50 hover:border-emerald-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-1">
+                <span>منشئ التكليفات</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-white font-bold">جديد</span>
+              </div>
+              <div className="text-[11px] text-emerald-600 dark:text-emerald-400">تقارير، أبحاث وتصدير PDF</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('arduino')}
+            className="p-4 rounded-2xl bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/60 dark:to-blue-950/60 border-2 border-cyan-500/50 hover:border-cyan-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm text-cyan-900 dark:text-cyan-200 flex items-center gap-1">
+                <span>محاكي Arduino</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500 text-black font-bold">تفاعلي</span>
+              </div>
+              <div className="text-[11px] text-cyan-600 dark:text-cyan-400">مختبر إلكترونيات وتوصيل أسلاك</div>
             </div>
           </button>
 

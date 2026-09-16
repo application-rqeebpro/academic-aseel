@@ -12,6 +12,8 @@ import {
 export type TabType = 
   | 'dashboard' 
   | 'explain'
+  | 'assignments'
+  | 'arduino'
   | 'subjects' 
   | 'formulas' 
   | 'units' 

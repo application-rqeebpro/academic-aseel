@@ -6,6 +6,7 @@ import { GoogleGenAI } from '@google/genai';
 import { INITIAL_SETTINGS, INITIAL_SUBJECTS, INITIAL_LESSONS, INITIAL_FORMULAS, INITIAL_UNIT_CONVERSIONS } from '../src/data/initialData';
 import { Subject, Lesson, AdminSettings } from '../src/types';
 import { processExplainLesson, callGeminiWithResilience } from './explainService';
+import { generateEngineeringAssignment, refineAssignmentSectionWithAi } from './assignmentService';
 import { db, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET || '7829';
@@ -816,7 +817,7 @@ router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
         const { text: replyText } = await callGeminiWithResilience(client, {
           contents,
           config: { systemInstruction, temperature: 0.7 },
-          preferredModel: 'gemini-3.8-flash',
+          preferredModel: 'gemini-3.1-flash-lite',
         });
 
         return res.json({ reply: replyText });
@@ -837,6 +838,62 @@ router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
   } catch (error: any) {
     console.error('Chat endpoint error:', error);
     res.status(500).json({ error: 'حدث خطأ في معالجة المحادثة.', details: error?.message });
+  }
+});
+
+// ==========================================
+// 🎓 ENGINEERING ASSIGNMENT CREATOR APIS
+// ==========================================
+
+// Generate complete customized engineering assignment
+router.post('/assignments/generate', async (req: Request, res: Response) => {
+  try {
+    const params = req.body;
+    if (!params.title || !params.type) {
+      return res.status(400).json({ error: 'يرجى تحديد نوع وعنوان التكليف الهندسي.' });
+    }
+
+    const assignment = await generateEngineeringAssignment(params);
+    return res.json({
+      success: true,
+      assignment,
+      message: 'تم إنشاء التكليف الهندسي بنجاح ويمكنك الآن تعديل وتخصيص كل تفاصيله.',
+    });
+  } catch (error: any) {
+    console.error('Assignment generation error:', error);
+    return res.status(500).json({
+      error: 'تعذر إنشاء التكليف بالذكاء الاصطناعي، تحقق من الاتصال بالإنترنت وحاول مرة أخرى.',
+      details: error?.message,
+    });
+  }
+});
+
+// Refine a single section with AI (Rephrase, Simplify, Expand, Shorten, Fix, Academic, Translate)
+router.post('/assignments/refine-section', async (req: Request, res: Response) => {
+  try {
+    const { sectionTitle, currentContent, instructionType, subject, major } = req.body;
+    if (!currentContent || !instructionType) {
+      return res.status(400).json({ error: 'محتوى القسم ونوع التحسين مطلوبان.' });
+    }
+
+    const refinedContent = await refineAssignmentSectionWithAi({
+      sectionTitle: sectionTitle || 'قسم هندسي',
+      currentContent,
+      instructionType,
+      subject,
+      major,
+    });
+
+    return res.json({
+      success: true,
+      refinedContent,
+    });
+  } catch (error: any) {
+    console.error('Refine assignment section error:', error);
+    return res.status(500).json({
+      error: 'تعذر تحسين القسم بالذكاء الاصطناعي حالياً، يرجى المحاولة مرة أخرى.',
+      details: error?.message,
+    });
   }
 });
 

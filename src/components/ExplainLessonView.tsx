@@ -49,6 +49,68 @@ import {
 } from '../types';
 import { ExplainFourteenSections } from './ExplainFourteenSections';
 
+// High-detail image optimization helper for mobile phones and web
+const optimizeImageForVision = (
+  file: File
+): Promise<{ base64: string; previewUrl: string; mimeType: string }> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('فشل قراءة ملف الصورة من جهازك.'));
+    reader.onload = (e) => {
+      const rawDataUrl = e.target?.result as string;
+      if (!rawDataUrl) {
+        return reject(new Error('ملف الصورة فارغ أو تالف.'));
+      }
+
+      const img = new Image();
+      img.onerror = () => {
+        resolve({ base64: rawDataUrl, previewUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
+      };
+      img.onload = () => {
+        try {
+          const maxDim = 1920; // High resolution preserving formulas, schematics, and text
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve({ base64: rawDataUrl, previewUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
+            return;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+          resolve({
+            base64: compressedDataUrl,
+            previewUrl: compressedDataUrl,
+            mimeType: 'image/jpeg',
+          });
+        } catch (_) {
+          resolve({ base64: rawDataUrl, previewUrl: rawDataUrl, mimeType: file.type || 'image/jpeg' });
+        }
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 interface ExplainLessonViewProps {
   student: StudentProfile;
   onNavigateToTool: (tabId: string, contextData?: any) => void;
@@ -66,6 +128,8 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
   const [sourceType, setSourceType] = useState<ExplainSourceType>('image');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [processedImageData, setProcessedImageData] = useState<{ base64: string; mimeType: string } | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [explanationLevel, setExplanationLevel] = useState<ExplainLevel>('simple');
   const [dragActive, setDragActive] = useState(false);
@@ -201,21 +265,52 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     }
   };
 
-  const processSelectedFile = (file: File) => {
-    setSelectedFile(file);
+  const processSelectedFile = async (file: File) => {
     setErrorMsg(null);
 
-    // Generate preview
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => setFilePreview(reader.result as string);
-      reader.readAsDataURL(file);
+    // Validate file type
+    if (sourceType === 'image') {
+      const isImg = file.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(file.name);
+      if (!isImg) {
+        setErrorMsg('نوع الملف غير مدعوم. يرجى رفع صورة بصيغة (JPG, PNG, WEBP, GIF).');
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        setErrorMsg('حجم الصورة كبير جداً (أكثر من 25 ميغابايت). يرجى اختيار صورة أصغر أو التقاط صورة عادية.');
+        return;
+      }
+    }
+
+    setSelectedFile(file);
+
+    // Generate preview & optimize if image
+    if (file.type.startsWith('image/') || sourceType === 'image') {
+      setIsProcessingImage(true);
+      try {
+        const optimized = await optimizeImageForVision(file);
+        setFilePreview(optimized.previewUrl);
+        setProcessedImageData({ base64: optimized.base64, mimeType: optimized.mimeType });
+      } catch (err: any) {
+        console.warn('Canvas image optimization failed, falling back to direct FileReader:', err);
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = reader.result as string;
+          setFilePreview(res);
+          setProcessedImageData({ base64: res, mimeType: file.type || 'image/jpeg' });
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsProcessingImage(false);
+      }
     } else if (file.type === 'application/pdf') {
       setFilePreview('pdf-document');
+      setProcessedImageData(null);
     } else if (file.type.startsWith('video/')) {
       setFilePreview('video-file');
+      setProcessedImageData(null);
     } else {
       setFilePreview('generic-file');
+      setProcessedImageData(null);
     }
   };
 
@@ -242,12 +337,18 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
 
   // Start Lesson Analysis
   const handleAnalyzeLesson = async (customAction?: string, customLevel?: ExplainLevel) => {
+    if (isAnalyzing) return;
+
     // Validate inputs
+    if (sourceType === 'image' && !selectedFile && !processedImageData && !textInput.trim()) {
+      setErrorMsg('يرجى اختيار أو التقاط صورة للدرس أو المسألة أولاً.');
+      return;
+    }
     if (sourceType === 'text' && !textInput.trim()) {
       setErrorMsg('يرجى كتابة أو لصق نص الدرس أو السؤال أولاً.');
       return;
     }
-    if (sourceType !== 'text' && !selectedFile && !textInput.trim()) {
+    if (sourceType !== 'text' && !selectedFile && !processedImageData && !textInput.trim()) {
       setErrorMsg('يرجى رفع ملف أو صورة أو كتابة النص المطلوب شرحه.');
       return;
     }
@@ -256,21 +357,35 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     setProgressStage(0);
     setErrorMsg(null);
 
+    const stages = sourceType === 'image' ? [
+      'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
+      'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
+      'جاري تحليل الدرس والمسائل خطوة بخطوة...',
+      'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
+      'تم تجهيز شرح الصورة بنجاح! 🚀',
+    ] : PROGRESS_STAGES;
+
     // Progress ticker
     const interval = setInterval(() => {
       setProgressStage((prev) => {
-        if (prev < PROGRESS_STAGES.length - 2) {
+        if (prev < stages.length - 2) {
           return prev + 1;
         }
         return prev;
       });
-    }, 1200);
+    }, 1300);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 65000);
 
     try {
       let fileData: string | undefined;
       let mimeType: string | undefined;
 
-      if (selectedFile) {
+      if (sourceType === 'image' && processedImageData) {
+        fileData = processedImageData.base64;
+        mimeType = processedImageData.mimeType;
+      } else if (selectedFile) {
         mimeType = selectedFile.type || (sourceType === 'pdf' ? 'application/pdf' : 'image/jpeg');
         fileData = await readFileAsBase64(selectedFile);
       }
@@ -294,18 +409,30 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       clearInterval(interval);
-      setProgressStage(PROGRESS_STAGES.length - 1);
+      setProgressStage(stages.length - 1);
 
       if (!response.ok) {
-        throw new Error('حدث خطأ في الخادم أثناء تحليل الدرس.');
+        let serverError = 'حدث خطأ في الخادم أثناء تحليل الدرس.';
+        try {
+          const errJson = await response.json();
+          if (errJson.error) serverError = errJson.error;
+        } catch (_) {}
+        if (response.status === 413) {
+          serverError = 'حجم الصورة المرفوعة كبير جداً، يرجى اختيار صورة أصغر أو التقاطها مجدداً.';
+        } else if (response.status === 503) {
+          serverError = 'خوادم الذكاء الاصطناعي تواجه ضغطاً مؤقتاً، يرجى الضغط على زر "إعادة المحاولة" بعد قليل.';
+        }
+        throw new Error(serverError);
       }
 
       const data = await response.json();
       if (!data.result) {
-        throw new Error('لم يتم استخراج شرح متكامل. يرجى التأكد من وضوح الملف والمحاولة ثانية.');
+        throw new Error('لم نتلقَ استجابة صالحة من النموذج. يرجى التأكد من وضوح الصورة والمحاولة ثانية.');
       }
 
       const result: ExplainLessonResult = {
@@ -325,9 +452,19 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         resultsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     } catch (err: any) {
+      clearTimeout(timeoutId);
       clearInterval(interval);
       console.error('Error analyzing lesson:', err);
-      setErrorMsg(err.message || 'تعذر تحليل الدرس حالياً. يرجى المحاولة لاحقاً.');
+
+      let userMsg = 'تعذر تحليل الدرس حالياً. يرجى التأكد من الصورة والمحاولة ثانية.';
+      if (err.name === 'AbortError') {
+        userMsg = 'استغرق تحليل الصورة وقتاً أطول من المتوقع (انتهت المهلة). يرجى الضغط على "إعادة المحاولة" أو رفع صورة أوضح.';
+      } else if (!navigator.onLine) {
+        userMsg = 'انقطع الاتصال بالإنترنت. يرجى التأكد من اتصالك ثم الضغط على "إعادة المحاولة".';
+      } else if (err.message) {
+        userMsg = err.message;
+      }
+      setErrorMsg(userMsg);
     } finally {
       setIsAnalyzing(false);
     }
@@ -685,31 +822,50 @@ ${analysisResult.summaryPoints.join('\n')}
                     {selectedFile.name}
                   </h4>
                   <p className="text-xs text-slate-500 mt-1">
-                    الحجم: {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                    الحجم: {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB {isProcessingImage && ' • جاري تحسين دقة الصورة...'}
                   </p>
                 </div>
 
                 {filePreview && filePreview.startsWith('data:image') && (
-                  <div className="max-w-xs mx-auto rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md">
-                    <img src={filePreview} alt="معاينة الملف" className="w-full max-h-48 object-cover" />
+                  <div className="max-w-md mx-auto rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md bg-slate-900/5 dark:bg-slate-950 p-2">
+                    <img
+                      src={filePreview}
+                      alt="معاينة الصورة"
+                      className="w-full max-h-72 object-contain mx-auto rounded-xl"
+                    />
+                    <div className="mt-2 text-[11px] text-slate-500 text-center font-medium">
+                      جاهزة للتحليل - تظهر كامل محتويات الصورة والمعادلات
+                    </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    تغيير الملف
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>تغيير الصورة</span>
                   </button>
+                  {sourceType === 'image' && (
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>📸 تصوير بالكاميرا</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedFile(null);
                       setFilePreview(null);
+                      setProcessedImageData(null);
                     }}
-                    className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 text-xs font-bold transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 text-xs font-bold transition-all cursor-pointer"
                   >
                     إلغاء
                   </button>
@@ -865,11 +1021,25 @@ ${analysisResult.summaryPoints.join('\n')}
           </div>
         </div>
 
-        {/* Error Alert if any */}
+        {/* Error Alert if any with Retry Action */}
         {errorMsg && (
-          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs sm:text-sm flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
-            <span>{errorMsg}</span>
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
+              <div>
+                <h4 className="font-bold">تنبيه أثناء التحليل:</h4>
+                <p className="mt-0.5 leading-relaxed">{errorMsg}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAnalyzeLesson()}
+              disabled={isAnalyzing}
+              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-sm self-end sm:self-auto"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+              <span>إعادة المحاولة</span>
+            </button>
           </div>
         )}
 
@@ -887,12 +1057,22 @@ ${analysisResult.summaryPoints.join('\n')}
           {isAnalyzing ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>{PROGRESS_STAGES[progressStage] || 'جاري التحليل...'}</span>
+              <span>
+                {sourceType === 'image'
+                  ? [
+                      'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
+                      'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
+                      'جاري تحليل الدرس والمسائل خطوة بخطوة...',
+                      'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
+                      'تم تجهيز شرح الصورة بنجاح! 🚀',
+                    ][progressStage] || 'جاري قراءة الصورة وإعداد الشرح...'
+                  : PROGRESS_STAGES[progressStage] || 'جاري التحليل...'}
+              </span>
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5 text-amber-300" />
-              <span>تحليل وشرح الدرس الآن 🚀</span>
+              <span>{sourceType === 'image' ? 'اشرح لي الدرس من الصورة 📸' : 'اشرح لي الدرس الآن 🚀'}</span>
             </>
           )}
         </button>
@@ -901,13 +1081,32 @@ ${analysisResult.summaryPoints.join('\n')}
         {isAnalyzing && (
           <div className="space-y-2 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 animate-pulse">
             <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
-              <span>{PROGRESS_STAGES[progressStage]}</span>
-              <span>{Math.round(((progressStage + 1) / PROGRESS_STAGES.length) * 100)}%</span>
+              <span>
+                {sourceType === 'image'
+                  ? [
+                      'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
+                      'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
+                      'جاري تحليل الدرس والمسائل خطوة بخطوة...',
+                      'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
+                      'تم تجهيز شرح الصورة بنجاح! 🚀',
+                    ][progressStage] || 'جاري قراءة الصورة والتحليل...'
+                  : PROGRESS_STAGES[progressStage]}
+              </span>
+              <span>
+                {Math.round(
+                  ((progressStage + 1) / (sourceType === 'image' ? 5 : PROGRESS_STAGES.length)) * 100
+                )}
+                %
+              </span>
             </div>
             <div className="w-full h-2 rounded-full bg-blue-200 dark:bg-blue-900 overflow-hidden">
               <div
                 className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                style={{ width: `${((progressStage + 1) / PROGRESS_STAGES.length) * 100}%` }}
+                style={{
+                  width: `${
+                    ((progressStage + 1) / (sourceType === 'image' ? 5 : PROGRESS_STAGES.length)) * 100
+                  }%`,
+                }}
               />
             </div>
           </div>
@@ -985,13 +1184,70 @@ ${analysisResult.summaryPoints.join('\n')}
               </div>
             </div>
 
-            {/* Clarification Warning if image was blurry */}
-            {analysisResult.clarificationNotice && (
-              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs sm:text-sm flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold">تنبيه أمانة علمية:</h4>
-                  <p className="mt-0.5">{analysisResult.clarificationNotice}</p>
+            {/* Warning if image was blurry */}
+            {(analysisResult.isImageBlurry || analysisResult.clarificationNotice) && (
+              <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 text-xs sm:text-sm space-y-3 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base">⚠️ تنبيه أمانة علمية: تفاصيل الصورة غير واضحة</h4>
+                    <p className="mt-1 leading-relaxed">
+                      {analysisResult.clarificationNotice ||
+                        'الكتابة أو الأرقام أو المخطط في الصورة غير واضحة بما يكفي لقراءة القوانين والمعادلات بدقة تامة. يرجى التقاط صورة أوضح بإضاءة جيدة وزاوية مستقيمة.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>📸 التقاط صورة أوضح بالكاميرا</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>اختيار صورة أوضح من الجهاز</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Warning if image was non-educational */}
+            {analysisResult.isNotEducational && (
+              <div className="p-5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border-2 border-blue-300 dark:border-blue-700 text-blue-900 dark:text-blue-200 text-xs sm:text-sm space-y-3 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <HelpCircle className="w-6 h-6 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base">ℹ️ الصورة لا تحتوي على درس أو محتوى تعليمي واضح</h4>
+                    <p className="mt-1 leading-relaxed">
+                      {analysisResult.notEducationalNotice ||
+                        'لم يتم العثور في هذه الصورة على درس أو مسألة أو مخطط هندسي لمواد الميكاترونكس. يرجى رفع صورة لدفتر، سبورة، كتاب، ملزمة، أو دائرة كهربائية.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>رفع صورة درس هندسي</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <Camera className="w-4 h-4" />
+                    <span>تصوير الدفتر أو الملزمة</span>
+                  </button>
                 </div>
               </div>
             )}

@@ -342,6 +342,8 @@ export interface ExplainLessonResult {
   };
   clarificationNotice?: string;
   isImageBlurry?: boolean;
+  isNotEducational?: boolean;
+  notEducationalNotice?: string;
   videoSupportNotice?: string;
   studySheetMarkdown?: string;
   sections?: { id: string; title: string; summary: string }[];
@@ -350,6 +352,78 @@ export interface ExplainLessonResult {
   isAiGenerated?: boolean;
   modelUsed?: string;
   noticeMessage?: string;
+}
+
+// ==========================================
+// 🎓 ENGINEERING ASSIGNMENT CREATOR TYPES
+// ==========================================
+
+export type AssignmentType =
+  | 'homework' // 📚 واجب دراسي
+  | 'research' // 📝 بحث علمي
+  | 'eng_report' // 📄 تقرير هندسي
+  | 'lab_report' // 🧪 تقرير تجربة مختبر
+  | 'problem_solving' // 🔢 حل مسائل
+  | 'circuits' // ⚡ دوائر كهربائية
+  | 'mechatronics_project' // 🤖 مشروع ميكاترونكس
+  | 'eng_project' // 🔧 مشروع هندسي
+  | 'programming' // 💻 تكليف برمجة
+  | 'arduino' // 🔌 Arduino
+  | 'plc' // ⚙️ PLC
+  | 'robotics' // 🤖 Robotics
+  | 'automation' // 🏭 Automation
+  | 'cad_design' // 📐 رسم وتصميم هندسي
+  | 'data_analysis' // 📊 تحليل بيانات
+  | 'lesson_summary' // 📖 تلخيص درس
+  | 'presentation' // 🎤 عرض تقديمي
+  | 'practical_exp' // 🧑🔬 تجربة عملية
+  | 'custom'; // ✏️ تكليف مخصص
+
+export type AssignmentDetailLevel = 'short' | 'medium' | 'advanced' | 'academic';
+export type AssignmentLanguage = 'ar' | 'en';
+
+export interface AssignmentCoverPage {
+  university: string;
+  college: string;
+  major: string;
+  subject: string;
+  assignmentTitle: string;
+  assignmentTypeLabel: string;
+  studentName: string;
+  studentId?: string;
+  professorName: string;
+  studyLevel: string;
+  submissionDate: string;
+  academicYear?: string;
+}
+
+export interface AssignmentSection {
+  id: string;
+  title: string;
+  content: string; // Markdown / rich text
+  type?: 'text' | 'code' | 'table' | 'formula' | 'circuit' | 'components' | 'image';
+  codeLanguage?: string;
+  tableData?: { headers: string[]; rows: string[][] };
+  formulaLatex?: string;
+  imageUrl?: string;
+  imageCaption?: string;
+}
+
+export interface EngineeringAssignment {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  type: AssignmentType;
+  typeLabel: string;
+  subject: string;
+  title: string;
+  pageCountTarget: number;
+  language: AssignmentLanguage;
+  detailLevel: AssignmentDetailLevel;
+  cover: AssignmentCoverPage;
+  sections: AssignmentSection[];
+  isAiGenerated: boolean;
+  modelUsed?: string;
 }
 
 

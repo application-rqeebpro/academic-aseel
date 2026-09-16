@@ -21,6 +21,8 @@ interface HeaderProps {
   onOpenAdmin: () => void;
   onOpenAiModal: () => void;
   onOpenExplainLesson?: () => void;
+  onOpenAssignments?: () => void;
+  onOpenArduino?: () => void;
   onOpenLogin: () => void;
   onOpenRegister: () => void;
   onOpenActivation?: () => void;
@@ -36,6 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAdmin,
   onOpenAiModal,
   onOpenExplainLesson,
+  onOpenAssignments,
+  onOpenArduino,
   onOpenLogin,
   onOpenRegister,
   onOpenActivation,
@@ -87,6 +91,29 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span>📷 اشرح درسي</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                  </button>
+                )}
+
+                {/* Assignment Generator Quick Trigger */}
+                {onOpenAssignments && (
+                  <button
+                    onClick={onOpenAssignments}
+                    className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer"
+                    title="منشئ التكليفات الهندسية"
+                  >
+                    <span>🎓 منشئ التكليفات</span>
+                  </button>
+                )}
+
+                {/* Arduino Simulator Quick Trigger */}
+                {onOpenArduino && (
+                  <button
+                    onClick={onOpenArduino}
+                    className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 hover:bg-cyan-100 dark:hover:bg-cyan-900/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer"
+                    title="محاكي Arduino والدوائر الإلكترونية"
+                  >
+                    <span>🤖 محاكي Arduino</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
                   </button>
                 )}
 

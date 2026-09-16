@@ -59,8 +59,8 @@ export function safeExtractJson(text: string): any {
 
 /**
  * Resilient caller for Gemini models with backoff retry and automatic cascade fallback across available models:
- * 1. Primary model (e.g. gemini-3.8-flash)
- * 2. High-speed lightweight model (gemini-3.1-flash-lite)
+ * 1. High-speed, high-availability lightweight models (gemini-3.1-flash-lite, gemini-flash-lite-latest)
+ * 2. Primary Flash models (gemini-3.6-flash, gemini-3.8-flash)
  * 3. Latest flash alias (gemini-flash-latest)
  */
 export async function callGeminiWithResilience(
@@ -71,18 +71,25 @@ export async function callGeminiWithResilience(
     preferredModel?: string;
   }
 ): Promise<{ text: string; modelUsed: string }> {
-  const models = [
-    request.preferredModel || 'gemini-3.8-flash',
+  // Ordered cascade prioritizing high-availability models with quota
+  const defaultCascade = [
     'gemini-3.1-flash-lite',
+    'gemini-flash-lite-latest',
+    'gemini-3.6-flash',
+    'gemini-3.8-flash',
     'gemini-flash-latest',
   ];
+
+  const models = request.preferredModel
+    ? [request.preferredModel, ...defaultCascade]
+    : defaultCascade;
 
   const uniqueModels = Array.from(new Set(models));
   let lastError: any = null;
 
   for (let i = 0; i < uniqueModels.length; i++) {
     const currentModel = uniqueModels[i];
-    const maxAttempts = i === 0 ? 2 : 1;
+    const maxAttempts = 2;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -99,31 +106,36 @@ export async function callGeminiWithResilience(
       } catch (err: any) {
         lastError = err;
         const msg = String(err?.message || err?.status || err || '');
-        const isTransient =
-          msg.includes('503') ||
+        const isQuotaExceeded =
           msg.includes('429') ||
+          msg.includes('Quota exceeded') ||
+          msg.includes('quota') ||
+          msg.includes('RESOURCE_EXHAUSTED');
+
+        const isTemporaryBusy =
+          msg.includes('503') ||
           msg.includes('UNAVAILABLE') ||
           msg.includes('high demand') ||
-          msg.includes('RESOURCE_EXHAUSTED') ||
-          msg.includes('overloaded') ||
-          msg.includes('Quota exceeded') ||
-          msg.includes('rate-limit');
+          msg.includes('overloaded');
 
         console.warn(
           `[Gemini Resilience] Model '${currentModel}' attempt ${attempt}/${maxAttempts} failed:`,
           msg.substring(0, 160)
         );
 
-        if (isTransient && attempt < maxAttempts) {
-          await new Promise((res) => setTimeout(res, 1200));
+        // If quota is exhausted on this model, retry won't help immediately, so immediately fall through to the next model
+        if (isQuotaExceeded) {
+          break;
+        }
+
+        // If temporary 503 spike, wait briefly only on first attempt
+        if (isTemporaryBusy && attempt < maxAttempts) {
+          await new Promise((res) => setTimeout(res, 600));
           continue;
         }
 
-        if (isTransient) {
-          break; // Try next model in sequence
-        } else {
-          throw err;
-        }
+        // Otherwise move immediately to the next candidate model in the cascade
+        break;
       }
     }
   }
@@ -169,8 +181,18 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
 
       // If a file / image / pdf / video is provided
       if (fileData) {
-        const cleanBase64 = fileData.replace(/^data:[\w\/\-\.]+;base64,/, '');
-        const actualMime = mimeType || (mode === 'pdf' ? 'application/pdf' : mode === 'video' ? 'video/mp4' : 'image/jpeg');
+        let cleanBase64 = fileData;
+        let detectedMime = mimeType;
+
+        const match = fileData.match(/^data:([^;]+);base64,(.*)$/s);
+        if (match) {
+          detectedMime = detectedMime || match[1];
+          cleanBase64 = match[2];
+        }
+
+        cleanBase64 = cleanBase64.trim().replace(/\s+/g, '');
+        let actualMime = detectedMime || (mode === 'pdf' ? 'application/pdf' : mode === 'video' ? 'video/mp4' : 'image/jpeg');
+        if (actualMime === 'image/jpg') actualMime = 'image/jpeg';
 
         parts.push({
           inlineData: {
@@ -198,6 +220,28 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
         generate_cheat_sheet: 'قم بإعداد ورقة مذاكرة شاملة جداً وجاهزة للطباعة والمراجعة السريعة ليلة الامتحان',
       };
 
+      const imageSpecificInstructions = mode === 'image' ? `
+تعليمات دقيقة ومشددة لتحليل صور الدروس (Vision / OCR Analysis):
+1. افحص الصورة المرفوعة بعناية بالغة:
+   - اقرأ النصوص المكتوبة بدقة (سواء كانت مطبوعة أو بخط اليد باللغتين العربية والإنجليزية).
+   - استخرج المسائل الرياضية، المعادلات الفيزيائية، القوانين، الرموز ووحدات القياس.
+   - تعرّف على الدوائر الكهربائية والإلكترونية ومكوناتها (مقاومات R، مكثفات C، ملفات L، مصادر جهد وتيار AC/DC، ترانزستورات، دايودات، مفاتيح) وطريقة توصيلها، واشملها في حقل "circuitAnalysis".
+   - تعرّف على المخططات والرسومات الهندسية ومكونات الميكاترونكس (المحركات، الحساسات، التروس، الأذرع والمكابس).
+2. فحص وضوح الصورة:
+   - إذا كانت الصورة مشوشة، باهتة، مظلمة، مقطوعة، أو تمنع قراءة الأرقام والرموز بأمانة علمية:
+     اجعل "isImageBlurry": true واكتب في "clarificationNotice": "الصورة غير واضحة بما يكفي لقراءة بعض المعادلات أو الأرقام بدقة، يرجى إعادة تصويرها بإضاءة كافية وزاوية مستقيمة."
+3. فحص المحتوى التعليمي:
+   - إذا كانت الصورة لا تحتوي على درس، مسألة، قانون، معادلة، دائرة، أو مخطط هندسي لمواد الميكاترونكس (مثل: صورة شخصية، سيارة بالشارع، صورة عشوائية فارغة):
+     اجعل "isNotEducational": true واكتب في "notEducationalNotice": "الصورة المرفوعة لا تحتوي على درس أو مسألة أو مخطط هندسي واضح لمواد الميكاترونكس. يرجى رفع صورة لدفتر، سبورة، كتاب، ملزمة، أو دائرة كهربائية."
+4. هيكل الشرح لطالب سنة أولى ميكاترونكس:
+   - ابدأ بتحديد موضوع الصورة وعنوان الدرس بدقة في lessonTitle و subjectName.
+   - اشرح الفكرة الهندسية باختصار وبساطة في simpleIdea.
+   - قسّم أهم الأفكار في نقاط واضحة في coreTakeaways.
+   - اشرح الرموز والمكونات في conceptExplanations و terms و formulas.
+   - إذا كانت الصورة تحتوي على مسألة أو تمرين: قم بحلها خطوة بخطوة في solvedExample مع المعطيات والقانون والتعويض والناتج النهائي والوحدة وتفسير النتيجة.
+   - أضف معلومة مهمة للحفظ في importantNotes وفي memoryAids.
+` : '';
+
       const userInstructionPrompt = `
 أنت مدرس جامعي ذكي متخصص في هندسة الميكاترونكس، ومهمتك مساعدة طالب سنة أولى في الجامعات اليمنية (${studentUniversity}) في تخصص (${studentMajor}) على فهم الدرس الذي يرفعه بطريقة سهلة ومبسطة ومختصرة، مع المحافظة التامة على المعلومات المهمة الموجودة في المحتوى الأصلي دون حذفها.
 
@@ -209,6 +253,8 @@ ${prompt ? `- استفسار أو نص الطالب: "${prompt}"` : ''}
 ${specificPart ? `- الطالب حدد هذا الجزء للتركيز عليه: "${specificPart}"` : ''}
 - مستوى الشرح المطلوب: ${levelDescriptions[explanationLevel] || levelDescriptions.simple}
 - الإجراء المطلوب: ${actionInstructions[actionType] || actionInstructions.full_explain}
+
+${imageSpecificInstructions}
 
 منهجية معالجة الدرس:
 1. اقرأ المحتوى كاملًا قدر الإمكان.
@@ -378,6 +424,8 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
   },
   "clarificationNotice": "",
   "isImageBlurry": false,
+  "isNotEducational": false,
+  "notEducationalNotice": "",
   "videoSupportNotice": "",
   "studySheetMarkdown": "ورقة مذاكرة مركزة تضم ملخص المفاهيم، جدول القوانين والوحدات، والأخطاء الواجب تجنبها ليلة الاختبار."
 }
@@ -394,7 +442,7 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
             responseMimeType: 'application/json',
             temperature: 0.2,
           },
-          preferredModel: 'gemini-3.8-flash',
+          preferredModel: 'gemini-3.1-flash-lite',
         });
         modelUsed = genResult.modelUsed;
         parsed = safeExtractJson(genResult.text);
@@ -438,6 +486,8 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
           circuitAnalysis: parsed.circuitAnalysis,
           clarificationNotice: parsed.clarificationNotice,
           isImageBlurry: Boolean(parsed.isImageBlurry),
+          isNotEducational: Boolean(parsed.isNotEducational),
+          notEducationalNotice: parsed.notEducationalNotice,
           videoSupportNotice: parsed.videoSupportNotice,
           studySheetMarkdown: parsed.studySheetMarkdown,
           pdfPageChoice: params.pdfPageChoice,
