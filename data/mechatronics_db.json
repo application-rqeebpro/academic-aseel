@@ -11,9 +11,33 @@
       "major": "إدارة المنصة والهندسة",
       "role": "admin",
       "createdAt": "2026-09-15T18:56:53.699Z"
+    },
+    {
+      "id": "user-1789594875928-4b554003",
+      "name": "Test Student",
+      "phone": "777123456",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studyLevel": "السنة الأولى",
+      "major": "هندسة الميكاترونكس",
+      "passwordHash": "$2b$10$fBCl1z5OdWDiqyEfOEDNmeB0.wEeyzpjp8K9THcZyI/xY4d96P8pG",
+      "role": "student",
+      "createdAt": "2026-09-16T21:41:16.027Z",
+      "lastLoginAt": "2026-09-16T21:41:16.028Z"
     }
   ],
-  "subscriptions": [],
+  "subscriptions": [
+    {
+      "id": "sub-1789594876028",
+      "userId": "user-1789594875928-4b554003",
+      "plan": "monthly",
+      "status": "pending",
+      "startDate": "2026-09-16T21:41:16.028Z",
+      "expiryDate": "2026-09-16T21:41:16.028Z",
+      "createdAt": "2026-09-16T21:41:16.028Z",
+      "activationMethod": "whatsapp",
+      "notes": "حساب مسجل جديد في انتظار تأكيد الدفع والتفعيل"
+    }
+  ],
   "activationCodes": [
     {
       "id": "code-7820",

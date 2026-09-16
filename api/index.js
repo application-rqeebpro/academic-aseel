@@ -2509,9 +2509,33 @@ var mechatronics_db_default = {
       major: "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0646\u0635\u0629 \u0648\u0627\u0644\u0647\u0646\u062F\u0633\u0629",
       role: "admin",
       createdAt: "2026-09-15T18:56:53.699Z"
+    },
+    {
+      id: "user-1789594875928-4b554003",
+      name: "Test Student",
+      phone: "777123456",
+      university: "\u0627\u0644\u062C\u0627\u0645\u0639\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A\u064A\u0629 \u0627\u0644\u062F\u0648\u0644\u064A\u0629 \u2013 \u0635\u0646\u0639\u0627\u0621",
+      studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+      major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
+      passwordHash: "$2b$10$fBCl1z5OdWDiqyEfOEDNmeB0.wEeyzpjp8K9THcZyI/xY4d96P8pG",
+      role: "student",
+      createdAt: "2026-09-16T21:41:16.027Z",
+      lastLoginAt: "2026-09-16T21:41:16.028Z"
     }
   ],
-  subscriptions: [],
+  subscriptions: [
+    {
+      id: "sub-1789594876028",
+      userId: "user-1789594875928-4b554003",
+      plan: "monthly",
+      status: "pending",
+      startDate: "2026-09-16T21:41:16.028Z",
+      expiryDate: "2026-09-16T21:41:16.028Z",
+      createdAt: "2026-09-16T21:41:16.028Z",
+      activationMethod: "whatsapp",
+      notes: "\u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u062C\u062F\u064A\u062F \u0641\u064A \u0627\u0646\u062A\u0638\u0627\u0631 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639 \u0648\u0627\u0644\u062A\u0641\u0639\u064A\u0644"
+    }
+  ],
   activationCodes: [
     {
       id: "code-7820",

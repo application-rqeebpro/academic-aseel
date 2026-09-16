@@ -41,11 +41,17 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
     setLoading(true);
     try {
       const token = localStorage.getItem('mct_auth_token');
+      if (!token) {
+        setError('يرجى إنشاء حساب أو تسجيل الدخول أولاً قبل إدخال كود التفعيل لربط الاشتراك بحسابك.');
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/activate-code', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ code: cleanCode }),
       });
