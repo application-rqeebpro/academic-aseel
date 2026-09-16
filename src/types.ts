@@ -229,7 +229,9 @@ export interface ExplainTerm {
 
 export interface ExplainConceptItem {
   concept: string;
-  simplifiedExplanation: string;
+  conceptEn?: string;
+  simplifiedExplanation?: string;
+  explanation?: string;
   scientificDefinition?: string;
   practicalAnalogy?: string;
   isAdditionalNote?: boolean;
@@ -276,8 +278,11 @@ export interface ExplainSolvedExample {
 }
 
 export interface ExplainImportantNote {
-  note: string;
-  type: 'warning' | 'tip' | 'exam';
+  note?: string;
+  point?: string;
+  explanation?: string;
+  type?: 'warning' | 'tip' | 'exam';
+  dangerLevel?: 'high' | 'medium' | 'low';
   isAdditionalNote?: boolean;
 }
 

@@ -186,7 +186,7 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-slate-500 block">الشرح المبسط:</span>
                   <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                    {concept.explanation}
+                    {concept.simplifiedExplanation || concept.explanation}
                   </p>
                 </div>
 
@@ -495,7 +495,7 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
               >
                 <div className="font-bold text-xs sm:text-sm text-rose-800 dark:text-rose-300 flex items-center gap-2">
                   <X className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>{note.point}</span>
+                  <span>{note.point || note.note}</span>
                 </div>
                 {note.explanation && (
                   <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pr-6">
