@@ -130,7 +130,18 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
         body: JSON.stringify({ password }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        if (res.status === 401) {
+          throw new Error('كلمة المرور غير صحيحة. يرجى التأكد من كتابة كلمة المرور المعتمدة.');
+        }
+        throw new Error(text || 'فشل الاتصال بالخادم.');
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'كلمة المرور غير صحيحة');
       }
@@ -138,7 +149,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       localStorage.setItem('mct_admin_token', data.token);
       setIsAuthenticated(true);
     } catch (err: any) {
-      setAuthError(err.message);
+      setAuthError(err.message || 'حدث خطأ أثناء تسجيل الدخول.');
     } finally {
       setLoading(false);
     }
@@ -211,7 +222,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
   const loadSettings = async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/admin/settings', { headers: getAuthHeader() });
       if (res.ok) {
         const data = await res.json();
         setSettings((prev) => ({ ...prev, ...data }));

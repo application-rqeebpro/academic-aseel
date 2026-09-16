@@ -108,7 +108,7 @@ try {
 }
 
 function getDefaultDB(): DBSchema {
-  const adminPasswordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin', 10);
+  const adminPasswordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'A7820600', 10);
   const demoStudentPasswordHash = bcrypt.hashSync('123456', 10);
 
   const initialAdmin: DBUser = {
