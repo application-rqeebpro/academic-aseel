@@ -656,26 +656,73 @@ router.post('/student/progress', requireAuth, (req: AuthenticatedRequest, res) =
 });
 
 // Explain Lesson Engine
-router.post('/explain-lesson', requireAuth, requireActiveSubscription, async (req: AuthenticatedRequest, res) => {
+router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
   try {
-    const { lessonTitle, textContent, imageBase64, mimeType, studyLevel, university } = req.body;
+    const user = req.user;
+    if (user && user.role === 'student') {
+      const sub = req.subscription || db.getSubscriptionByUserId(user.id);
+      if (sub && (sub.status === 'expired' || sub.status === 'suspended')) {
+        return res.status(403).json({
+          error: 'انتهت صلاحية اشتراكك، يرجى التجديد لاستخدام خدمة الشرح الذكي.',
+          subscriptionStatus: sub.status,
+        });
+      }
+    }
 
-    if (!lessonTitle && !textContent && !imageBase64) {
-      return res.status(400).json({ error: 'يرجى تقديم عنوان الدرس، نص الدرس، أو صورة الدرس لتحليلها.' });
+    const {
+      mode = 'text',
+      prompt = '',
+      fileData,
+      mimeType,
+      fileName,
+      explanationLevel = 'simple',
+      actionType = 'full_explain',
+      specificPart = '',
+      studentUniversity,
+      studentMajor,
+      studentId,
+      lessonTitle,
+      textContent,
+      imageBase64,
+      pdfPageChoice,
+    } = req.body;
+
+    const actualFileData = fileData || imageBase64;
+    const actualPrompt = prompt || textContent || (lessonTitle ? `عنوان الدرس: ${lessonTitle}` : '');
+    const actualMode = mode || (imageBase64 ? 'image' : 'text');
+
+    if (!actualFileData && !actualPrompt) {
+      return res.status(400).json({ error: 'يرجى تقديم محتوى أو صورة أو ملف لشرح الدرس.' });
     }
 
     const explanation = await processExplainLesson({
-      mode: imageBase64 ? 'image' : 'text',
-      prompt: `${lessonTitle ? 'عنوان الدرس: ' + lessonTitle + '\n' : ''}${textContent || ''}`,
-      fileData: imageBase64 ? imageBase64.replace(/^data:image\/\w+;base64,/, '') : undefined,
-      mimeType: mimeType || 'image/jpeg',
-      explanationLevel: 'medium',
-      studentUniversity: university || req.user?.university || 'الجامعة الإماراتية الدولية – صنعاء',
-      studentMajor: req.user?.major || 'هندسة الميكاترونكس',
-      studentId: req.user?.id,
+      mode: actualMode,
+      prompt: actualPrompt,
+      fileData: actualFileData,
+      mimeType,
+      fileName: fileName || (lessonTitle ? `${lessonTitle}` : undefined),
+      explanationLevel,
+      actionType,
+      specificPart,
+      studentUniversity: studentUniversity || user?.university || 'الجامعة الإماراتية الدولية – صنعاء',
+      studentMajor: studentMajor || user?.major || 'هندسة الميكاترونكس',
+      studentId: studentId || user?.id,
+      pdfPageChoice,
     });
 
-    res.json({ success: true, explanation });
+    if (user?.id) {
+      try {
+        db.saveStudentLesson({
+          ...explanation,
+          studentId: user.id,
+          savedAt: new Date().toISOString(),
+        });
+      } catch (e) {
+        // silent
+      }
+    }
+
+    res.json({ success: true, result: explanation, explanation });
   } catch (error: any) {
     console.error('Error processing explain-lesson:', error);
     res.status(500).json({
@@ -713,7 +760,7 @@ router.delete('/student-lessons/:lessonId', requireAuth, (req: AuthenticatedRequ
 });
 
 // AI Chat endpoint
-router.post('/ai/chat', requireAuth, requireActiveSubscription, async (req: AuthenticatedRequest, res) => {
+router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
   try {
     const { message, history = [], currentLessonTitle, currentSubjectName, imageBase64 } = req.body;
 
@@ -760,7 +807,7 @@ router.post('/ai/chat', requireAuth, requireActiveSubscription, async (req: Auth
         contents.push({ role: 'user', parts: currentParts });
 
         const response = await client.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.8-flash',
           contents,
           config: { systemInstruction, temperature: 0.7 },
         });

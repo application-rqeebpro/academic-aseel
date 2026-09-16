@@ -25,10 +25,11 @@ export interface ExplainRequestParams {
   fileName?: string;
   explanationLevel?: ExplainLevel;
   specificPart?: string;
-  actionType?: 'full_explain' | 'simplify_more' | 'did_not_understand' | 'solve_example' | 'generate_cheat_sheet' | 'test_me';
+  actionType?: 'full_explain' | 'simplify_more' | 'explain_point' | 'give_example' | 'test_me' | 'did_not_understand' | 'solve_example' | 'generate_cheat_sheet';
   studentUniversity?: string;
   studentMajor?: string;
   studentId?: string;
+  pdfPageChoice?: { mode: 'full' | 'pages'; selectedPages?: string };
 }
 
 export async function processExplainLesson(params: ExplainRequestParams): Promise<ExplainLessonResult> {
@@ -43,6 +44,7 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
     actionType = 'full_explain',
     studentUniversity = 'الجامعة الإماراتية الدولية – صنعاء',
     studentMajor = 'هندسة الميكاترونكس',
+    pdfPageChoice,
   } = params;
 
   const client = getGeminiClient();
@@ -54,9 +56,8 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
       // If a file / image / pdf / video is provided
       if (fileData) {
         const cleanBase64 = fileData.replace(/^data:[\w\/\-\.]+;base64,/, '');
-        const actualMime = mimeType || (mode === 'pdf' ? 'application/pdf' : 'image/jpeg');
+        const actualMime = mimeType || (mode === 'pdf' ? 'application/pdf' : mode === 'video' ? 'video/mp4' : 'image/jpeg');
 
-        // Gemini handles image/* and application/pdf and audio/video
         parts.push({
           inlineData: {
             mimeType: actualMime,
@@ -73,140 +74,184 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
       };
 
       const actionInstructions: Record<string, string> = {
-        full_explain: 'تحليل المحتوى التعليمي كاملاً وشرحه وفق القالب الهندسي المعتمد',
-        simplify_more: 'التركيز على تبسيط الشرح بأقصى درجة ممكنة مع أمثلة شديدة البساطة',
-        did_not_understand: 'الطالب ضغط "لم أفهم"؛ أعد الشرح بأسلوب مغاير تماماً وتشبيه يومي عملي جداً',
-        solve_example: 'ركز على تقديم مسألة ومثال محلول إضافي خطوة بخطوة بالتفصيل مع المعطيات والقوانين',
-        generate_cheat_sheet: 'قم بإعداد ورقة مذاكرة شاملة جداً وجاهزة للطباعة والمراجعة السريعة',
-        test_me: 'أنشئ بنك أسئلة واختبار تدريبي مفصل مع الإجابات والتفسير الدقيق',
+        full_explain: 'تحليل المحتوى التعليمي كاملاً وشرحه وفق القالب الهندسي المعتمد بجميع أقسامه الـ 14 بدقة وأمانة علمية',
+        simplify_more: 'التركيز على تبسيط الشرح بأقصى درجة ممكنة مع تشبيهات عملية حية من الحياة اليومية والسيارات والآلات لطالب مبتدئ',
+        explain_point: `الطالب حدد هذه النقطة بالتحديد لشرحها: "${specificPart}". اشرح هذه النقطة بعمق وبساطة مع المحافظة على ترابط الدرس`,
+        give_example: 'أنشئ مثالاً تعليمياً هندسياً إضافياً جديداً ومبتكراً يرتبط بهذا المفهوم خطوة بخطوة وضع isGenerated: true',
+        test_me: 'أنشئ اختباراً تدريبياً جديداً ومتقناً مكوناً من 3 إلى 5 أسئلة متنوعة مع الإجابات وتفسيرها الدقيق',
+        did_not_understand: 'الطالب ضغط "لم أفهم"؛ أعد الشرح بأسلوب مغاير تماماً وتشبيه يومي عملي جداً يزيل أي غموض',
+        solve_example: 'ركز على تقديم مسألة ومثال محلول إضافي خطوة بخطوة بالتفصيل مع المعطيات والقوانين والناتج وتفسير النتيجة',
+        generate_cheat_sheet: 'قم بإعداد ورقة مذاكرة شاملة جداً وجاهزة للطباعة والمراجعة السريعة ليلة الامتحان',
       };
 
       const userInstructionPrompt = `
-أنت مدرس جامعي متخصص في الميكاترونكس والهندسة، ومهمتك مساعدة طالب سنة أولى في الجامعات اليمنية (${studentUniversity}) في تخصص (${studentMajor}) على فهم المحتوى الذي يرفعه.
+أنت مدرس جامعي ذكي متخصص في هندسة الميكاترونكس، ومهمتك مساعدة طالب سنة أولى في الجامعات اليمنية (${studentUniversity}) في تخصص (${studentMajor}) على فهم الدرس الذي يرفعه بطريقة سهلة ومبسطة ومختصرة، مع المحافظة التامة على المعلومات المهمة الموجودة في المحتوى الأصلي دون حذفها.
 
 المعطيات:
 - نوع المحتوى المرفوع: ${mode}
 ${fileName ? `- اسم الملف: ${fileName}` : ''}
+${pdfPageChoice?.mode === 'pages' && pdfPageChoice.selectedPages ? `- اختيار صفحات PDF محددة: "${pdfPageChoice.selectedPages}"` : ''}
 ${prompt ? `- استفسار أو نص الطالب: "${prompt}"` : ''}
 ${specificPart ? `- الطالب حدد هذا الجزء للتركيز عليه: "${specificPart}"` : ''}
 - مستوى الشرح المطلوب: ${levelDescriptions[explanationLevel] || levelDescriptions.simple}
 - الإجراء المطلوب: ${actionInstructions[actionType] || actionInstructions.full_explain}
 
-القواعد الصارمة للشرح:
-1. لا تكتفِ بإعادة صياغة المحتوى أو نسخه. افهم المحتوى أولاً، ثم اشرحه بطريقة عربية سهلة ومختصرة وممتعة.
-2. حافظ على القوانين والمعلومات المهمة؛ وإذا وجدت قانوناً، اشرح كل رمز ووحدته الدولية.
-3. إذا كان القانون فيزيائياً، قم بتحليل أبعاده [M, L, T, I] واشرح معناها الفيزيائي بطريقة سهلة.
-4. إذا وجدت مسألة أو قانوناً، اشرح طريقة الحل خطوة بخطوة (المعطيات، المطلوب، القانون، التعويض، الناتج بوحدته).
-5. فرّق بوضوح في حقل isGenerated في المثال المحلول بين ما إذا كان مستخرجاً من ملف الطالب أو مثالاً إضافياً تعليمياً أنشأته أنت.
-6. إذا كانت الصورة لدائرة كهربائية، استخرج عناصر الدائرة (مقاومات، مصادر جهد، تيارات، توصيلات، قيم).
-7. إذا كانت الصورة غير واضحة أو الرموز باهتة بحيث يتعذر قراءة بعض الأرقام بدقة، اذكر في clarificationNotice: "الصورة غير واضحة بما يكفي لقراءة بعض القيم، يرجى رفع صورة أوضح" ولا تخمن القيم غير المقروءة.
-8. إذا كان الملف فيديو، لا تدعِ أنك شاهدت الفيديو كاملاً إذا لم تتمكن من معالجته بالكامل، ولخص ما تمكنت من تحليله بصدق علمي.
-9. اقترح الأداة المناسبة في المنصة من بين:
-   - circuits: مختبر الدوائر الكهربائية (لأي موضوع كهربائي أو أوم أو كيرشوف)
-   - math: المساعد الرياضي (للمتجهات والتفاضل والتكامل والمصفوفات)
-   - formulas: محلل القوانين (للقوانين الفيزيائية والميكانيكية)
-   - units: محلل ومحول الوحدات (للتحويلات والوحدات الدولية)
-   - torque: حاسبة عزم المحرك (للعزم والمحركات وقوانين الدوران)
-   - gears: حاسبة التروس (لنسب السرعات والتروس)
-   - oee: حاسبة الكفاءة الصناعية OEE
-   - robot: محاكي الذراع الروبوتية
+منهجية معالجة الدرس:
+1. اقرأ المحتوى كاملًا قدر الإمكان.
+2. حدد موضوع الدرس بدقة.
+3. استخرج الأفكار الأساسية والتعريفات والقوانين والمعادلات والرموز والوحدات والأمثلة والملاحظات.
+4. حدد العلاقة بين الأفكار، ثم أعد شرح المحتوى بأسلوب طالب سنة أولى؛ لا تحذف معلومة أساسية من أجل الاختصار، بل رتبها وبسطها.
+5. إذا احتجت إلى إضافة معلومة لم تكن موجودة في الملف الأصلي لتوضيح فكرة غامضة، ضع علامة: "💡 معلومة إضافية للتوضيح" (أو isAdditionalNote: true).
+6. إذا كانت الصورة غير واضحة بما يكفي لقراءة جزء معين أو أرقام، لا تخمن! اكتب في clarificationNotice: "الصورة غير واضحة بما يكفي لقراءة هذا الجزء، يرجى رفع صورة أوضح."
+7. إذا كان المحتوى فيديو، لخص ما تم استخراجه بصدق؛ وإذا كانت هناك قيود اذكرها في videoSupportNotice.
+8. إذا كان ملف PDF طويلاً، قسّمه إلى أقسام منظمة بدلاً من حذف المعلومات.
 
-أخرج الناتج فقط بصيغة كائن JSON صالح وبدون أي علامات أو كتل نصية خارج الـ JSON:
+يجب إخراج الناتج حصراً كـ JSON صالح ومطابق تماماً للبنية التالية:
 {
-  "lessonTitle": "اسم الدرس المستخرج بدقة",
-  "subjectName": "اسم المادة (فيزياء 1 / دوائر كهربائية 1 / تفاضل وتكامل 1 / ميكانيكا هندسية / كيمياء هندسية / مقدمة ميكاترونكس)",
-  "simpleIdea": "الفكرة الأساسية للدرس في 3 إلى 5 أسطر بأسلوب شيق وبسيط مع تشبيه عملي ملموس",
+  "lessonTitle": "📚 اسم الدرس المستخرج من المحتوى بدقة",
+  "subjectName": "اسم المادة (مثل: فيزياء 1 / دوائر كهربائية 1 / تفاضل وتكامل 1 / ميكانيكا هندسية / كيمياء هندسية / مقدمة ميكاترونكس)",
+  "simpleIdea": "💡 الدرس ببساطة: فقرة سهلة ومفهومة تشرح: ما هو الموضوع؟ ماذا يعني؟ لماذا ندرسه؟ وأين يستخدم في الميكاترونكس؟",
   "coreTakeaways": [
-    "النقطة الأساسية 1",
-    "النقطة الأساسية 2",
-    "النقطة الأساسية 3",
-    "النقطة الأساسية 4"
+    "🎯 أهم الأفكار: النقطة الأساسية الأولى المستخرجة من الدرس",
+    "🎯 النقطة الأساسية الثانية دون حذف أي فكرة مهمة",
+    "🎯 النقطة الأساسية الثالثة",
+    "🎯 النقطة الأساسية الرابعة"
+  ],
+  "conceptExplanations": [
+    {
+      "concept": "اسم المفهوم العلمي",
+      "simplifiedExplanation": "شرح المفهوم بأسلوب مبسط جداً يفهمه طالب سنة أولى",
+      "scientificDefinition": "التعريف العلمي الدقيق المستخرج من المحتوى",
+      "practicalAnalogy": "تشبيه واقعي ملموس من السيارات أو الروبوتات أو الحياة اليومية",
+      "isAdditionalNote": false
+    }
   ],
   "terms": [
     {
       "term": "المصطلح بالعربية",
-      "englishTerm": "English Name",
-      "meaning": "معنى مبسط للمصطلح",
-      "practicalAnalogy": "تشبيه عملي ملموس"
+      "englishTerm": "English Scientific Term",
+      "meaning": "معنى المصطلح بطريقة بسيطة",
+      "practicalAnalogy": "تشبيه عملي ملموس",
+      "isAdditionalNote": false
     }
   ],
   "formulas": [
     {
-      "equation": "صيغة القانون (مثال: V = I * R)",
-      "meaning": "شرح معنى القانون والغرض منه ومتى نستخدمه",
+      "equation": "صيغة القانون (مثال: F = m × a أو V = I × R)",
+      "meaning": "شرح معنى القانون والغرض منه",
+      "whenToUse": "متى يستخدم هذا القانون بالتحديد في المسائل والتطبيقات؟",
       "symbols": [
-        { "symbol": "الرمز", "name": "اسم الكمية", "unit": "الوحدة الدولية", "dimension": "الأبعاد الفيزيائية" }
+        {
+          "symbol": "F",
+          "name": "القوة",
+          "unit": "Newton (N)",
+          "dimension": "[F] = M L T^-2"
+        },
+        {
+          "symbol": "m",
+          "name": "الكتلة",
+          "unit": "Kilogram (kg)",
+          "dimension": "M"
+        },
+        {
+          "symbol": "a",
+          "name": "التسارع",
+          "unit": "m/s²",
+          "dimension": "L T^-2"
+        }
       ]
     }
   ],
   "units": [
-    { "quantity": "اسم الكمية", "unitName": "اسم الوحدة", "unitSymbol": "رمز الوحدة" }
+    {
+      "quantity": "اسم الكمية (مثال: القوة)",
+      "unitName": "نيوتن (Newton)",
+      "unitSymbol": "N",
+      "notes": "1 N = 1 kg·m/s²"
+    }
   ],
   "dimensions": [
     {
-      "quantity": "اسم الكمية",
-      "formula": "صيغة القانون",
-      "dimensionStr": "[X] = M L T^-2",
-      "explanation": "شرح معنى الأبعاد للمهندس"
+      "quantity": "القوة",
+      "formula": "F = m × a",
+      "dimensionStr": "[F] = M L T⁻²",
+      "explanation": "M تعبر عن الكتلة، L عن الطول، T⁻² عن مربع الزمن في المقام"
     }
   ],
   "solvedExample": {
-    "problem": "نص المسألة بوضوح",
-    "given": ["المعطى 1", "المعطى 2"],
-    "required": "المطلوب إيجاده",
-    "formulaUsed": "القانون المستخدم",
+    "problem": "نص المسألة أو المثال المذكور في الدرس",
+    "given": ["المعطى 1: الكتلة m = 5 kg", "المعطى 2: التسارع a = 2 m/s²"],
+    "required": "المطلوب: حساب القوة المؤثرة F",
+    "formulaUsed": "F = m × a",
     "steps": [
-      "الخطوة 1...",
-      "الخطوة 2...",
-      "الخطوة 3..."
+      "الخطوة 1: التأكد من تجانس الوحدات في النظام الدولي (kg, m/s²)",
+      "الخطوة 2: التعويض المباشر في القانون: F = 5 × 2",
+      "الخطوة 3: إتمام عملية الضرب الرياضية"
     ],
-    "finalAnswer": "الناتج النهائي مع الوحدة",
+    "calculation": "F = 5 × 2 = 10",
+    "unit": "N (نيوتن)",
+    "finalAnswer": "F = 10 N",
+    "whyThisResult": "تفسير النتيجة: القوة الناتجة تعني أننا نحتاج إلى 10 نيوتن لدفع كتلة مقدارها 5 كجم بتسارع 2 متر لكل ثانية مربعة في اتجاه الحركة",
     "isGenerated": false,
-    "note": "نصيحة هندسية للحل في الامتحان"
+    "note": "⚠️ انتبه دائماً إلى تحويل الوحدات (مثل cm إلى m أو g إلى kg) قبل التعويض"
   },
-  "commonMistakes": [
+  "importantNotes": [
     {
-      "mistake": "الخطأ الشائع",
-      "correction": "التصحيح السليم",
-      "why": "السبب العلمي"
+      "note": "⚠️ ملاحظة هامة: انتبه إلى تحويل الوحدات إلى النظام الدولي (SI Units) قبل التعويض في المعادلات",
+      "type": "warning",
+      "isAdditionalNote": false
     }
   ],
+  "memoryAids": [
+    "🧠 كيف أتذكر الدرس: مثلث قانون أوم (V في الأعلى، I و R في الأسفل)"
+  ],
   "summaryPoints": [
-    "الخلاصة 1",
-    "الخلاصة 2",
-    "الخلاصة 3"
+    "📝 الخلاصة: تلخيص مكثف جداً يمكن قراءته في دقيقة أو دقيقتين ويشمل زبدة الدرس الأساسية"
+  ],
+  "learningObjectives": [
+    "✓ تعريف وفهم المفهوم الأساسي في الدرس وتطبيقاته",
+    "✓ معرفة جميع القوانين الرياضية والرموز وشروط استخدامها",
+    "✓ معرفة الوحدات الدولية والأبعاد الفيزيائية لكل كمية",
+    "✓ القدرة على حل مسألة تطبيقية خطوة بخطوة بالتعويض السليم"
   ],
   "quiz": [
     {
       "id": "q1",
-      "question": "نص السؤال",
+      "question": "نص السؤال من صميم محتوى الدرس",
       "type": "mcq",
-      "options": ["خيار 1", "خيار 2", "خيار 3", "خيار 4"],
-      "correctAnswer": "خيار 1",
-      "explanation": "تفسير الإجابة الصحيحة"
+      "options": ["خيار أ", "خيار ب", "خيار ج", "خيار د"],
+      "correctAnswer": "خيار أ",
+      "explanation": "شرح مختصر ومباشر لسبب صحة هذا الخيار دون غيره"
     },
     {
       "id": "q2",
-      "question": "سؤال صح أو خطأ أو حسابي",
+      "question": "سؤال صح أو خطأ مفاهيمي من الدرس",
       "type": "true_false",
       "options": ["صح", "خطأ"],
       "correctAnswer": "صح",
-      "explanation": "تفسير واضح"
+      "explanation": "تفسير سبب صحة أو خطأ العبارة علمياً"
     },
     {
       "id": "q3",
-      "question": "مسألة سريعة أو سؤال مفاهيمي",
+      "question": "سؤال تطبيقي أو مسألة حسابية سريعة من الدرس",
       "type": "conceptual",
-      "options": ["خيار أ", "خيار ب", "خيار ج"],
-      "correctAnswer": "خيار أ",
-      "explanation": "شرح المفتاح الهندسي"
+      "options": ["الاحتمال 1", "الاحتمال 2", "الاحتمال 3"],
+      "correctAnswer": "الاحتمال 1",
+      "explanation": "الشرح الرياضي أو الهندسي للإجابة"
+    }
+  ],
+  "commonMistakes": [
+    {
+      "mistake": "الخطأ الشائع الذي يقع فيه طلاب السنة الأولى",
+      "correction": "التصرف الهندسي الصحيح لتفادي هذا الخطأ",
+      "why": "السبب العلمي وراء ضرورة هذا التصحيح"
     }
   ],
   "suggestedTools": [
     {
       "toolId": "circuits",
-      "title": "⚡ افتح مختبر الدوائر الكهربائية",
-      "subtitle": "حسابات المقاومات وقوانين كيرشوف ومحاكاة التوصيل",
+      "title": "مختبر الدوائر الكهربائية",
+      "subtitle": "محاكاة التوصيل وقوانين كيرشوف وأوم",
       "icon": "circuits",
       "reason": "لتجربة القوانين عملياً ومحاكاة التوصيل"
     }
@@ -217,8 +262,9 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
     "components": [],
     "analysisSummary": ""
   },
-  "isImageBlurry": false,
   "clarificationNotice": "",
+  "isImageBlurry": false,
+  "videoSupportNotice": "",
   "studySheetMarkdown": "ورقة مذاكرة مركزة تضم ملخص المفاهيم، جدول القوانين والوحدات، والأخطاء الواجب تجنبها ليلة الاختبار."
 }
 `;
@@ -230,13 +276,12 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
         contents: { parts },
         config: {
           responseMimeType: 'application/json',
-          temperature: 0.3,
+          temperature: 0.2,
         },
       });
 
       const responseText = response.text?.trim() || '';
       if (responseText) {
-        // Parse JSON response
         const parsed = JSON.parse(responseText);
 
         return {
@@ -250,6 +295,7 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
           explanationLevel,
           simpleIdea: parsed.simpleIdea || 'فكرة الدرس الأساسية تم تلخيصها بأسلوب مبسط.',
           coreTakeaways: Array.isArray(parsed.coreTakeaways) ? parsed.coreTakeaways : ['فهم المفاهيم الأساسية وتطبيقاتها'],
+          conceptExplanations: Array.isArray(parsed.conceptExplanations) ? parsed.conceptExplanations : [],
           terms: Array.isArray(parsed.terms) ? parsed.terms : [],
           formulas: Array.isArray(parsed.formulas) ? parsed.formulas : [],
           units: Array.isArray(parsed.units) ? parsed.units : [],
@@ -263,14 +309,19 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
             finalAnswer: '',
             isGenerated: true,
           },
-          commonMistakes: Array.isArray(parsed.commonMistakes) ? parsed.commonMistakes : [],
+          importantNotes: Array.isArray(parsed.importantNotes) ? parsed.importantNotes : [],
+          memoryAids: Array.isArray(parsed.memoryAids) ? parsed.memoryAids : [],
           summaryPoints: Array.isArray(parsed.summaryPoints) ? parsed.summaryPoints : [],
+          learningObjectives: Array.isArray(parsed.learningObjectives) ? parsed.learningObjectives : [],
           quiz: Array.isArray(parsed.quiz) ? parsed.quiz : [],
+          commonMistakes: Array.isArray(parsed.commonMistakes) ? parsed.commonMistakes : [],
           suggestedTools: Array.isArray(parsed.suggestedTools) ? parsed.suggestedTools : [],
           circuitAnalysis: parsed.circuitAnalysis,
           clarificationNotice: parsed.clarificationNotice,
           isImageBlurry: Boolean(parsed.isImageBlurry),
+          videoSupportNotice: parsed.videoSupportNotice,
           studySheetMarkdown: parsed.studySheetMarkdown,
+          pdfPageChoice: params.pdfPageChoice,
         };
       }
     } catch (err: any) {
@@ -310,6 +361,29 @@ export function generateFallbackExplainedLesson(params: ExplainRequestParams): E
         'شدة التيار (I) هي معدل تدفق الشحنات عبر مقطع الموصل بالزمن، وتقاس بالأمبير (A).',
         'المقاومة (R) هي خاصية المادة لإعاقة مرور التيار الكهربائي، وتقاس بالأوم (Ω).',
         'العلاقة طردية بين الجهد والتيار عند ثبوت المقاومة ودرجة الحرارة.',
+      ],
+      conceptExplanations: [
+        {
+          concept: 'فرق الجهد الكهربائي (Voltage)',
+          simplifiedExplanation: 'الجهد هو القوة الدافعة التي تدفع الإلكترونات للتحرك داخل السلك، تماماً مثل ضغط الماء في الخرطوم.',
+          scientificDefinition: 'الشغل المبذول لنقل شحنة كهربائية موجبة مقدارها كولوم واحد بين نقطتين في مجال كهربائي.',
+          practicalAnalogy: 'يشبه ضغط خزان الماء المرتفع فوق سطح المنزل الذي يدفع الماء للنزول بقوة.',
+          isAdditionalNote: false,
+        },
+        {
+          concept: 'شدة التيار الكهربائي (Electric Current)',
+          simplifiedExplanation: 'كمية الإلكترونات والشحنات التي تعبر في الثانية الواحدة، كلما زادت زادت شدة التيار وسخونة السلك.',
+          scientificDefinition: 'المعدل الزمني لتدفق الشحنات الكهربائية عبر مقطع عرضي في موصل: I = dq / dt.',
+          practicalAnalogy: 'يشبه معدل تدفق لترات الماء المتدفقة في الأنبوب كل ثانية.',
+          isAdditionalNote: false,
+        },
+        {
+          concept: 'المقاومة الكهربائية (Electrical Resistance)',
+          simplifiedExplanation: 'المقاومة هي صعوبة مرور التيار داخل المادة واصطدام الإلكترونات بذرات السلك.',
+          scientificDefinition: 'خاصية مادية تعبر عن إعاقة الموصل لمرور الشحنات الكهربائية: R = ρ · L / A.',
+          practicalAnalogy: 'يشبه وضع إسفنجة أو تضيق داخل أنبوب الماء يقلل من سرعة تدفقه.',
+          isAdditionalNote: false,
+        },
       ],
       terms: [
         {
@@ -379,9 +453,33 @@ export function generateFallbackExplainedLesson(params: ExplainRequestParams): E
           'الخطوة 4: حساب القدرة المبددة: P = V_R × I = 7 × 0.02 = 0.14 W (نختار مقاومة ربع واط 0.25W بأمان).',
         ],
         finalAnswer: 'R = 350 Ω (أو أقرب قيمة قياسية تجارية 360 Ω أو 390 Ω)، بقدرة 0.25 Watt.',
+        calculation: 'R = (9 - 2) / 0.02 = 7 / 0.02 = 350 Ω',
+        unit: 'Ω (أوم)',
+        whyThisResult: 'النتيجة تضمن أن تيار الدايود لن يتجاوز 20 ميلي أمبير حتى لا يحترق، مع توزيع الجهد بين المقاومة (7V) والدايود (2V).',
         isGenerated: true,
         note: 'خطأ معتاد في امتحانات العملي: نسيان تحويل الملي أمبير (mA) إلى أمبير (A) بالقسمة على 1000 يؤدي إلى مقاومة خاطئة تماماً!',
       },
+      importantNotes: [
+        {
+          note: '⚠️ تحويل الوحدات: تأكد من تحويل التيار من mA إلى A (بالقسمة على 1000) والمقاومة من kΩ إلى Ω قبل التعويض في قانون أوم.',
+          type: 'warning',
+          isAdditionalNote: false,
+        },
+        {
+          note: '💡 في توصيل التوالي يكون التيار ثابتاً في جميع العناصر، بينما يتوزع الجهد (V_total = V1 + V2).',
+          type: 'tip',
+          isAdditionalNote: false,
+        },
+      ],
+      memoryAids: [
+        '🧠 مثلث قانون أوم: ضع V في القمة و I و R في القاعدة؛ لتجد أي مجهول غطه بإصبعك (V = I × R ، I = V / R ، R = V / I).',
+      ],
+      learningObjectives: [
+        '✓ استيعاب المفاهيم الثلاثة للكهرباء: الجهد (الدفع)، التيار (التدفق)، والمقاومة (الإعاقة).',
+        '✓ إتقان استخدام قانون أوم الرياضي في حل المسائل البسيطة والدوائر الكهربائية.',
+        '✓ معرفة الوحدات الدولية والأبعاد الفيزيائية لكل كمية كهربائية واستخدام البادئات (milli, kilo).',
+        '✓ القدرة على تصميم مقاومة حماية لعناصر الميكاترونكس والحساسات والليدات.',
+      ],
       commonMistakes: [
         {
           mistake: 'قسمة الجهد الكلي مباشرة على التيار دون طرح هبوط جهد العناصر الأخرى كالليدات.',
@@ -494,6 +592,29 @@ export function generateFallbackExplainedLesson(params: ExplainRequestParams): E
       'التسارع (a) يتناسب طردياً مع القوة المحصلة وعكسياً مع الكتلة: a = F_net / m.',
       'في الروبوتات والمركبات الذكية: نحسب F لتحديد حجم المحرك وقدرته لمنع احتراقه تحت الحمل.',
     ],
+    conceptExplanations: [
+      {
+        concept: 'القوة المحصلة (Net Force)',
+        simplifiedExplanation: 'القوة هي أي دفعة أو سحبة تغير من سرعة الجسم أو اتجاهه، وإذا تساوت القوى في اتجاهين متعاكسين فإن الجسم لا يتسارع.',
+        scientificDefinition: 'المؤثر الفيزيائي الخارجي المسبب لتسارع الأجسام طبقاً للقانون: ∑F = m · a.',
+        practicalAnalogy: 'مثل سيارة يدفعها محركها للأمام والاحتكاك يقاومها للخلف، المحصلة هي الفرق بينهما.',
+        isAdditionalNote: false,
+      },
+      {
+        concept: 'القصور الذاتي والكتلة (Inertia & Mass)',
+        simplifiedExplanation: 'القصور الذاتي هو كسل الجسم وعناده ضد أي تغيير في حالته الحركية، والكتلة هي مقياس هذا العناد.',
+        scientificDefinition: 'خاصية مقاومة المادة لأي تغير في سرعتها المتجهة أو حالتها السكونية.',
+        practicalAnalogy: 'صعوبة إيقاف قطار بضائع ثقيل فجأة مقارنة بدراجة هوائية تسير بنفس السرعة.',
+        isAdditionalNote: false,
+      },
+      {
+        concept: 'التسارع الخطي (Linear Acceleration)',
+        simplifiedExplanation: 'معدل زيادة أو نقصان السرعة في كل ثانية تمر، وليس السرعة نفسها.',
+        scientificDefinition: 'المشتقة الأولى للسرعة بالنسبة للزمن: a = dv / dt.',
+        practicalAnalogy: 'ضغط دواسة بنزين السيارة بقوة مما يجعلك تلتصق بالكرسي أثناء زيادة السرعة.',
+        isAdditionalNote: false,
+      },
+    ],
     terms: [
       {
         term: 'القوة المحصلة',
@@ -563,9 +684,39 @@ export function generateFallbackExplainedLesson(params: ExplainRequestParams): E
         'الخطوة 3: حساب الناتج النهائي والتحقق من الوحدة: F = 30 N.',
       ],
       finalAnswer: 'F = 30 Newton (N) في اتجاه حركة العربة.',
+      calculation: 'F = 15 kg × 2 m/s² = 30 N',
+      unit: 'N (نيوتن)',
+      whyThisResult: 'النتيجة تؤكد أننا نحتاج إلى قوة دفع مقدارها 30 نيوتن للتغلب على عطالة العربة وتسريعها من السكون إلى 3 م/ث في ثانية ونصف.',
       isGenerated: true,
       note: 'في التطبيق العملي لمشاريع التخرج: نضيف 20% كعامل أمان لمقاومة احتكاك الأرضية وعزم بدء المحرك.',
     },
+    importantNotes: [
+      {
+        note: '⚠️ انتبه للفرق بين الكتلة m (بالكيلوجرام، ثابتة لا تتغير بتغير الكوكب) والوزن W (بالنيوتن، قوة جاذبية تتغير مع g).',
+        type: 'warning',
+        isAdditionalNote: false,
+      },
+      {
+        note: '⚠️ تحويل الوحدات: إذا كانت السرعة معطاة بـ km/h، اقسم على 3.6 فوراً لتحويلها إلى m/s قبل التعويض في قوانين التسارع.',
+        type: 'warning',
+        isAdditionalNote: false,
+      },
+      {
+        note: '💡 إذا كانت السرعة ثابتة، فإن التسارع a = 0، وبالتالي القوة المحصلة F_net = 0 دائماً (قانون نيوتن الأول).',
+        type: 'tip',
+        isAdditionalNote: false,
+      },
+    ],
+    memoryAids: [
+      '🧠 لتذكر قانون نيوتن الثاني: مثلث القوة (F في القمة، m و a في القاعدة؛ F = m · a ، a = F / m ، m = F / a).',
+      '🧠 تذكر أن 1 نيوتن يعادل وزن تفاحة صغيرة تزن حوالي 100 جرام (0.1 kg × 9.8 ≈ 1 N).',
+    ],
+    learningObjectives: [
+      '✓ صياغة وفهم قوانين نيوتن الثلاثة والتمييز بين القوة والقصور الذاتي والتسارع.',
+      '✓ استخدام صيغة F = m × a لحساب القوة والتسارع والكتلة بدقة متناهية.',
+      '✓ تحديد الوحدات الدولية (SI) والأبعاد الفيزيائية للقوة [F] = M L T⁻².',
+      '✓ تطبيق مخطط الجسم الحر وحساب القوة المطلوبة لتسريع آليات وأنظمة الميكاترونكس.',
+    ],
     commonMistakes: [
       {
         mistake: 'الخلط بين الكتلة (Mass) بالكيلوجرام والوزن (Weight) بالنيوتن.',

@@ -47,6 +47,7 @@ import {
   ExplainLevel,
   ExplainQuizQuestion
 } from '../types';
+import { ExplainFourteenSections } from './ExplainFourteenSections';
 
 interface ExplainLessonViewProps {
   student: StudentProfile;
@@ -95,6 +96,13 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
   // Active view tab inside analysis
   const [activeTab, setActiveTab] = useState<'explanation' | 'formulas' | 'example' | 'quiz' | 'tools'>('explanation');
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // PDF page mode & selection
+  const [pdfMode, setPdfMode] = useState<'all' | 'page'>('all');
+  const [pdfPageNumber, setPdfPageNumber] = useState('');
+
+  // Presentation View Mode: 'stream' (Ordered 1-14 single flow) vs 'tabs'
+  const [viewMode, setViewMode] = useState<'stream' | 'tabs'>('stream');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -275,6 +283,8 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         fileName: selectedFile?.name || (textInput ? 'مقتطف نصي' : 'درس جامعي'),
         explanationLevel: customLevel || explanationLevel,
         actionType: customAction || 'full_explain',
+        specificPart: customPartText || undefined,
+        pdfPageChoice: pdfMode === 'page' && pdfPageNumber ? pdfPageNumber : undefined,
         studentUniversity: student.university,
         studentMajor: student.major,
         studentId: student.id,
@@ -337,6 +347,70 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     if (!analysisResult) return;
     setExplanationLevel('simple');
     await handleAnalyzeLesson('did_not_understand', 'simple');
+  };
+
+  // Button 1: "بسّط لي أكثر" (Simplify even more with everyday analogies)
+  const handleSimplifyMore = async () => {
+    if (!analysisResult) return;
+    setExplanationLevel('simple');
+    await handleAnalyzeLesson('simplify', 'simple');
+  };
+
+  // Button 2: "اشرح هذه النقطة" (Open deep-dive modal on any specific point)
+  const handleOpenExplainPoint = (pointText?: string) => {
+    if (pointText) setCustomPartText(pointText);
+    setPartAction('explain');
+    setPartResultText(null);
+    setShowExplainPartModal(true);
+  };
+
+  // Button 3: "أعطني مثالًا" (Generate an additional practical solved problem)
+  const handleRequestMoreExamples = async () => {
+    if (!analysisResult) return;
+    setIsAnalyzing(true);
+    try {
+      const payload = {
+        mode: 'text',
+        prompt: `المطلوب: توليد مثال تطبيقي ومسألة جديدة تماماً ومحلولة بالتفصيل لطالب سنة أولى ميكاترونكس حول درس: "${analysisResult.lessonTitle}".
+المطلوب: نص المسألة، المعطيات، المطلوب، القانون، خطوات الحل بالتفصيل، والناتج النهائي بالوحدة الدولية وتفسير النتيجة.`,
+        lessonTitle: analysisResult.lessonTitle,
+        explanationLevel: 'simple',
+        actionType: 'example',
+        studentUniversity: student.university,
+        studentMajor: student.major,
+        studentId: student.id,
+      };
+      const res = await fetch('/api/explain-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const resData = data.result || data.explanation;
+        if (resData?.solvedExample) {
+          setAnalysisResult((prev) => prev ? ({
+            ...prev,
+            solvedExample: {
+              ...resData.solvedExample,
+              isGenerated: true,
+            },
+          }) : null);
+          setTimeout(() => {
+            document.getElementById('section-9')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 200);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Button 4: "اختبرني" (Scroll directly to Section 14: Quick Quiz)
+  const handleTestMe = () => {
+    document.getElementById('section-14')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Handle Level switch
@@ -640,6 +714,61 @@ ${analysisResult.summaryPoints.join('\n')}
                     إلغاء
                   </button>
                 </div>
+
+                {/* PDF Page Selection Options */}
+                {sourceType === 'pdf' && (
+                  <div className="mt-3 p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 space-y-3 text-right">
+                    <span className="text-xs font-bold text-blue-900 dark:text-blue-200 block">
+                      📄 خيارات شرح ملف الـ PDF:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <label className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                        pdfMode === 'all'
+                          ? 'bg-white dark:bg-slate-900 border-blue-500 text-blue-700 dark:text-blue-300 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="pdfMode"
+                          checked={pdfMode === 'all'}
+                          onChange={() => setPdfMode('all')}
+                          className="text-blue-600"
+                        />
+                        <span>🔘 شرح الملف كاملًا</span>
+                      </label>
+
+                      <label className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                        pdfMode === 'page'
+                          ? 'bg-white dark:bg-slate-900 border-blue-500 text-blue-700 dark:text-blue-300 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="pdfMode"
+                          checked={pdfMode === 'page'}
+                          onChange={() => setPdfMode('page')}
+                          className="text-blue-600"
+                        />
+                        <span>🔘 اختر صفحة/قسمًا محددًا</span>
+                      </label>
+                    </div>
+
+                    {pdfMode === 'page' && (
+                      <div className="pt-1 flex items-center gap-2">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          رقم الصفحة أو المقطع:
+                        </label>
+                        <input
+                          type="text"
+                          value={pdfPageNumber}
+                          onChange={(e) => setPdfPageNumber(e.target.value)}
+                          placeholder="مثال: صفحة 4 أو صفحات 3-5"
+                          className="w-full sm:w-64 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -912,28 +1041,106 @@ ${analysisResult.summaryPoints.join('\n')}
               </div>
             </div>
 
-            {/* Navigation Tabs for Sections */}
-            <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-1 gap-2">
-              {[
-                { id: 'explanation', label: '💡 الشرح والمفاهيم' },
-                { id: 'formulas', label: `📐 القوانين والوحدات (${analysisResult.formulas.length})` },
-                { id: 'example', label: '🧮 مثال محلول' },
-                { id: 'quiz', label: `📝 اختبر نفسك (${analysisResult.quiz.length})` },
-                { id: 'tools', label: `🛠️ أدوات مقترحة (${analysisResult.suggestedTools.length})` },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
-                    activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* View Mode & Quick Navigation Index */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl bg-blue-50/50 dark:bg-slate-950 border border-blue-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">نمط التدريس:</span>
+                <div className="inline-flex p-1 rounded-xl bg-slate-200/80 dark:bg-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('stream')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === 'stream'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-700 dark:text-slate-300 hover:text-blue-600'
+                    }`}
+                  >
+                    📋 التدريس الشامل (الـ 14 خطوة)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('tabs')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === 'tabs'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-700 dark:text-slate-300 hover:text-blue-600'
+                    }`}
+                  >
+                    📑 تبويبات الأقسام
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Jump Index for the 14 sections */}
+              {viewMode === 'stream' && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full text-[11px] font-bold">
+                  {[
+                    { id: 'section-1', label: '1. العنوان' },
+                    { id: 'section-2', label: '2. ببساطة' },
+                    { id: 'section-3', label: '3. الأفكار' },
+                    { id: 'section-4', label: '4. المفاهيم' },
+                    { id: 'section-5', label: '5. المصطلحات' },
+                    { id: 'section-6', label: '6. القوانين' },
+                    { id: 'section-7', label: '7. الوحدات' },
+                    { id: 'section-8', label: '8. الأبعاد' },
+                    { id: 'section-9', label: '9. المسألة' },
+                    { id: 'section-10', label: '10. الملاحظات' },
+                    { id: 'section-11', label: '11. التذكر' },
+                    { id: 'section-12', label: '12. الخلاصة' },
+                    { id: 'section-13', label: '13. الجدارات' },
+                    { id: 'section-14', label: '14. الاختبار' },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      className="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-slate-600 dark:text-slate-300 whitespace-nowrap cursor-pointer transition-colors"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Stream Mode: Render 14 Ordered Sections */}
+            {viewMode === 'stream' ? (
+              <ExplainFourteenSections
+                analysisResult={analysisResult}
+                quizAnswers={quizAnswers}
+                setQuizAnswers={setQuizAnswers}
+                revealedQuiz={revealedQuiz}
+                setRevealedQuiz={setRevealedQuiz}
+                onOpenExplainPoint={handleOpenExplainPoint}
+                onNavigateToTool={onNavigateToTool}
+                onSimplifyMore={handleSimplifyMore}
+                onRequestMoreExamples={handleRequestMoreExamples}
+                onTestMe={handleTestMe}
+              />
+            ) : (
+              <>
+                {/* Navigation Tabs for Sections */}
+                <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-1 gap-2">
+                  {[
+                    { id: 'explanation', label: '💡 الشرح والمفاهيم' },
+                    { id: 'formulas', label: `📐 القوانين والوحدات (${analysisResult.formulas.length})` },
+                    { id: 'example', label: '🧮 مثال محلول' },
+                    { id: 'quiz', label: `📝 اختبر نفسك (${analysisResult.quiz.length})` },
+                    { id: 'tools', label: `🛠️ أدوات مقترحة (${analysisResult.suggestedTools.length})` },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
+                        activeTab === tab.id
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
 
             {/* SECTION 1: Explanation & Core Concepts */}
             {activeTab === 'explanation' && (
@@ -1489,7 +1696,58 @@ ${analysisResult.summaryPoints.join('\n')}
                 </div>
               </div>
             )}
+              </>
+            )}
 
+          </div>
+
+          {/* Persistent Interactive 4 Action Buttons Bar (Always accessible) */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 text-white shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-xl bg-blue-600/30 text-blue-400">🤖</span>
+              <div>
+                <span className="font-black text-sm block">المدرس الذكي جاهز لمساعدتك في أي لحظة:</span>
+                <span className="text-xs text-slate-400 block">اضغط على أي زر أدناه للتفاعل الفوري مع محتوى هذا الدرس</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
+              <button
+                type="button"
+                onClick={handleSimplifyMore}
+                className="px-3.5 py-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>بسّط لي أكثر</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenExplainPoint()}
+                className="px-3.5 py-2.5 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>اشرح هذه النقطة</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRequestMoreExamples}
+                className="px-3.5 py-2.5 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                <span>أعطني مثالاً</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTestMe}
+                className="px-3.5 py-2.5 rounded-xl bg-purple-600/90 hover:bg-purple-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <FileCheck className="w-3.5 h-3.5" />
+                <span>اختبرني</span>
+              </button>
+            </div>
           </div>
 
           {/* Section: Select Specific Part to Explain */}
@@ -1629,9 +1887,38 @@ ${analysisResult.summaryPoints.map((s) => `- ${s}`).join('\n')}
                 value={customPartText}
                 onChange={(e) => setCustomPartText(e.target.value)}
                 placeholder="اكتب هنا القانون أو الفقرة..."
-                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs"
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-white"
               />
             </div>
+
+            {/* Quick Chips from Current Lesson */}
+            {analysisResult && (analysisResult.formulas?.length > 0 || analysisResult.conceptExplanations?.length > 0) && (
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-500 block">اختر نقطة أو قانوناً من الدرس بضغطة زر:</span>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/60 dark:border-slate-800">
+                  {analysisResult.formulas?.map((f, i) => (
+                    <button
+                      key={`f-${i}`}
+                      type="button"
+                      onClick={() => setCustomPartText(`قانون: ${f.equation} (${f.meaning})`)}
+                      className="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-blue-600 dark:text-blue-400 hover:border-blue-500 cursor-pointer transition-colors"
+                    >
+                      {f.equation}
+                    </button>
+                  ))}
+                  {analysisResult.conceptExplanations?.map((c, i) => (
+                    <button
+                      key={`c-${i}`}
+                      type="button"
+                      onClick={() => setCustomPartText(`مفهوم: ${c.concept}`)}
+                      className="px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300 hover:border-blue-500 cursor-pointer transition-colors"
+                    >
+                      {c.concept}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">

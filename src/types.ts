@@ -224,11 +224,21 @@ export interface ExplainTerm {
   englishTerm?: string;
   meaning: string;
   practicalAnalogy?: string;
+  isAdditionalNote?: boolean;
+}
+
+export interface ExplainConceptItem {
+  concept: string;
+  simplifiedExplanation: string;
+  scientificDefinition?: string;
+  practicalAnalogy?: string;
+  isAdditionalNote?: boolean;
 }
 
 export interface ExplainFormula {
   equation: string;
   meaning: string;
+  whenToUse?: string;
   symbols: {
     symbol: string;
     name: string;
@@ -241,6 +251,7 @@ export interface ExplainUnit {
   quantity: string;
   unitName: string;
   unitSymbol: string;
+  notes?: string;
 }
 
 export interface ExplainDimension {
@@ -256,9 +267,18 @@ export interface ExplainSolvedExample {
   required: string;
   formulaUsed: string;
   steps: string[];
+  calculation?: string;
+  unit?: string;
   finalAnswer: string;
+  whyThisResult?: string;
   isGenerated: boolean;
   note?: string;
+}
+
+export interface ExplainImportantNote {
+  note: string;
+  type: 'warning' | 'tip' | 'exam';
+  isAdditionalNote?: boolean;
 }
 
 export interface ExplainCommonMistake {
@@ -294,16 +314,20 @@ export interface ExplainLessonResult {
   filePreviewUrl?: string;
   createdAt: string;
   explanationLevel: ExplainLevel;
-  simpleIdea: string;
-  coreTakeaways: string[];
-  terms: ExplainTerm[];
-  formulas: ExplainFormula[];
-  units: ExplainUnit[];
-  dimensions: ExplainDimension[];
-  solvedExample: ExplainSolvedExample;
+  simpleIdea: string; // 💡 الدرس ببساطة: ما هو؟ ماذا يعني؟ لماذا ندرسه؟ أين يستخدم؟
+  coreTakeaways: string[]; // 🎯 أهم الأفكار
+  conceptExplanations?: ExplainConceptItem[]; // 📖 شرح المفاهيم بأسلوب مبسط ثم التعريف العلمي
+  terms: ExplainTerm[]; // 📌 المصطلحات المهمة بالعربي والإنجليزي
+  formulas: ExplainFormula[]; // 📐 القوانين والمعادلات كاملة مع الرموز ومتى تستخدم
+  units: ExplainUnit[]; // 📏 الوحدات الدولية
+  dimensions: ExplainDimension[]; // 🔬 الأبعاد الفيزيائية
+  solvedExample: ExplainSolvedExample; // 🧮 الأمثلة والمسائل خطوة بخطوة وتفسير النتيجة
+  importantNotes?: ExplainImportantNote[]; // ⚠️ الملاحظات والتنبيهات المهمة
+  memoryAids?: string[]; // 🧠 كيف أتذكر الدرس؟
+  summaryPoints: string[]; // 📝 الخلاصة المركزة (تقرأ في دقيقة أو دقيقتين)
+  learningObjectives?: string[]; // 🎓 ماذا يجب أن أعرف بعد الدرس؟
+  quiz: ExplainQuizQuestion[]; // 🧪 اختبار سريع وتفاعلي
   commonMistakes: ExplainCommonMistake[];
-  summaryPoints: string[];
-  quiz: ExplainQuizQuestion[];
   suggestedTools: ExplainSuggestedTool[];
   circuitAnalysis?: {
     hasCircuit: boolean;
@@ -313,8 +337,11 @@ export interface ExplainLessonResult {
   };
   clarificationNotice?: string;
   isImageBlurry?: boolean;
+  videoSupportNotice?: string;
   studySheetMarkdown?: string;
   sections?: { id: string; title: string; summary: string }[];
   originalContentSample?: string;
+  pdfPageChoice?: { mode: 'full' | 'pages'; selectedPages?: string };
 }
+
 
