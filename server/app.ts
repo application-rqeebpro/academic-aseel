@@ -20,15 +20,6 @@ export interface AuthenticatedRequest extends Request {
 let subjects: Subject[] = [...INITIAL_SUBJECTS];
 let lessons: Lesson[] = [...INITIAL_LESSONS];
 
-// Helper: Check if password matches admin allowed passwords
-export function isValidAdminPassword(password: string): boolean {
-  if (!password) return false;
-  const envPass = process.env.ADMIN_PASSWORD;
-  const allowed = ['A7820600', 'mechatronics2025', 'admin123', 'admin', '7820', '7829'];
-  if (envPass && password === envPass) return true;
-  return allowed.includes(password.trim());
-}
-
 // Token Helpers
 export function generateAuthToken(user: DBUser): string {
   return jwt.sign(
@@ -251,32 +242,23 @@ router.post('/auth/register', (req, res) => {
   });
 });
 
-// Login (Student or Admin)
+// Student / User Login
 router.post('/auth/login', (req, res) => {
   const { identifier, password } = req.body;
 
   if (!identifier || !password) {
-    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف / البريد الإلكتروني وكلمة المرور.' });
+    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف أو البريد الإلكتروني وكلمة المرور.' });
   }
 
   const clean = identifier.trim();
-  let user = db.findUserByPhone(clean) || db.findUserByEmail(clean);
-
-  // Fallback for admin if logging in with Admin Password directly
-  if (!user && (clean === 'admin' || clean === '785502919' || clean === 'admin@mechatronics.ye' || clean.toLowerCase() === 'owner')) {
-    if (isValidAdminPassword(password)) {
-      user = db.getAllUsers().find((u) => u.role === 'admin');
-    }
-  }
+  const cleanDigits = clean.replace(/[^0-9]/g, '');
+  const user = db.findUserByPhone(cleanDigits) || db.findUserByEmail(clean);
 
   if (!user) {
-    return res.status(401).json({ error: 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف وكلمة المرور.' });
+    return res.status(401).json({ error: 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف أو البريد الإلكتروني.' });
   }
 
-  const isValidPassword =
-    (user.role === 'admin' && isValidAdminPassword(password)) ||
-    bcrypt.compareSync(password, user.passwordHash);
-
+  const isValidPassword = bcrypt.compareSync(password, user.passwordHash);
   if (!isValidPassword) {
     return res.status(401).json({ error: 'كلمة المرور غير صحيحة.' });
   }
@@ -322,6 +304,122 @@ router.post('/auth/login', (req, res) => {
           isExpired,
         }
       : undefined,
+  });
+});
+
+// Forgot Password - Initiate recovery
+router.post('/auth/forgot-password', (req, res) => {
+  const { phone, email } = req.body;
+  if (!phone && !email) {
+    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف المسجل لاستعادة كلمة المرور.' });
+  }
+
+  const cleanPhone = phone ? phone.trim().replace(/[^0-9]/g, '') : '';
+  let user = cleanPhone ? db.findUserByPhone(cleanPhone) : null;
+  if (!user && email) {
+    user = db.findUserByEmail(email.trim());
+  }
+
+  if (!user) {
+    return res.status(404).json({
+      error: 'لم يتم العثور على حساب مسجل بهذا الرقم. يرجى التأكد من كتابة الرقم بشكل صحيح أو إنشاء حساب جديد.',
+    });
+  }
+
+  const { code, token, expiresAt } = db.createPasswordReset(user.id, user.phone);
+
+  res.json({
+    success: true,
+    message: 'تم إنشاء رمز التحقق لاستعادة الحساب بنجاح.',
+    phone: user.phone,
+    recoveryToken: token,
+    recoveryCode: code,
+    expiresAt,
+  });
+});
+
+// Reset Password - Verify code and set new password
+router.post('/auth/reset-password', (req, res) => {
+  const { phone, recoveryCode, newPassword } = req.body;
+
+  if (!phone || !recoveryCode || !newPassword) {
+    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف، رمز التحقق، وكلمة المرور الجديدة.' });
+  }
+
+  if (newPassword.length < 4) {
+    return res.status(400).json({ error: 'يجب أن تتكون كلمة المرور الجديدة من 4 خانات على الأقل.' });
+  }
+
+  const userId = db.verifyAndConsumePasswordReset(phone, recoveryCode);
+  if (!userId) {
+    return res.status(400).json({
+      error: 'رمز التحقق غير صحيح أو انتهت صلاحيته (صلاحية الرمز 15 دقيقة). يرجى طلب رمز جديد.',
+    });
+  }
+
+  const newHash = bcrypt.hashSync(newPassword, 10);
+  db.updateUserPassword(userId, newHash);
+
+  res.json({
+    success: true,
+    message: 'تم تعيين كلمة المرور الجديدة بنجاح! يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.',
+  });
+});
+
+// Student Profile Edit
+router.put('/student/profile', requireAuth, (req: AuthenticatedRequest, res) => {
+  const { name, university, studyLevel, major, email } = req.body;
+  const user = req.user!;
+
+  const updates: Partial<DBUser> = {};
+  if (name && name.trim()) updates.name = name.trim();
+  if (university && university.trim()) updates.university = university.trim();
+  if (studyLevel) updates.studyLevel = studyLevel;
+  if (major && major.trim()) updates.major = major.trim();
+  if (email !== undefined) updates.email = email ? email.trim() : undefined;
+
+  const updated = db.updateUser(user.id, updates);
+
+  res.json({
+    success: true,
+    message: 'تم تحديث البيانات الشخصية بنجاح.',
+    user: {
+      id: updated!.id,
+      name: updated!.name,
+      phone: updated!.phone,
+      email: updated!.email,
+      university: updated!.university,
+      studyLevel: updated!.studyLevel,
+      major: updated!.major,
+      role: updated!.role,
+    },
+  });
+});
+
+// Student Change Password
+router.post('/student/change-password', requireAuth, (req: AuthenticatedRequest, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'يرجى إدخال كلمة المرور الحالية وكلمة المرور الجديدة.' });
+  }
+
+  if (newPassword.length < 4) {
+    return res.status(400).json({ error: 'يجب ألا تقل كلمة المرور الجديدة عن 4 أحرف أو أرقام.' });
+  }
+
+  const user = req.user!;
+  const isValid = bcrypt.compareSync(currentPassword, user.passwordHash);
+  if (!isValid) {
+    return res.status(400).json({ error: 'كلمة المرور الحالية غير صحيحة.' });
+  }
+
+  const newHash = bcrypt.hashSync(newPassword, 10);
+  db.updateUserPassword(user.id, newHash);
+
+  res.json({
+    success: true,
+    message: 'تم تغيير كلمة المرور بنجاح.',
   });
 });
 
@@ -689,43 +787,211 @@ router.post('/ai/chat', requireAuth, requireActiveSubscription, async (req: Auth
 });
 
 // ==========================================
-// ADMIN PANEL APIS (SECURE & PROTECTED)
+// ADMIN PANEL APIS (SECURE & ROLE PROTECTED)
 // ==========================================
 
 // Admin Login
 router.post('/admin/login', (req, res) => {
-  const { password } = req.body;
+  const { identifier, password } = req.body;
 
-  if (isValidAdminPassword(password)) {
-    let adminUser = db.getAllUsers().find((u) => u.role === 'admin');
-    if (!adminUser) {
-      // Create admin user if not present
-      adminUser = {
-        id: 'user-admin-1',
-        name: 'مدير الأكاديمية',
-        phone: '785502919',
-        email: 'admin@mechatronics.ye',
-        passwordHash: bcrypt.hashSync('A7820600', 10),
-        university: 'أكاديمية الميكاترونكس اليمنية',
-        studyLevel: 'السنة الأولى',
-        major: 'إدارة المنصة والهندسة',
-        role: 'admin',
-        createdAt: new Date().toISOString(),
-      };
-      db.createUser(adminUser);
-    }
+  if (!password) {
+    return res.status(400).json({ error: 'يرجى إدخال كلمة مرور المسؤول.' });
+  }
 
-    const token = generateAuthToken(adminUser);
-    return res.json({
-      success: true,
-      token,
-      user: adminUser,
+  const clean = identifier ? String(identifier).trim() : '';
+  const users = db.getAllUsers();
+  
+  // Find admin user
+  let adminUser = users.find(
+    (u) => u.role === 'admin' && (!clean || u.phone === clean || u.email?.toLowerCase() === clean.toLowerCase() || u.name === clean)
+  );
+
+  if (!adminUser) {
+    // If no specific match, grab the system admin
+    adminUser = users.find((u) => u.role === 'admin');
+  }
+
+  if (!adminUser) {
+    return res.status(401).json({ error: 'لم يتم العثور على حساب مسؤول مسجل في قاعدة البيانات.' });
+  }
+
+  const isValidPassword = bcrypt.compareSync(password, adminUser.passwordHash);
+  if (!isValidPassword) {
+    return res.status(401).json({
+      error: 'كلمة المرور غير صحيحة. يرجى التأكد من كتابة كلمة المرور المعتمدة الخاصة بلوحة الإدارة.',
     });
   }
 
-  return res.status(401).json({
-    error: 'كلمة مرور الإدارة غير صحيحة.',
+  adminUser.lastLoginAt = new Date().toISOString();
+  db.updateUser(adminUser.id, { lastLoginAt: adminUser.lastLoginAt });
+
+  const token = generateAuthToken(adminUser);
+  return res.json({
+    success: true,
+    message: 'تم تسجيل دخول المسؤول بنجاح.',
+    token,
+    user: {
+      id: adminUser.id,
+      name: adminUser.name,
+      phone: adminUser.phone,
+      email: adminUser.email,
+      role: 'admin',
+    },
   });
+});
+
+// Admin Verify Token / Session
+router.get('/admin/verify', requireAuth, requireAdmin, (req: AuthenticatedRequest, res) => {
+  res.json({
+    success: true,
+    user: {
+      id: req.user!.id,
+      name: req.user!.name,
+      phone: req.user!.phone,
+      email: req.user!.email,
+      role: req.user!.role,
+    },
+  });
+});
+
+// Admin Change Own Password
+router.post('/admin/change-password', requireAuth, requireAdmin, (req: AuthenticatedRequest, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'يرجى إدخال كلمة المرور الحالية وكلمة المرور الجديدة.' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'يجب أن تتكون كلمة المرور الجديدة من 6 خانات أو أكثر.' });
+  }
+
+  const admin = req.user!;
+  const isValid = bcrypt.compareSync(currentPassword, admin.passwordHash);
+  if (!isValid) {
+    return res.status(400).json({ error: 'كلمة المرور الحالية غير صحيحة.' });
+  }
+
+  const newHash = bcrypt.hashSync(newPassword, 10);
+  db.updateUserPassword(admin.id, newHash);
+
+  res.json({
+    success: true,
+    message: 'تم تحديث كلمة مرور مدير الأكاديمية بنجاح!',
+  });
+});
+
+// Admin Subject Management
+router.post('/admin/subjects', requireAuth, requireAdmin, (req, res) => {
+  const { name, icon, description, category, semester } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'يرجى إدخال اسم المادة الدراسية.' });
+  }
+
+  const newSubject: Subject = {
+    id: `subj-${Date.now()}`,
+    name: name.trim(),
+    englishName: req.body.englishName || 'Mechatronics Subject',
+    code: req.body.code || 'MCT-101',
+    icon: icon || 'Cpu',
+    color: req.body.color || 'from-blue-600 to-indigo-600',
+    description: description?.trim() || '',
+    year: 'السنة الأولى',
+    semester: (semester === 'الفصل الثاني' || semester === 2) ? 'الفصل الثاني' : 'الفصل الأول',
+    lessonsCount: 0,
+  };
+
+  subjects.push(newSubject);
+  res.json({ success: true, subject: newSubject, subjects });
+});
+
+router.put('/admin/subjects/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const idx = subjects.findIndex((s) => s.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'المادة غير موجودة.' });
+
+  subjects[idx] = {
+    ...subjects[idx],
+    ...req.body,
+  };
+
+  res.json({ success: true, subject: subjects[idx], subjects });
+});
+
+router.delete('/admin/subjects/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  subjects = subjects.filter((s) => s.id !== id);
+  lessons = lessons.filter((l) => l.subjectId !== id);
+  res.json({ success: true, message: 'تم حذف المادة والدروس التابعة لها بنجاح.', subjects });
+});
+
+// Admin Lesson Management
+router.post('/admin/lessons', requireAuth, requireAdmin, (req, res) => {
+  const { title, subjectId, description, duration, readingTimeMinutes } = req.body;
+  if (!title || !subjectId) {
+    return res.status(400).json({ error: 'عنوان الدرس والمادة التابع لها مطلوبان.' });
+  }
+
+  const newLesson: Lesson = {
+    id: `less-${Date.now()}`,
+    subjectId,
+    title: title.trim(),
+    order: lessons.filter((l) => l.subjectId === subjectId).length + 1,
+    readingTimeMinutes: Number(readingTimeMinutes) || 20,
+    simpleExplanation: description || 'شرح الدرس مبسط باللغة العربية والإنجليزية.',
+    coreConcept: title.trim(),
+    terms: [],
+    formulas: [],
+    solvedExamples: [],
+    commonMistakes: [],
+    practiceQuestions: [],
+    quiz: [],
+    summary: ['ملخص النقاط الأساسية في الدرس'],
+  };
+
+  lessons.push(newLesson);
+
+  const subIdx = subjects.findIndex((s) => s.id === subjectId);
+  if (subIdx >= 0) {
+    subjects[subIdx].lessonsCount = lessons.filter((l) => l.subjectId === subjectId).length;
+  }
+
+  res.json({ success: true, lesson: newLesson, lessons });
+});
+
+router.put('/admin/lessons/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const idx = lessons.findIndex((l) => l.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'الدرس غير موجود.' });
+
+  lessons[idx] = {
+    ...lessons[idx],
+    ...req.body,
+  };
+
+  res.json({ success: true, lesson: lessons[idx], lessons });
+});
+
+router.delete('/admin/lessons/:id', requireAuth, requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const target = lessons.find((l) => l.id === id);
+  lessons = lessons.filter((l) => l.id !== id);
+
+  if (target) {
+    const subIdx = subjects.findIndex((s) => s.id === target.subjectId);
+    if (subIdx >= 0) {
+      subjects[subIdx].lessonsCount = lessons.filter((l) => l.subjectId === target.subjectId).length;
+    }
+  }
+
+  res.json({ success: true, message: 'تم حذف الدرس بنجاح.', lessons });
+});
+
+// Admin Delete Student
+router.delete('/admin/students/:studentId', requireAuth, requireAdmin, (req, res) => {
+  const { studentId } = req.params;
+  const deleted = db.deleteUser(studentId);
+  res.json({ success: deleted, message: 'تم حذف حساب الطالب بنجاح.' });
 });
 
 // Admin Dashboard Statistics

@@ -19,6 +19,7 @@ import { MathHelperView } from './components/MathHelperView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
+import { StudentProfileModal } from './components/StudentProfileModal';
 
 export default function App() {
   // Theme state
@@ -71,6 +72,7 @@ export default function App() {
 
   // Modals state
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiInitialTopic, setAiInitialTopic] = useState('');
@@ -309,6 +311,7 @@ export default function App() {
         onOpenLogin={handleOpenLogin}
         onOpenRegister={handleStartRegistration}
         onOpenActivation={() => setOnboardingStep('code')}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
         onLogout={handleLogout}
         onNavigateHome={() => {
           if (student) {
@@ -437,6 +440,7 @@ export default function App() {
                       window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(msg)}`, '_blank');
                     }}
                     onOpenActivation={() => setOnboardingStep('code')}
+                    onOpenProfile={() => setIsProfileModalOpen(true)}
                     onOpenSavedLesson={(lesson) => {
                       setSelectedExplainedLesson(lesson);
                       setActiveTab('explain');
@@ -544,6 +548,24 @@ export default function App() {
         currentLessonTitle={activeLesson?.title}
         currentSubjectName={subjects.find((s) => s.id === activeLesson?.subjectId)?.name}
       />
+
+      {/* Student Profile & Settings Modal */}
+      {student && (
+        <StudentProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          student={student}
+          onUpdateStudent={(updated) => {
+            setStudent(updated);
+            localStorage.setItem('mct_student', JSON.stringify(updated));
+          }}
+          onOpenActivation={() => {
+            setIsProfileModalOpen(false);
+            setOnboardingStep('code');
+          }}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Admin Panel Modal */}
       <AdminPanelView

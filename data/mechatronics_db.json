@@ -11,35 +11,9 @@
       "major": "إدارة المنصة والهندسة",
       "role": "admin",
       "createdAt": "2026-09-15T18:56:53.699Z"
-    },
-    {
-      "id": "user-student-demo",
-      "name": "محمد عبدالله الشامي",
-      "phone": "771234567",
-      "email": "student@example.com",
-      "passwordHash": "$2b$10$A9bcR.U4Peim8v/.DfUhjOvcUYkrwEEJzgEDrHC3oPRBURj.zUIN.",
-      "university": "الجامعة الإماراتية الدولية – صنعاء",
-      "studyLevel": "السنة الأولى",
-      "major": "هندسة الميكاترونكس",
-      "role": "student",
-      "createdAt": "2026-09-15T18:56:53.699Z",
-      "lastLoginAt": "2026-09-15T19:30:31.814Z"
     }
   ],
-  "subscriptions": [
-    {
-      "id": "sub-demo-1",
-      "userId": "user-student-demo",
-      "plan": "yearly",
-      "status": "active",
-      "startDate": "2026-09-15T18:56:53.699Z",
-      "expiryDate": "2027-09-15T18:56:53.699Z",
-      "createdAt": "2026-09-15T18:56:53.699Z",
-      "activatedAt": "2026-09-15T18:56:53.699Z",
-      "activationMethod": "admin_direct",
-      "notes": "حساب تجريبي نشط للتقييم الأكاديمي"
-    }
-  ],
+  "subscriptions": [],
   "activationCodes": [
     {
       "id": "code-7820",
@@ -134,20 +108,8 @@
     }
   ],
   "subscriptionRequests": [],
-  "studentProgress": {
-    "user-student-demo": {
-      "studentId": "user-student-demo",
-      "completedLessons": [
-        "phys-lesson-1"
-      ],
-      "quizScores": {
-        "phys-lesson-1": 100
-      },
-      "savedProjects": [],
-      "simulatorSettings": {},
-      "updatedAt": "2026-09-15T18:56:53.700Z"
-    }
-  },
+  "passwordResetTokens": [],
+  "studentProgress": {},
   "studentLessons": [],
   "settings": {
     "whatsappNumber": "785502919",

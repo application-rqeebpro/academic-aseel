@@ -25,7 +25,8 @@ import {
   HelpCircle,
   KeyRound,
   MessageCircle,
-  Lock
+  Lock,
+  User
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -36,6 +37,7 @@ interface DashboardViewProps {
   onRenewSubscription: () => void;
   onOpenActivation?: () => void;
   onOpenSavedLesson?: (lesson: ExplainLessonResult) => void;
+  onOpenProfile?: () => void;
   whatsappNumber?: string;
 }
 
@@ -47,6 +49,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onRenewSubscription,
   onOpenActivation,
   onOpenSavedLesson,
+  onOpenProfile,
   whatsappNumber = '785502919',
 }) => {
   const isPending = !student.isActivated || student.subscriptionStatus === 'pending';
@@ -185,6 +188,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-xs sm:text-sm text-blue-100/90 max-w-xl">
               "لا تحفظ القانون، افهمه." جاهز اليوم لمواصلة فهم المفاهيم الفيزيائية والكهربائية وحل المسائل؟
             </p>
+            {onOpenProfile && (
+              <div className="pt-1">
+                <button
+                  onClick={onOpenProfile}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all cursor-pointer backdrop-blur-xs border border-white/20 shadow-xs"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>تعديل بياناتي وكلمة المرور</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Quick Subscription Status Pill */}

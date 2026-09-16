@@ -24,6 +24,7 @@ interface HeaderProps {
   onOpenLogin: () => void;
   onOpenRegister: () => void;
   onOpenActivation?: () => void;
+  onOpenProfile?: () => void;
   onLogout: () => void;
   onNavigateHome: () => void;
 }
@@ -38,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLogin,
   onOpenRegister,
   onOpenActivation,
+  onOpenProfile,
   onLogout,
   onNavigateHome,
 }) => {
@@ -110,18 +112,23 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 )}
 
-                {/* Active Student Pill */}
-                <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
-                    <span className={`w-2 h-2 rounded-full ${student.isActivated ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
+                {/* Active Student Pill / Profile Trigger */}
+                <button
+                  onClick={onOpenProfile}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 text-xs transition-colors cursor-pointer"
+                  title="عرض وتعديل الملف الشخصي وكلمة المرور"
+                >
+                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200 font-bold">
+                    <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>{student.name.split(' ')[0]}</span>
+                    <span className={`w-2 h-2 rounded-full ${student.isActivated ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                   </div>
-                  <div className="w-px h-3.5 bg-slate-300 dark:bg-slate-700" />
-                  <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
+                  <div className="hidden sm:block w-px h-3.5 bg-slate-300 dark:bg-slate-700" />
+                  <div className="hidden sm:flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>{student.isActivated ? `${student.remainingDays} يوم` : 'بانتظار التفعيل'}</span>
+                    <span>{student.isActivated ? `${student.remainingDays} يوم` : 'تفعيل'}</span>
                   </div>
-                </div>
+                </button>
 
                 {/* Admin role badge */}
                 {student.role === 'admin' && (

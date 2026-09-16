@@ -62,6 +62,17 @@ export interface DBSubscriptionRequest {
   notes?: string;
 }
 
+export interface DBPasswordResetToken {
+  id: string;
+  userId: string;
+  phone: string;
+  code: string;
+  token: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+
 export interface DBStudentProgress {
   studentId: string;
   completedLessons: string[];
@@ -76,6 +87,7 @@ export interface DBSchema {
   subscriptions: DBSubscription[];
   activationCodes: DBActivationCode[];
   subscriptionRequests: DBSubscriptionRequest[];
+  passwordResetTokens?: DBPasswordResetToken[];
   studentProgress: Record<string, DBStudentProgress>;
   studentLessons: any[];
   settings: {
@@ -108,8 +120,9 @@ try {
 }
 
 function getDefaultDB(): DBSchema {
-  const adminPasswordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'A7820600', 10);
-  const demoStudentPasswordHash = bcrypt.hashSync('123456', 10);
+  const adminPasswordHash = process.env.ADMIN_PASSWORD
+    ? bcrypt.hashSync(process.env.ADMIN_PASSWORD, 10)
+    : '$2b$10$8zzAtKZqsqrnXQoHtifRheHTtyv06090GnMF8mzMsfnzl5OyOKeNq';
 
   const initialAdmin: DBUser = {
     id: 'user-admin-1',
@@ -122,32 +135,6 @@ function getDefaultDB(): DBSchema {
     major: 'إدارة المنصة والهندسة',
     role: 'admin',
     createdAt: new Date().toISOString(),
-  };
-
-  const initialStudent: DBUser = {
-    id: 'user-student-demo',
-    name: 'محمد عبدالله الشامي',
-    phone: '771234567',
-    email: 'student@example.com',
-    passwordHash: demoStudentPasswordHash,
-    university: 'الجامعة الإماراتية الدولية – صنعاء',
-    studyLevel: 'السنة الأولى',
-    major: 'هندسة الميكاترونكس',
-    role: 'student',
-    createdAt: new Date().toISOString(),
-  };
-
-  const initialSub: DBSubscription = {
-    id: 'sub-demo-1',
-    userId: initialStudent.id,
-    plan: 'yearly',
-    status: 'active',
-    startDate: new Date().toISOString(),
-    expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date().toISOString(),
-    activatedAt: new Date().toISOString(),
-    activationMethod: 'admin_direct',
-    notes: 'حساب تجريبي نشط للتقييم الأكاديمي',
   };
 
   const ownerCodes: DBActivationCode[] = [
@@ -219,20 +206,12 @@ function getDefaultDB(): DBSchema {
   ];
 
   return {
-    users: [initialAdmin, initialStudent],
-    subscriptions: [initialSub],
+    users: [initialAdmin],
+    subscriptions: [],
     activationCodes: ownerCodes,
     subscriptionRequests: [],
-    studentProgress: {
-      [initialStudent.id]: {
-        studentId: initialStudent.id,
-        completedLessons: ['phys-lesson-1'],
-        quizScores: { 'phys-lesson-1': 100 },
-        savedProjects: [],
-        simulatorSettings: {},
-        updatedAt: new Date().toISOString(),
-      },
-    },
+    passwordResetTokens: [],
+    studentProgress: {},
     studentLessons: [],
     settings: {
       whatsappNumber: process.env.WHATSAPP_NUMBER || '785502919',
@@ -316,6 +295,55 @@ export const db = {
     saveDB(data);
     return data.users.length !== initLen;
   },
+
+  // Password Reset & Profile Update
+  createPasswordReset(userId: string, phone: string): { code: string; token: string; expiresAt: string } {
+    const data = getDB();
+    if (!data.passwordResetTokens) {
+      data.passwordResetTokens = [];
+    }
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const token = crypto.randomBytes(24).toString('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 mins
+
+    const resetItem: DBPasswordResetToken = {
+      id: `pr-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
+      userId,
+      phone: phone.replace(/[^0-9]/g, ''),
+      code,
+      token,
+      expiresAt,
+      used: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    data.passwordResetTokens.unshift(resetItem);
+    saveDB(data);
+    return { code, token, expiresAt };
+  },
+
+  verifyAndConsumePasswordReset(phone: string, code: string): string | null {
+    const data = getDB();
+    if (!data.passwordResetTokens) return null;
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const item = data.passwordResetTokens.find(
+      (r) => !r.used && r.phone === cleanPhone && r.code.trim() === code.trim() && new Date(r.expiresAt) > new Date()
+    );
+    if (!item) return null;
+    item.used = true;
+    saveDB(data);
+    return item.userId;
+  },
+
+  updateUserPassword(userId: string, newPasswordHash: string): boolean {
+    const data = getDB();
+    const user = data.users.find((u) => u.id === userId);
+    if (!user) return false;
+    user.passwordHash = newPasswordHash;
+    saveDB(data);
+    return true;
+  },
+
   getDB,
   saveDB,
 
