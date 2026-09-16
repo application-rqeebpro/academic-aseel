@@ -347,6 +347,9 @@ export interface ExplainLessonResult {
   sections?: { id: string; title: string; summary: string }[];
   originalContentSample?: string;
   pdfPageChoice?: { mode: 'full' | 'pages'; selectedPages?: string };
+  isAiGenerated?: boolean;
+  modelUsed?: string;
+  noticeMessage?: string;
 }
 
 

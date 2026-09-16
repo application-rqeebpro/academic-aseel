@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from '@google/genai';
 import { INITIAL_SETTINGS, INITIAL_SUBJECTS, INITIAL_LESSONS, INITIAL_FORMULAS, INITIAL_UNIT_CONVERSIONS } from '../src/data/initialData';
 import { Subject, Lesson, AdminSettings } from '../src/types';
-import { processExplainLesson } from './explainService';
+import { processExplainLesson, callGeminiWithResilience } from './explainService';
 import { db, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET || '7829';
@@ -132,7 +132,14 @@ let genAI: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI | null {
   if (process.env.GEMINI_API_KEY && !genAI) {
     try {
-      genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      genAI = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
     } catch (e) {
       console.warn('Failed to initialize GoogleGenAI client:', e);
     }
@@ -806,15 +813,15 @@ router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
 
         contents.push({ role: 'user', parts: currentParts });
 
-        const response = await client.models.generateContent({
-          model: 'gemini-3.8-flash',
+        const { text: replyText } = await callGeminiWithResilience(client, {
           contents,
           config: { systemInstruction, temperature: 0.7 },
+          preferredModel: 'gemini-3.8-flash',
         });
 
-        return res.json({ reply: response.text });
+        return res.json({ reply: replyText });
       } catch (geminiError: any) {
-        console.warn('Gemini API call error, falling back to local guidance:', geminiError?.message);
+        console.warn('Gemini API call error across resilience models, falling back to local guidance:', geminiError?.message);
       }
     }
 

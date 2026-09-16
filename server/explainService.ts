@@ -17,6 +17,120 @@ export function getGeminiClient(): GoogleGenAI | null {
   });
 }
 
+/**
+ * Robust JSON parser that handles codeblocks, outermost brace matching, and trailing commas
+ */
+export function safeExtractJson(text: string): any {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    // continue
+  }
+
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch (_) {
+      // continue
+    }
+  }
+
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const jsonSubstring = cleaned.substring(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(jsonSubstring);
+    } catch (_) {
+      const sanitized = jsonSubstring.replace(/,\s*([\}\]])/g, '$1');
+      try {
+        return JSON.parse(sanitized);
+      } catch (_) {
+        // failed
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Resilient caller for Gemini models with backoff retry and automatic cascade fallback across available models:
+ * 1. Primary model (e.g. gemini-3.8-flash)
+ * 2. High-speed lightweight model (gemini-3.1-flash-lite)
+ * 3. Latest flash alias (gemini-flash-latest)
+ */
+export async function callGeminiWithResilience(
+  client: GoogleGenAI,
+  request: {
+    contents: any;
+    config?: any;
+    preferredModel?: string;
+  }
+): Promise<{ text: string; modelUsed: string }> {
+  const models = [
+    request.preferredModel || 'gemini-3.8-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest',
+  ];
+
+  const uniqueModels = Array.from(new Set(models));
+  let lastError: any = null;
+
+  for (let i = 0; i < uniqueModels.length; i++) {
+    const currentModel = uniqueModels[i];
+    const maxAttempts = i === 0 ? 2 : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const response = await client.models.generateContent({
+          model: currentModel,
+          contents: request.contents,
+          config: request.config,
+        });
+
+        const text = response.text?.trim() || '';
+        if (text) {
+          return { text, modelUsed: currentModel };
+        }
+      } catch (err: any) {
+        lastError = err;
+        const msg = String(err?.message || err?.status || err || '');
+        const isTransient =
+          msg.includes('503') ||
+          msg.includes('429') ||
+          msg.includes('UNAVAILABLE') ||
+          msg.includes('high demand') ||
+          msg.includes('RESOURCE_EXHAUSTED') ||
+          msg.includes('overloaded') ||
+          msg.includes('Quota exceeded') ||
+          msg.includes('rate-limit');
+
+        console.warn(
+          `[Gemini Resilience] Model '${currentModel}' attempt ${attempt}/${maxAttempts} failed:`,
+          msg.substring(0, 160)
+        );
+
+        if (isTransient && attempt < maxAttempts) {
+          await new Promise((res) => setTimeout(res, 1200));
+          continue;
+        }
+
+        if (isTransient) {
+          break; // Try next model in sequence
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
+  throw lastError || new Error('All Gemini models failed to respond.');
+}
+
 export interface ExplainRequestParams {
   mode: ExplainSourceType;
   prompt?: string;
@@ -271,19 +385,24 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
 
       parts.push({ text: userInstructionPrompt });
 
-      const response = await client.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: { parts },
-        config: {
-          responseMimeType: 'application/json',
-          temperature: 0.2,
-        },
-      });
+      let parsed: any = null;
+      let modelUsed = '';
+      try {
+        const genResult = await callGeminiWithResilience(client, {
+          contents: { parts },
+          config: {
+            responseMimeType: 'application/json',
+            temperature: 0.2,
+          },
+          preferredModel: 'gemini-3.8-flash',
+        });
+        modelUsed = genResult.modelUsed;
+        parsed = safeExtractJson(genResult.text);
+      } catch (geminiCallError: any) {
+        console.warn('Gemini generateContent call failed across all resilience models, using smart educational fallback:', geminiCallError?.message);
+      }
 
-      const responseText = response.text?.trim() || '';
-      if (responseText) {
-        const parsed = JSON.parse(responseText);
-
+      if (parsed && typeof parsed === 'object') {
         return {
           id: 'expl-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
           studentId: params.studentId,
@@ -322,15 +441,20 @@ ${specificPart ? `- الطالب حدد هذا الجزء للتركيز علي�
           videoSupportNotice: parsed.videoSupportNotice,
           studySheetMarkdown: parsed.studySheetMarkdown,
           pdfPageChoice: params.pdfPageChoice,
+          isAiGenerated: true,
+          modelUsed,
         };
       }
     } catch (err: any) {
-      console.warn('Gemini generateContent error or json parse failed, using smart educational fallback:', err?.message);
+      console.warn('Unexpected error in processExplainLesson, using smart educational fallback:', err?.message);
     }
   }
 
   // Smart fallback generator when API key is not present or API call fails
-  return generateFallbackExplainedLesson(params);
+  const fallback = generateFallbackExplainedLesson(params);
+  fallback.isAiGenerated = false;
+  fallback.noticeMessage = 'تم تحضير الشرح بالاعتماد على المنظومة التعليمية الهندسية المعتمدة لضمان استمرار دراستك بسلاسة دون تأخير.';
+  return fallback;
 }
 
 // Rich Mechatronics Curriculum Fallback Generator

@@ -996,6 +996,30 @@ ${analysisResult.summaryPoints.join('\n')}
               </div>
             )}
 
+            {/* Smart Notice Message (e.g. offline curriculum fallback during high server demand) */}
+            {analysisResult.noticeMessage && (
+              <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/50 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold">إشعار النظام الذكي:</h4>
+                    <p className="mt-0.5">{analysisResult.noticeMessage}</p>
+                  </div>
+                </div>
+                {analysisResult.isAiGenerated === false && (
+                  <button
+                    type="button"
+                    onClick={() => handleAnalyzeLesson()}
+                    disabled={isAnalyzing}
+                    className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                    <span>إعادة المحاولة عبر الذكاء</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Quick Level Switchers */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800">
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
