@@ -350,6 +350,7 @@ export default function App() {
               <WelcomeView
                 onRegister={handleStartRegistration}
                 onLogin={handleOpenLogin}
+                onOpenAdmin={() => setIsAdminOpen(true)}
                 subjects={subjects}
                 monthlyPriceUSD={monthlyPriceUSD}
                 yearlyPriceUSD={yearlyPriceUSD}

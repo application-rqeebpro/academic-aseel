@@ -37,7 +37,13 @@ import {
   Atom,
   Eye,
   AlertTriangle,
-  FileCheck
+  FileCheck,
+  Mic,
+  MicOff,
+  Square,
+  Play,
+  Volume2,
+  Wand2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { 
@@ -168,6 +174,130 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
   // Presentation View Mode: 'stream' (Ordered 1-14 single flow) vs 'tabs'
   const [viewMode, setViewMode] = useState<'stream' | 'tabs'>('stream');
 
+  // Audio Recording & Speech-to-Text states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [transcribedText, setTranscribedText] = useState<string>('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionSuccess, setTranscriptionSuccess] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<any>(null);
+
+  const startRecording = async () => {
+    setErrorMsg(null);
+    setTranscribedText('');
+    setTranscriptionSuccess(false);
+    setAudioBlob(null);
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setErrorMsg('متصفحك الحالي لا يدعم تسجيل الصوت المباشر من الميكروفون. يمكنك رفع ملف صوتي بدلاً من ذلك.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        setAudioBlob(blob);
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+
+        stream.getTracks().forEach((track) => track.stop());
+
+        // Automatically transcribe audio speech to text
+        handleTranscribeAudioBlob(blob, mimeType);
+      };
+
+      mediaRecorder.start(200);
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Mic error:', err);
+      setErrorMsg('تعذر الوصول إلى الميكروفون. يرجى السماح للمتصفح بالوصول للميكروفون والمحاولة ثانية.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleTranscribeAudioBlob = async (blobOrFile: Blob | File, mimeType?: string) => {
+    setIsTranscribing(true);
+    setErrorMsg(null);
+    setTranscriptionSuccess(false);
+
+    try {
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const res = reader.result as string;
+          const match = res.match(/^data:([^;]+);base64,(.*)$/s);
+          resolve(match ? match[2] : res);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blobOrFile);
+      });
+
+      const res = await fetch('/api/transcribe-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioData: base64Data,
+          mimeType: mimeType || blobOrFile.type || 'audio/webm',
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'حدث خطأ أثناء تحويل الصوت إلى نص.');
+      }
+
+      const data = await res.json();
+      if (data.text) {
+        setTranscribedText(data.text);
+        setTextInput(data.text);
+        setTranscriptionSuccess(true);
+      } else {
+        throw new Error('لم يتلقَ النظام أية نصوص من المقطع الصوتي.');
+      }
+    } catch (err: any) {
+      console.error('Transcription error:', err);
+      setErrorMsg(err.message || 'فشل تحويل الصوت إلى نص. يرجى إعادة التسجيل والتحدث بوضوح.');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const resultsTopRef = useRef<HTMLDivElement>(null);
@@ -268,7 +398,29 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
   const processSelectedFile = async (file: File) => {
     setErrorMsg(null);
 
+    const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type.includes('pdf') || sourceType === 'pdf';
+    const isAudio = sourceType === 'audio' || file.type.startsWith('audio/') || /\.(mp3|wav|m4a|ogg|webm|aac|flac)$/i.test(file.name);
+
+    if (isAudio) {
+      setSourceType('audio');
+      setSelectedFile(file);
+      setFilePreview('audio-file');
+      setProcessedImageData(null);
+      const url = URL.createObjectURL(file);
+      setAudioUrl(url);
+      handleTranscribeAudioBlob(file, file.type || 'audio/mp3');
+      return;
+    }
+
     // Validate file type
+    if (isPdf) {
+      setSourceType('pdf');
+      setSelectedFile(file);
+      setFilePreview('pdf-document');
+      setProcessedImageData(null);
+      return;
+    }
+
     if (sourceType === 'image') {
       const isImg = file.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(file.name);
       if (!isImg) {
@@ -302,9 +454,6 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       } finally {
         setIsProcessingImage(false);
       }
-    } else if (file.type === 'application/pdf') {
-      setFilePreview('pdf-document');
-      setProcessedImageData(null);
     } else if (file.type.startsWith('video/')) {
       setFilePreview('video-file');
       setProcessedImageData(null);
@@ -340,6 +489,10 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     if (isAnalyzing) return;
 
     // Validate inputs
+    if (sourceType === 'audio' && !audioBlob && !selectedFile && !textInput.trim()) {
+      setErrorMsg('يرجى تسجيل مقطع صوتي بالميكروفون أو اختيار ملف صوتي لشرحه.');
+      return;
+    }
     if (sourceType === 'image' && !selectedFile && !processedImageData && !textInput.trim()) {
       setErrorMsg('يرجى اختيار أو التقاط صورة للدرس أو المسألة أولاً.');
       return;
@@ -348,8 +501,8 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       setErrorMsg('يرجى كتابة أو لصق نص الدرس أو السؤال أولاً.');
       return;
     }
-    if (sourceType !== 'text' && !selectedFile && !processedImageData && !textInput.trim()) {
-      setErrorMsg('يرجى رفع ملف أو صورة أو كتابة النص المطلوب شرحه.');
+    if (sourceType !== 'text' && !selectedFile && !processedImageData && !audioBlob && !textInput.trim()) {
+      setErrorMsg('يرجى رفع ملف أو تسجيل صوتي أو كتابة النص المطلوب شرحه.');
       return;
     }
 
@@ -357,7 +510,13 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     setProgressStage(0);
     setErrorMsg(null);
 
-    const stages = sourceType === 'image' ? [
+    const stages = sourceType === 'audio' ? [
+      'جاري استماع الميكروفون وتحويل الصوت إلى نص...',
+      'جاري استخراج المصطلحات والقوانين والرموز الهندسية...',
+      'جاري تحليل الدرس والمسائل المذكورة صوتياً...',
+      'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
+      'تم تحويل الصوت وشرح الدرس بنجاح! 🚀',
+    ] : sourceType === 'image' ? [
       'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
       'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
       'جاري تحليل الدرس والمسائل خطوة بخطوة...',
@@ -381,25 +540,57 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     try {
       let fileData: string | undefined;
       let mimeType: string | undefined;
+      let currentPromptText = textInput;
 
-      if (sourceType === 'image' && processedImageData) {
+      if (sourceType === 'audio' && !currentPromptText.trim() && (audioBlob || selectedFile)) {
+        try {
+          const audioTarget = audioBlob || selectedFile!;
+          const audioB64 = await readFileAsBase64(audioTarget as File);
+          const transRes = await fetch('/api/transcribe-audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              audioData: audioB64,
+              mimeType: audioTarget.type || 'audio/webm',
+            }),
+          });
+          if (transRes.ok) {
+            const transData = await transRes.json();
+            if (transData.text) {
+              currentPromptText = transData.text;
+              setTranscribedText(transData.text);
+              setTextInput(transData.text);
+            }
+          }
+        } catch (tErr) {
+          console.warn('Auto transcription fallback error:', tErr);
+        }
+      }
+
+      if (selectedFile && (selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type.includes('pdf') || sourceType === 'pdf')) {
+        mimeType = 'application/pdf';
+        fileData = await readFileAsBase64(selectedFile);
+      } else if (sourceType === 'image' && processedImageData) {
         fileData = processedImageData.base64;
         mimeType = processedImageData.mimeType;
+      } else if (audioBlob) {
+        mimeType = audioBlob.type || 'audio/webm';
+        fileData = await readFileAsBase64(audioBlob as File);
       } else if (selectedFile) {
-        mimeType = selectedFile.type || (sourceType === 'pdf' ? 'application/pdf' : 'image/jpeg');
+        mimeType = selectedFile.type || 'image/jpeg';
         fileData = await readFileAsBase64(selectedFile);
       }
 
       const payload = {
         mode: sourceType,
-        prompt: textInput,
+        prompt: currentPromptText,
         fileData,
         mimeType,
-        fileName: selectedFile?.name || (textInput ? 'مقتطف نصي' : 'درس جامعي'),
+        fileName: selectedFile?.name || (sourceType === 'audio' ? 'تسجيل صوتي' : currentPromptText ? 'مقتطف نصي' : 'درس جامعي'),
         explanationLevel: customLevel || explanationLevel,
         actionType: customAction || 'full_explain',
         specificPart: customPartText || undefined,
-        pdfPageChoice: pdfMode === 'page' && pdfPageNumber ? pdfPageNumber : undefined,
+        pdfPageChoice: pdfMode === 'page' && pdfPageNumber ? { mode: 'pages', selectedPages: pdfPageNumber } : { mode: 'full' },
         studentUniversity: student.university,
         studentMajor: student.major,
         studentId: student.id,
@@ -678,7 +869,7 @@ ${analysisResult.summaryPoints.join('\n')}
           <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
             اختر طريقة إرسال محتوى الدرس:
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3">
             
             <button
               type="button"
@@ -721,6 +912,28 @@ ${analysisResult.summaryPoints.join('\n')}
               <div>
                 <span className="font-extrabold text-sm block">📄 ملف PDF</span>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">ملزمة، سلايدات، فصل</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSourceType('audio');
+                setSelectedFile(null);
+                setFilePreview(null);
+              }}
+              className={`p-4 rounded-2xl border-2 text-right transition-all flex flex-col justify-between gap-2 cursor-pointer ${
+                sourceType === 'audio'
+                  ? 'border-rose-600 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 shadow-sm'
+                  : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                <Mic className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-extrabold text-sm block">🎙️ تسجيل صوتي</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">تحويل الصوت لنص + شرح</span>
               </div>
             </button>
 
@@ -771,8 +984,137 @@ ${analysisResult.summaryPoints.join('\n')}
           </div>
         </div>
 
-        {/* Dynamic Upload / Text Input Box */}
-        {sourceType !== 'text' ? (
+        {/* Dynamic Voice Recording & Audio Studio Card */}
+        {sourceType === 'audio' ? (
+          <div className="bg-rose-50/40 dark:bg-rose-950/20 rounded-3xl p-6 border border-rose-200 dark:border-rose-900/50 space-y-5 text-center">
+            
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 text-xs font-bold">
+                <Mic className="w-3.5 h-3.5 animate-pulse" />
+                استوديو تحويل الصوت إلى نص والشرح الذكي (Speech-to-Text)
+              </div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                تحدث بالميكروفون أو ارفع مقطعاً صوتياً لشرح الدرس
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+                سيقوم الذكاء الاصطناعي بتحويل كلامك إلى نص مفرّغ بدقة، ثم توليد الشرح الهندسي الشامل تلقائياً.
+              </p>
+            </div>
+
+            {/* Mic Recording Controls */}
+            <div className="flex flex-col items-center justify-center gap-4 py-3">
+              {isRecording ? (
+                <div className="space-y-3">
+                  <div className="relative inline-flex items-center justify-center">
+                    <span className="absolute w-20 h-20 rounded-full bg-rose-500/30 animate-ping"></span>
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="relative w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-600/40 hover:scale-105 transition-transform cursor-pointer"
+                    >
+                      <Square className="w-7 h-7 fill-current" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-sm">
+                    <span className="w-3 h-3 rounded-full bg-rose-600 animate-pulse"></span>
+                    جاري التسجيل الان: {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">اضغط الزر لإيقاف التسجيل وتفريغ الصوت إلى نص</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-lg shadow-rose-600/30 hover:scale-105 transition-all mx-auto cursor-pointer"
+                  >
+                    <Mic className="w-8 h-8" />
+                  </button>
+                  <div className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    اضغط الميكروفون لبدء التسجيل الصوتي المباشر
+                  </div>
+                </div>
+              )}
+
+              {/* Or upload audio file */}
+              {!isRecording && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1.5 mx-auto cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    أو اختر ملفاً صوتياً من جهازك (MP3, WAV, M4A, OGG)
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileChange}
+                    accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm,.aac"
+                    className="hidden"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Audio Preview Player */}
+            {audioUrl && (
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-md mx-auto space-y-2 text-right">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5">
+                    <Volume2 className="w-4 h-4 text-rose-600" />
+                    {selectedFile ? selectedFile.name : 'المقطع الصوتي المسجل'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleTranscribeAudioBlob(audioBlob || selectedFile!)}
+                    disabled={isTranscribing}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isTranscribing ? 'animate-spin' : ''}`} />
+                    إعادة تحويل الصوت
+                  </button>
+                </div>
+                <audio src={audioUrl} controls className="w-full h-10 rounded-lg" />
+              </div>
+            )}
+
+            {/* Loading Transcription */}
+            {isTranscribing && (
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center gap-3 text-amber-800 dark:text-amber-300 text-xs font-bold animate-pulse">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                جاري تحويل المقطع الصوتي إلى نص مكتوب عبر الذكاء الاصطناعي...
+              </div>
+            )}
+
+            {/* Transcribed Text Output & Editor */}
+            {(transcribedText || textInput) && (
+              <div className="space-y-2 text-right pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Wand2 className="w-4 h-4 text-rose-600" />
+                    النص المفرّغ من المقطع الصوتي (يمكنك تعديله قبل الشرح):
+                  </label>
+                  {transcriptionSuccess && (
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      تم التحويل بنجاح
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  rows={4}
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  placeholder="سيظهر النص المفرغ من تسجيلك الصوتي هنا تلقائياً..."
+                  className="w-full p-3.5 rounded-2xl border border-rose-200 dark:border-rose-900 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none leading-relaxed"
+                />
+              </div>
+            )}
+
+          </div>
+        ) : sourceType !== 'text' ? (
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}

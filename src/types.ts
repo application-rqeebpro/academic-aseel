@@ -216,7 +216,7 @@ export interface AdminSettings {
   announcementText: string;
 }
 
-export type ExplainSourceType = 'image' | 'pdf' | 'video' | 'text' | 'file';
+export type ExplainSourceType = 'image' | 'pdf' | 'video' | 'text' | 'file' | 'audio';
 export type ExplainLevel = 'simple' | 'medium' | 'advanced' | 'short';
 
 export interface ExplainTerm {

@@ -178,8 +178,18 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               </>
             ) : (
-              /* Visitor view: strictly "تسجيل الدخول" and "اشترك الآن" */
+              /* Visitor view: Owner icon button, "تسجيل الدخول", and "اشترك الآن" */
               <>
+                {/* Owner / Admin Control Panel Icon Button */}
+                <button
+                  onClick={onOpenAdmin}
+                  className="p-2 sm:p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200 dark:border-indigo-800 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                  title="لوحة تحكم المالك / الإدارة"
+                  aria-label="Owner Admin Control Panel"
+                >
+                  <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </button>
+
                 <button
                   onClick={onOpenLogin}
                   className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs sm:text-sm transition-all cursor-pointer"

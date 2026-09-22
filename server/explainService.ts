@@ -1,6 +1,19 @@
 import { GoogleGenAI } from '@google/genai';
 import { ExplainLessonResult, ExplainLevel, ExplainSourceType } from '../src/types';
 
+async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
+  try {
+    const { createRequire } = await import('module');
+    const req = createRequire(import.meta.url);
+    const pdf = req('pdf-parse');
+    const parsed = await pdf(pdfBuffer);
+    return parsed?.text?.trim() || '';
+  } catch (e: any) {
+    console.warn('[PDF Extract Warning]:', e?.message || e);
+    return '';
+  }
+}
+
 // Helper to initialize Gemini safely
 export function getGeminiClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -179,6 +192,8 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
     try {
       const parts: any[] = [];
 
+      const isPdfRequest = mode === 'pdf' || (mimeType && mimeType.includes('pdf')) || (fileName && fileName.toLowerCase().endsWith('.pdf'));
+
       // If a file / image / pdf / video is provided
       if (fileData) {
         let cleanBase64 = fileData;
@@ -194,12 +209,47 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
         let actualMime = detectedMime || (mode === 'pdf' ? 'application/pdf' : mode === 'video' ? 'video/mp4' : 'image/jpeg');
         if (actualMime === 'image/jpg') actualMime = 'image/jpeg';
 
-        parts.push({
-          inlineData: {
-            mimeType: actualMime,
-            data: cleanBase64,
-          },
-        });
+        // Enforce application/pdf for any PDF request or octet-stream containing pdf
+        if (isPdfRequest || actualMime.includes('pdf') || actualMime.includes('octet-stream')) {
+          actualMime = 'application/pdf';
+        }
+
+        if (actualMime === 'application/pdf') {
+          let extractedPdfText = '';
+          try {
+            const pdfBuffer = Buffer.from(cleanBase64, 'base64');
+            extractedPdfText = await extractTextFromPdfBuffer(pdfBuffer);
+            if (extractedPdfText) {
+              console.log(`[PDF Extraction] Successfully extracted ${extractedPdfText.length} characters from PDF file: ${fileName || 'unnamed.pdf'}`);
+            }
+          } catch (pdfErr: any) {
+            console.warn('[PDF Extraction] text extraction warning:', pdfErr?.message);
+          }
+
+          if (extractedPdfText.length > 0) {
+            parts.push({
+              text: `[محتوى ملف الـ PDF المرفوع - اسم الملف: ${fileName || 'ملف الدرس'}]:\n${extractedPdfText.slice(0, 45000)}`
+            });
+          }
+
+          // If base64 size is reasonable (under 18MB) or extracted text is small (scanned PDF), also send inlineData
+          const approxSizeBytes = cleanBase64.length * 0.75;
+          if (approxSizeBytes < 18 * 1024 * 1024 || extractedPdfText.length < 50) {
+            parts.push({
+              inlineData: {
+                mimeType: 'application/pdf',
+                data: cleanBase64,
+              },
+            });
+          }
+        } else {
+          parts.push({
+            inlineData: {
+              mimeType: actualMime,
+              data: cleanBase64,
+            },
+          });
+        }
       }
 
       const levelDescriptions: Record<ExplainLevel, string> = {
@@ -442,7 +492,7 @@ ${imageSpecificInstructions}
             responseMimeType: 'application/json',
             temperature: 0.2,
           },
-          preferredModel: 'gemini-3.1-flash-lite',
+          preferredModel: isPdfRequest ? 'gemini-3.8-flash' : 'gemini-3.1-flash-lite',
         });
         modelUsed = genResult.modelUsed;
         parsed = safeExtractJson(genResult.text);

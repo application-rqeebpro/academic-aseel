@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from '@google/genai';
 import { INITIAL_SETTINGS, INITIAL_SUBJECTS, INITIAL_LESSONS, INITIAL_FORMULAS, INITIAL_UNIT_CONVERSIONS } from '../src/data/initialData';
 import { Subject, Lesson, AdminSettings } from '../src/types';
-import { processExplainLesson, callGeminiWithResilience } from './explainService';
+import { processExplainLesson, callGeminiWithResilience, getGeminiClient as getGeminiClientFromService } from './explainService';
 import { generateEngineeringAssignment, refineAssignmentSectionWithAi } from './assignmentService';
 import { db, normalizePhone, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
 
@@ -782,6 +782,63 @@ router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
       error: 'حدث خطأ أثناء تحليل الدرس وتوليد الشرح. يرجى المحاولة مرة أخرى.',
       details: error?.message,
     });
+  }
+});
+
+// Transcribe Audio Speech-to-Text Endpoint
+router.post('/transcribe-audio', async (req: AuthenticatedRequest, res) => {
+  try {
+    const { audioData, mimeType = 'audio/webm', fileName } = req.body;
+    if (!audioData) {
+      return res.status(400).json({ error: 'لم يتم استلام أية بيانات صوتية للتفريغ.' });
+    }
+
+    const client = getGeminiClientFromService();
+    if (!client) {
+      return res.status(500).json({ error: 'مفتاح الذكاء الاصطناعي غير متوفر حالياً.' });
+    }
+
+    let cleanBase64 = audioData;
+    let detectedMime = mimeType;
+    const match = audioData.match(/^data:([^;]+);base64,(.*)$/s);
+    if (match) {
+      detectedMime = match[1];
+      cleanBase64 = match[2];
+    }
+    cleanBase64 = cleanBase64.trim().replace(/\s+/g, '');
+
+    const actualMime = detectedMime || 'audio/webm';
+
+    const promptText = `أنت خبير واستشاري تحويل الصوت إلى نص (Speech-to-Text) متخصص في الهندسة والميكاترونكس والفيزياء والرياضيات باللغة العربية.
+قم بتفريغ وتحويل المقطع الصوتي المرفق إلى نص دقيق وواضح جداً باللغة العربية مع المحافظة على كافة المصطلحات الهندسية والرموز والقوانين والأرقام المذكورة.
+المطلوب: إرجاع النص المفرّغ فقط بدون أية مقدمات أو هوامش أو تعليقات خارجية.`;
+
+    const response = await callGeminiWithResilience(client, {
+      contents: [
+        {
+          inlineData: {
+            mimeType: actualMime,
+            data: cleanBase64,
+          },
+        },
+        { text: promptText },
+      ],
+      config: {
+        temperature: 0.2,
+      },
+      preferredModel: 'gemini-3.8-flash',
+    });
+
+    const transcribedText = response.text ? response.text.trim() : '';
+
+    if (!transcribedText) {
+      return res.status(400).json({ error: 'تعذر استخرج نص من التسجيل الصوتي. يرجى التأكد من وضوح الصوت والتحدث بالقرب من الميكروفون.' });
+    }
+
+    res.json({ success: true, text: transcribedText, modelUsed: response.modelUsed });
+  } catch (error: any) {
+    console.error('Error transcribing audio:', error);
+    res.status(500).json({ error: error.message || 'حدث خطأ أثناء تحويل الصوت إلى نص.' });
   }
 });
 
