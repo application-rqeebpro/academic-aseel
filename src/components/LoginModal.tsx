@@ -303,6 +303,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="text-[11px] text-slate-400 text-right pt-0.5">
+                تلميح: إذا لم تقم بإنشاء كلمة مرور مخصصة عند التسجيل، فكلمة المرور هي آخر 6 أرقام من رقم هاتفك.
+              </p>
             </div>
 
             {/* Submit Button */}

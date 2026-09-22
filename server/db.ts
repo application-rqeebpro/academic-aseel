@@ -271,10 +271,27 @@ export function saveDB(data: DBSchema): void {
   }
 }
 
+// Convert Eastern Arabic / Persian numerals to Western digits (0-9)
+export function convertArabicDigitsToEnglish(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/[٠۰]/g, '0')
+    .replace(/[١۱]/g, '1')
+    .replace(/[٢۲]/g, '2')
+    .replace(/[٣۳]/g, '3')
+    .replace(/[٤۴]/g, '4')
+    .replace(/[٥۵]/g, '5')
+    .replace(/[٦۶]/g, '6')
+    .replace(/[٧۷]/g, '7')
+    .replace(/[٨۸]/g, '8')
+    .replace(/[٩۹]/g, '9');
+}
+
 // Helper phone normalizer for Yemeni numbers (+967, 00967, 077..., etc.)
 export function normalizePhone(phone: string): string {
   if (!phone) return '';
-  let digits = phone.trim().replace(/[^0-9]/g, '');
+  const converted = convertArabicDigitsToEnglish(phone.toString().trim());
+  let digits = converted.replace(/[^0-9]/g, '');
   if (!digits) return '';
   if (digits.startsWith('00967')) {
     digits = digits.slice(5);
