@@ -86,25 +86,31 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       // Store JWT token
       localStorage.setItem('mct_auth_token', data.token);
 
-      const studentData: StudentProfile = {
-        id: data.user.id,
-        name: data.user.name,
-        phone: data.user.phone,
-        email: data.user.email,
-        university: data.user.university,
-        studyLevel: data.user.studyLevel,
-        major: data.user.major,
-        role: data.user.role,
-        subscriptionPlan: data.subscription?.plan || 'monthly',
-        subscriptionStatus: data.subscription?.status || 'pending',
-        subscriptionStartDate: data.subscription?.startDate,
-        subscriptionEndDate: data.subscription?.expiryDate,
-        remainingDays: data.subscription?.remainingDays || 0,
-        isActivated: data.subscription?.isActivated || false,
-        isExpired: data.subscription?.isExpired || false,
-        completedLessons: [],
-        quizScores: {},
-      };
+      const studentData: StudentProfile = data.student
+        ? {
+            ...data.student,
+            completedLessons: data.student.completedLessons || [],
+            quizScores: data.student.quizScores || {},
+          }
+        : {
+            id: data.user.id,
+            name: data.user.name,
+            phone: data.user.phone,
+            email: data.user.email,
+            university: data.user.university,
+            studyLevel: data.user.studyLevel,
+            major: data.user.major,
+            role: data.user.role,
+            subscriptionPlan: data.subscription?.plan || 'monthly',
+            subscriptionStatus: data.subscription?.status || 'pending',
+            subscriptionStartDate: data.subscription?.startDate,
+            subscriptionEndDate: data.subscription?.expiryDate,
+            remainingDays: data.subscription?.remainingDays || 0,
+            isActivated: data.subscription?.isActivated || false,
+            isExpired: data.subscription?.isExpired || false,
+            completedLessons: [],
+            quizScores: {},
+          };
 
       onLoginSuccess(studentData, data.token);
       onClose();

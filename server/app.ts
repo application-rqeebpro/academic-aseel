@@ -7,7 +7,7 @@ import { INITIAL_SETTINGS, INITIAL_SUBJECTS, INITIAL_LESSONS, INITIAL_FORMULAS, 
 import { Subject, Lesson, AdminSettings } from '../src/types';
 import { processExplainLesson, callGeminiWithResilience } from './explainService';
 import { generateEngineeringAssignment, refineAssignmentSectionWithAi } from './assignmentService';
-import { db, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
+import { db, normalizePhone, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET || '7829';
 
@@ -181,17 +181,21 @@ router.post('/auth/register', (req, res) => {
     return res.status(400).json({ error: 'الاسم ورقم الهاتف مطلوبان للتسجيل.' });
   }
 
-  const cleanPhone = phone.trim().replace(/[^0-9]/g, '');
+  const cleanPhone = normalizePhone(phone);
+  if (!cleanPhone) {
+    return res.status(400).json({ error: 'يرجى إدخال رقم هاتف صحيح.' });
+  }
+
   const existingUser = db.findUserByPhone(cleanPhone);
   if (existingUser) {
     return res.status(400).json({
-      error: 'رقم الهاتف مسجل مسبقًا في الأكاديمية. يمكنك تسجيل الدخول مباشرة.',
+      error: 'رقم الهاتف مسجل مسبقًا في الأكاديمية. يمكنك تسجيل الدخول مباشرة باستخدام كلمة المرور الخاصة بك.',
     });
   }
 
   const userId = `user-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-  const passwordHash = password
-    ? bcrypt.hashSync(password, 10)
+  const passwordHash = password && password.trim()
+    ? bcrypt.hashSync(password.trim(), 10)
     : bcrypt.hashSync(cleanPhone.slice(-6) || '123456', 10);
 
   const newUser: DBUser = {
@@ -247,6 +251,25 @@ router.post('/auth/register', (req, res) => {
       isActivated: false,
       isExpired: false,
     },
+    student: {
+      id: newUser.id,
+      name: newUser.name,
+      phone: newUser.phone,
+      email: newUser.email,
+      university: newUser.university,
+      studyLevel: newUser.studyLevel,
+      major: newUser.major,
+      role: newUser.role,
+      subscriptionPlan: 'monthly',
+      subscriptionStatus: 'pending',
+      subscriptionStartDate: now.toISOString(),
+      subscriptionEndDate: now.toISOString(),
+      remainingDays: 0,
+      isActivated: false,
+      isExpired: false,
+      completedLessons: [],
+      quizScores: {},
+    },
   });
 });
 
@@ -259,16 +282,16 @@ router.post('/auth/login', (req, res) => {
   }
 
   const clean = identifier.trim();
-  const cleanDigits = clean.replace(/[^0-9]/g, '');
-  const user = db.findUserByPhone(cleanDigits) || db.findUserByEmail(clean);
+  const cleanPhone = normalizePhone(clean);
+  const user = (cleanPhone ? db.findUserByPhone(cleanPhone) : null) || db.findUserByEmail(clean);
 
   if (!user) {
     return res.status(401).json({ error: 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف أو البريد الإلكتروني.' });
   }
 
-  const isValidPassword = bcrypt.compareSync(password, user.passwordHash);
+  const isValidPassword = bcrypt.compareSync(password.trim(), user.passwordHash);
   if (!isValidPassword) {
-    return res.status(401).json({ error: 'كلمة المرور غير صحيحة.' });
+    return res.status(401).json({ error: 'كلمة المرور غير صحيحة. يرجى التأكد من كلمة المرور التي أنشأتها أثناء التسجيل.' });
   }
 
   user.lastLoginAt = new Date().toISOString();
@@ -276,6 +299,7 @@ router.post('/auth/login', (req, res) => {
 
   const token = generateAuthToken(user);
   const sub = db.getSubscriptionByUserId(user.id);
+  const progress = db.getStudentProgress(user.id);
 
   let remainingDays = 0;
   let isActivated = false;
@@ -289,6 +313,26 @@ router.post('/auth/login', (req, res) => {
   } else if (sub && sub.status === 'expired') {
     isExpired = true;
   }
+
+  const studentObj = {
+    id: user.id,
+    name: user.name,
+    phone: user.phone,
+    email: user.email,
+    university: user.university,
+    studyLevel: user.studyLevel,
+    major: user.major,
+    role: user.role,
+    subscriptionPlan: sub?.plan || 'monthly',
+    subscriptionStatus: sub?.status || 'pending',
+    subscriptionStartDate: sub?.startDate,
+    subscriptionEndDate: sub?.expiryDate,
+    remainingDays,
+    isActivated,
+    isExpired,
+    completedLessons: progress.completedLessons || [],
+    quizScores: progress.quizScores || {},
+  };
 
   res.json({
     success: true,
@@ -312,6 +356,7 @@ router.post('/auth/login', (req, res) => {
           isExpired,
         }
       : undefined,
+    student: studentObj,
   });
 });
 

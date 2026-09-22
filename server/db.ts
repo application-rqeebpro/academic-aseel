@@ -266,6 +266,22 @@ export function saveDB(data: DBSchema): void {
   }
 }
 
+// Helper phone normalizer for Yemeni numbers (+967, 00967, 077..., etc.)
+export function normalizePhone(phone: string): string {
+  if (!phone) return '';
+  let digits = phone.trim().replace(/[^0-9]/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00967')) {
+    digits = digits.slice(5);
+  } else if (digits.startsWith('967') && digits.length > 9) {
+    digits = digits.slice(3);
+  }
+  while (digits.startsWith('0') && digits.length > 1) {
+    digits = digits.slice(1);
+  }
+  return digits;
+}
+
 // Helper Repository Functions
 export const db = {
   // Users
@@ -273,8 +289,9 @@ export const db = {
     return getDB().users.find((u) => u.id === id);
   },
   findUserByPhone(phone: string): DBUser | undefined {
-    const clean = phone.replace(/[^0-9]/g, '');
-    return getDB().users.find((u) => u.phone.replace(/[^0-9]/g, '') === clean);
+    const clean = normalizePhone(phone);
+    if (!clean) return undefined;
+    return getDB().users.find((u) => normalizePhone(u.phone) === clean);
   },
   findUserByEmail(email: string): DBUser | undefined {
     if (!email) return undefined;
