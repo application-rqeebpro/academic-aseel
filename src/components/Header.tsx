@@ -1,7 +1,8 @@
 import React from 'react';
 import { StudentProfile } from '../types';
+import { AcademyLogo } from './AcademyLogo';
+import { PWAInstallButton } from './PWAInstallButton';
 import { 
-  Cpu, 
   Moon, 
   Sun, 
   ShieldCheck, 
@@ -53,32 +54,14 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-16">
           
           {/* Logo & Branding */}
-          <div 
-            onClick={onNavigateHome}
-            className="flex items-center gap-3 cursor-pointer group select-none"
-          >
-            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <Cpu className="w-6 h-6 animate-pulse" />
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                  أكاديمية الميكاترونكس اليمنية
-                </span>
-                <span className="hidden sm:inline-flex px-2 py-0.5 text-xs font-semibold rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  السنة الأولى
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden xs:block">
-                افهم الميكاترونكس بطريقة سهلة
-              </p>
-            </div>
-          </div>
+          <AcademyLogo onClick={onNavigateHome} size="md" />
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
             
+            {/* PWA Install Button */}
+            <PWAInstallButton variant="button" />
+
             {/* If Student is Logged in */}
             {student ? (
               <>

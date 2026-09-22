@@ -708,6 +708,67 @@ router.post('/student/progress', requireAuth, (req: AuthenticatedRequest, res) =
   res.json({ success: true, progress: saved });
 });
 
+// Get Student Personal Notes
+router.get('/student/notes', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const studentId = req.user?.id || req.query.studentId as string || 'guest';
+  const progress = db.getStudentProgress(studentId);
+  res.json({ success: true, notes: progress.lessonNotes || {} });
+});
+
+router.get('/student/notes/:lessonId', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const studentId = req.user?.id || req.query.studentId as string || 'guest';
+  const { lessonId } = req.params;
+  const progress = db.getStudentProgress(studentId);
+  const note = (progress.lessonNotes || {})[lessonId] || null;
+  res.json({ success: true, lessonId, note });
+});
+
+// Save or Update Personal Lesson Note
+router.post('/student/notes', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const studentId = req.user?.id || req.body.studentId || 'guest';
+  const { lessonId, lessonTitle, noteText } = req.body;
+
+  if (!lessonId || !lessonId.trim()) {
+    return res.status(400).json({ error: 'معرّف الدرس مطلوب لحفظ الملاحظة.' });
+  }
+
+  const progress = db.getStudentProgress(studentId);
+  if (!progress.lessonNotes) {
+    progress.lessonNotes = {};
+  }
+
+  if (!noteText || !noteText.trim()) {
+    delete progress.lessonNotes[lessonId];
+  } else {
+    progress.lessonNotes[lessonId] = {
+      text: noteText.trim(),
+      lessonTitle: lessonTitle || lessonId,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  db.saveStudentProgress(studentId, { lessonNotes: progress.lessonNotes });
+  res.json({
+    success: true,
+    message: 'تم حفظ الملاحظة الشخصية بنجاح في قاعدة البيانات.',
+    note: progress.lessonNotes[lessonId] || null,
+  });
+});
+
+// Delete Personal Lesson Note
+router.delete('/student/notes/:lessonId', authenticateToken, (req: AuthenticatedRequest, res) => {
+  const studentId = req.user?.id || req.query.studentId as string || 'guest';
+  const { lessonId } = req.params;
+
+  const progress = db.getStudentProgress(studentId);
+  if (progress.lessonNotes && progress.lessonNotes[lessonId]) {
+    delete progress.lessonNotes[lessonId];
+    db.saveStudentProgress(studentId, { lessonNotes: progress.lessonNotes });
+  }
+
+  res.json({ success: true, message: 'تم حذف الملاحظة بنجاح.' });
+});
+
 // Explain Lesson Engine
 router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
   try {

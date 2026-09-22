@@ -28,7 +28,9 @@ import {
   Lock,
   User,
   FileText,
-  Bot
+  Bot,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -57,8 +59,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const isPending = !student.isActivated || student.subscriptionStatus === 'pending';
   const isExpired = student.isExpired || (student.remainingDays !== undefined && student.remainingDays <= 0);
 
-  // Load saved explained lessons for this student
+  // Load saved explained lessons & personal notes for this student
   const [savedLessons, setSavedLessons] = useState<ExplainLessonResult[]>([]);
+  const [studentNotes, setStudentNotes] = useState<Record<string, { text: string; lessonTitle?: string; updatedAt: string }>>({});
 
   useEffect(() => {
     try {
@@ -70,6 +73,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     } catch (e) {
       // ignore
     }
+
+    // Fetch personal notes from database
+    const fetchNotes = async () => {
+      try {
+        const token = localStorage.getItem('mct_auth_token');
+        const res = await fetch(`/api/student/notes?studentId=${student.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.notes) {
+            setStudentNotes(data.notes);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load notes from API:', err);
+      }
+    };
+
+    fetchNotes();
   }, [student.id]);
 
   const handleContactWhatsApp = () => {
@@ -499,6 +522,56 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         </div>
       </div>
+
+      {/* 6.5. دفتر ملاحظاتي الشخصية المخزنة */}
+      {Object.keys(studentNotes).length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <Edit3 className="w-5 h-5 text-amber-500" />
+              <span>دفتر ملاحظاتي الشخصية على الدروس ({Object.keys(studentNotes).length})</span>
+            </h2>
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+              مخزنة بسيرفر الأكاديمية 💾
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.entries(studentNotes).map(([lessonId, note]) => (
+              <div
+                key={lessonId}
+                className="p-5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/50 space-y-2.5 shadow-xs hover:border-amber-400 transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>{note.lessonTitle || lessonId}</span>
+                  </span>
+                  {note.updatedAt && (
+                    <span className="text-[10px] text-amber-700/80 dark:text-amber-400/80 font-mono">
+                      {new Date(note.updatedAt).toLocaleDateString('ar-YE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-amber-100 dark:border-amber-900/40 line-clamp-3">
+                  {note.text}
+                </p>
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    onClick={() => handleToolClick('subjects')}
+                    className="text-xs font-bold text-amber-800 dark:text-amber-300 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>فتح الدرس للتعديل</span>
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 7. Curriculum Subjects Overview */}
       <div className="space-y-3">

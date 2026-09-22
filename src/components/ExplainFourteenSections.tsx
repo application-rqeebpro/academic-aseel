@@ -22,6 +22,7 @@ import {
   FileText
 } from 'lucide-react';
 import { ExplainLessonResult } from '../types';
+import { LessonNoteWidget } from './LessonNoteWidget';
 
 interface ExplainFourteenSectionsProps {
   analysisResult: ExplainLessonResult;
@@ -75,6 +76,12 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
           </div>
         </div>
       </section>
+
+      {/* 📝 ملاحظاتي الشخصية على هذا الدرس الشامل */}
+      <LessonNoteWidget
+        lessonId={`explain_${analysisResult.lessonTitle || 'general'}`}
+        lessonTitle={analysisResult.lessonTitle || 'الدرس المفسر بالذكاء الاصطناعي'}
+      />
 
       {/* 2. الدرس ببساطة (الفكرة العامة) */}
       <section id="section-2" className="scroll-mt-24 p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-slate-50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 shadow-sm space-y-4">
@@ -371,110 +378,293 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
         <div className="flex items-center justify-between">
           <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
             <Calculator className="w-5 h-5 text-indigo-500 shrink-0" />
-            <span>9. الأمثلة والمسائل المحلولة خطوة بخطوة</span>
+            <span>9. حل المسائل والتمارين خطوة بخطوة مع التعليل</span>
           </h3>
           <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
             analysisResult.solvedExample?.isGenerated
               ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
               : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
           }`}>
-            {analysisResult.solvedExample?.isGenerated ? '💡 مثال تعليمي إضافي من الذكاء الاصطناعي' : '📄 مستخرج من الملف الأصلي'}
+            {analysisResult.solvedExample?.isGenerated ? '💡 مثال تعليمي إضافي من الذكاء الاصطناعي' : '📄 مسألة مستخرجة ومحلولة بالكامل'}
           </span>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
-          {/* Problem */}
-          <div className="space-y-1.5">
-            <span className="text-xs font-black text-blue-600 uppercase tracking-wider block">نص المسألة:</span>
-            <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-relaxed">
-              {analysisResult.solvedExample?.problem}
-            </p>
-          </div>
+        {/* List of Solved Examples */}
+        {(() => {
+          const examplesList = (analysisResult.solvedExamples && analysisResult.solvedExamples.length > 0)
+            ? analysisResult.solvedExamples
+            : (analysisResult.solvedExample ? [analysisResult.solvedExample] : []);
 
-          {/* Given & Required */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-              <span className="text-xs font-bold text-slate-500 block">المعطيات (Given):</span>
-              <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
-                {(analysisResult.solvedExample?.given || []).map((g, idx) => (
-                  <li key={idx}>{g}</li>
-                ))}
-              </ul>
-            </div>
+          return (
+            <div className="space-y-6">
+              {examplesList.map((example, exIdx) => (
+                <div key={exIdx} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
+                  {/* Problem Title & Header */}
+                  <div className="space-y-1.5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">
+                        {examplesList.length > 1 ? `المسألة رقم (${exIdx + 1}):` : 'نص المسألة الأصلي:'}
+                      </span>
+                      {example.isMultipleParts && (
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                          تتضمن عدة فقرات (أ، ب، ج...)
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-relaxed">
+                      {example.problem}
+                    </p>
+                  </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-              <span className="text-xs font-bold text-slate-500 block">المطلوب (Required):</span>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {analysisResult.solvedExample?.required}
-              </p>
-              {analysisResult.solvedExample?.formulaUsed && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-blue-600 font-mono" dir="ltr">
-                  القانون المستخدم: {analysisResult.solvedExample.formulaUsed}
-                </div>
-              )}
-            </div>
-          </div>
+                  {/* Given & Required */}
+                  {( (example.given && example.given.length > 0) || example.required ) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {example.given && example.given.length > 0 && (
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+                          <span className="text-xs font-bold text-slate-500 block">المعطيات (Given):</span>
+                          <ul className="space-y-1 text-xs text-slate-700 dark:text-slate-300 list-disc list-inside">
+                            {example.given.map((g, idx) => (
+                              <li key={idx}>{g}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
-          {/* Steps */}
-          <div className="space-y-3">
-            <span className="text-xs font-black text-slate-500 uppercase tracking-wider block">خطوات الحل التفصيلية:</span>
-            <div className="space-y-2.5">
-              {(analysisResult.solvedExample?.steps || []).map((step, idx) => (
-                <div
-                  key={idx}
-                  className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3"
-                >
-                  <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs shrink-0 flex items-center justify-center">
-                    {idx + 1}
-                  </span>
-                  <span className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-                    {step}
-                  </span>
+                      {example.required && (
+                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+                          <span className="text-xs font-bold text-slate-500 block">المطلوب (Required):</span>
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                            {example.required}
+                          </p>
+                          {example.formulaUsed && (
+                            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-blue-600 font-mono" dir="ltr">
+                              القانون الرئيسي: {example.formulaUsed}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Render SubParts if available */}
+                  {example.subParts && example.subParts.length > 0 ? (
+                    <div className="space-y-4 pt-2">
+                      <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider block">
+                        حل فقرات المسألة بالتفصيل ({example.subParts.length} فقرة):
+                      </span>
+
+                      <div className="space-y-4">
+                        {example.subParts.map((sub, sIdx) => (
+                          <div key={sIdx} className="p-4 sm:p-5 rounded-2xl bg-indigo-50/40 dark:bg-slate-950 border border-indigo-100 dark:border-slate-800 space-y-3.5 shadow-2xs">
+                            <div className="flex items-center justify-between border-b border-indigo-100 dark:border-slate-800 pb-2">
+                              <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs">
+                                {sub.partLabel || `الفقرة (${sIdx + 1})`}
+                              </span>
+                              {sub.isMcq && (
+                                <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950 px-2.5 py-0.5 rounded-full">
+                                  سؤال اختيارات من متعدد
+                                </span>
+                              )}
+                            </div>
+
+                            {sub.question && (
+                              <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                                {sub.question}
+                              </p>
+                            )}
+
+                            {/* MCQ Options & Selected Answer with Reasoning */}
+                            {(sub.isMcq || sub.selectedOption || (sub.mcqOptions && sub.mcqOptions.length > 0)) && (
+                              <div className="space-y-3 p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                {sub.mcqOptions && sub.mcqOptions.length > 0 && (
+                                  <div className="space-y-1.5">
+                                    <span className="text-[11px] font-bold text-slate-500 block">الخيارات المتاحة:</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {sub.mcqOptions.map((opt, oIdx) => {
+                                        const isSelected = sub.selectedOption && (opt.includes(sub.selectedOption) || sub.selectedOption.includes(opt));
+                                        return (
+                                          <div
+                                            key={oIdx}
+                                            className={`p-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-between ${
+                                              isSelected
+                                                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-900 dark:text-emerald-200 shadow-xs'
+                                                : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                                            }`}
+                                          >
+                                            <span>{opt}</span>
+                                            {isSelected && (
+                                              <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-black">
+                                                ✓ الاختيار الصحيح
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {sub.selectedOption && (!sub.mcqOptions || sub.mcqOptions.length === 0) && (
+                                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                    <span>الإجابة الصحيحة: <strong>{sub.selectedOption}</strong></span>
+                                  </div>
+                                )}
+
+                                {sub.optionReasoning && (
+                                  <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 space-y-1">
+                                    <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 block">
+                                      💡 سبب اختيار هذا الإجابة والتعليل العلمي:
+                                    </span>
+                                    <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                                      {sub.optionReasoning}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Steps for subPart */}
+                            {sub.steps && sub.steps.length > 0 && (
+                              <div className="space-y-2">
+                                <span className="text-[11px] font-bold text-slate-500 block">خطوات حل الفقرة:</span>
+                                <div className="space-y-1.5">
+                                  {sub.steps.map((st, stIdx) => (
+                                    <div key={stIdx} className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-start gap-2.5 text-xs text-slate-800 dark:text-slate-200">
+                                      <span className="w-5 h-5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] shrink-0 flex items-center justify-center">
+                                        {stIdx + 1}
+                                      </span>
+                                      <span className="leading-relaxed">{st}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Final answer for subPart */}
+                            {sub.finalAnswer && (
+                              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                                  نتيجة الفقرة: <strong>{sub.finalAnswer}</strong>
+                                </span>
+                                {sub.unit && (
+                                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-[11px] font-mono font-bold">
+                                    الوحدة: {sub.unit}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {sub.whyThisResult && (
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                💡 <strong>الشرح الهندسية للنتيجة:</strong> {sub.whyThisResult}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Standard Single Problem Steps */
+                    <div className="space-y-3">
+                      <span className="text-xs font-black text-slate-500 uppercase tracking-wider block">خطوات الحل التفصيلية:</span>
+                      <div className="space-y-2.5">
+                        {(example.steps || []).map((step, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 flex items-start gap-3"
+                          >
+                            <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-xs shrink-0 flex items-center justify-center">
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                              {step}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top-level MCQ Option & Reason if applicable */}
+                  {(example.isMcqQuestion || example.selectedOption) && (
+                    <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 space-y-3">
+                      {example.mcqOptions && example.mcqOptions.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-xs font-bold text-purple-900 dark:text-purple-200 block">خيارات السؤال:</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {example.mcqOptions.map((opt, oIdx) => {
+                              const isSelected = example.selectedOption && (opt.includes(example.selectedOption) || example.selectedOption.includes(opt));
+                              return (
+                                <div key={oIdx} className={`p-2.5 rounded-xl text-xs font-bold border ${isSelected ? 'bg-emerald-100 dark:bg-emerald-950 border-emerald-500 text-emerald-900 dark:text-emerald-200' : 'bg-white dark:bg-slate-900 border-purple-200 dark:border-purple-800 text-slate-700 dark:text-slate-300'}`}>
+                                  {opt} {isSelected && '✓ [الإجابة الصحيحة]'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {example.selectedOption && (
+                        <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                          ✓ الاختيار الصحيح: {example.selectedOption}
+                        </div>
+                      )}
+
+                      {example.optionReasoning && (
+                        <div className="text-xs text-purple-950 dark:text-purple-200 leading-relaxed pt-1 border-t border-purple-200 dark:border-purple-900">
+                          💡 <strong>السبب والتعليل العلمي:</strong> {example.optionReasoning}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Final Answer */}
+                  {example.finalAnswer && (
+                    <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">الناتج النهائي المباشر (Final Answer):</span>
+                        <span className="text-base sm:text-lg font-black text-emerald-950 dark:text-emerald-100">
+                          {example.finalAnswer}
+                        </span>
+                      </div>
+                      {example.unit && (
+                        <span className="px-3 py-1 rounded-xl bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-xs font-mono font-bold">
+                          الوحدة: {example.unit}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Why this result makes sense */}
+                  {example.whyThisResult && (
+                    <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
+                      💡 <strong>لماذا وصلنا لهذه النتيجة؟</strong> {example.whyThisResult}
+                    </div>
+                  )}
+
+                  {/* Additional note */}
+                  {example.note && (
+                    <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-300">
+                      ⚠️ <strong>نصيحة المهندس:</strong> {example.note}
+                    </div>
+                  )}
                 </div>
               ))}
-            </div>
-          </div>
 
-          {/* Final Answer */}
-          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">الناتج النهائي (Final Answer):</span>
-              <span className="text-base sm:text-lg font-black text-emerald-950 dark:text-emerald-100">
-                {analysisResult.solvedExample?.finalAnswer}
-              </span>
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={onRequestMoreExamples}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-2 shadow-sm"
+                >
+                  <Calculator className="w-4 h-4" />
+                  <span>توليد مسألة ومثال تطبيقي إضافي 🧮</span>
+                </button>
+              </div>
             </div>
-            {analysisResult.solvedExample?.unit && (
-              <span className="px-3 py-1 rounded-xl bg-emerald-200/80 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-xs font-mono font-bold">
-                الوحدة: {analysisResult.solvedExample.unit}
-              </span>
-            )}
-          </div>
-
-          {/* Why this result makes sense */}
-          {analysisResult.solvedExample?.whyThisResult && (
-            <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
-              💡 <strong>لماذا وصلنا لهذه النتيجة؟</strong> {analysisResult.solvedExample.whyThisResult}
-            </div>
-          )}
-
-          {/* Additional note */}
-          {analysisResult.solvedExample?.note && (
-            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-300">
-              ⚠️ <strong>نصيحة المهندس:</strong> {analysisResult.solvedExample.note}
-            </div>
-          )}
-
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={onRequestMoreExamples}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-2 shadow-sm"
-            >
-              <Calculator className="w-4 h-4" />
-              <span>توليد مسألة ومثال تطبيقي إضافي 🧮</span>
-            </button>
-          </div>
-        </div>
+          );
+        })()}
       </section>
 
       {/* 10. الملاحظات المهمة */}

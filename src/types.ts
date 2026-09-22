@@ -263,6 +263,23 @@ export interface ExplainDimension {
   explanation: string;
 }
 
+export interface ProblemSubPart {
+  partLabel: string; // e.g. "الفقرة (أ)" or "المطلوب (1)"
+  question: string; // نص الفقرة أو الجزء الفرعي
+  given?: string[];
+  required?: string;
+  formulaUsed?: string;
+  steps: string[]; // خطوات حل هذه الفقرة بالتفصيل
+  calculation?: string; // التعويض الرياضي
+  unit?: string; // وحدة القياس
+  finalAnswer: string; // الناتج النهائي للفقرة
+  whyThisResult?: string; // التفسير الهندسي لنتيجة الفقرة
+  isMcq?: boolean; // هل الفقرة سؤال اختيارات من متعدد؟
+  mcqOptions?: string[]; // الخيارات المتاحة (أ، ب، ج، د)
+  selectedOption?: string; // الإجابة والاختيار الصحيح
+  optionReasoning?: string; // ذكر سبب التعليل واختيار هذا الخيار بالتفصيل
+}
+
 export interface ExplainSolvedExample {
   problem: string;
   given: string[];
@@ -275,6 +292,12 @@ export interface ExplainSolvedExample {
   whyThisResult?: string;
   isGenerated: boolean;
   note?: string;
+  isMultipleParts?: boolean; // هل المسألة مقسمة إلى فقرات (أ، ب، ج...)؟
+  subParts?: ProblemSubPart[]; // قائمة بجميع فقرات المسألة المحلولة بالتفصيل
+  isMcqQuestion?: boolean; // هل المسألة عبارة عن سؤال اختيارات؟
+  mcqOptions?: string[]; // خيارات السؤال (أ، ب، ج، د)
+  selectedOption?: string; // الاختيار الصحيح المختار
+  optionReasoning?: string; // التعليل وسبب اختيار هذا الخيار
 }
 
 export interface ExplainImportantNote {
@@ -326,7 +349,8 @@ export interface ExplainLessonResult {
   formulas: ExplainFormula[]; // 📐 القوانين والمعادلات كاملة مع الرموز ومتى تستخدم
   units: ExplainUnit[]; // 📏 الوحدات الدولية
   dimensions: ExplainDimension[]; // 🔬 الأبعاد الفيزيائية
-  solvedExample: ExplainSolvedExample; // 🧮 الأمثلة والمسائل خطوة بخطوة وتفسير النتيجة
+  solvedExample: ExplainSolvedExample; // 🧮 المسألة الرئيسية أو الأولى
+  solvedExamples?: ExplainSolvedExample[]; // 🧮 قائمة بكافة المسائل المحلولة إذا احتوت الصورة على عدة مسائل
   importantNotes?: ExplainImportantNote[]; // ⚠️ الملاحظات والتنبيهات المهمة
   memoryAids?: string[]; // 🧠 كيف أتذكر الدرس؟
   summaryPoints: string[]; // 📝 الخلاصة المركزة (تقرأ في دقيقة أو دقيقتين)

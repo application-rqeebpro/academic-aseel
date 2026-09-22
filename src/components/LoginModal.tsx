@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AcademyLogo } from './AcademyLogo';
 import { 
   LogIn, 
   X, 
@@ -212,9 +213,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-sm">
-            {view === 'login' ? <LogIn className="w-6 h-6" /> : <KeyRound className="w-6 h-6" />}
-          </div>
+          <AcademyLogo variant="icon" size="lg" className="mx-auto" />
           <h2 className="text-2xl font-black text-slate-900 dark:text-white">
             {view === 'login' && 'تسجيل دخول الطالب'}
             {view === 'forgot-request' && 'استعادة كلمة المرور'}

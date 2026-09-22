@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { AcademyLogo } from './AcademyLogo';
+import { PWAInstallButton } from './PWAInstallButton';
 import { 
   Cpu, 
   Sparkles, 
@@ -67,6 +69,9 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           </div>
 
+          {/* PWA Direct Install Button */}
+          <PWAInstallButton variant="button" />
+
           {/* Owner Quick Access Icon Button */}
           {onOpenAdmin && (
             <button
@@ -82,20 +87,13 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
 
         {/* Hero Central Branding */}
         <div className="space-y-4 max-w-3xl mx-auto">
-          {/* Futuristic Animated Icon */}
-          <div className="relative mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-xl shadow-blue-500/25 border border-white/20 hover:scale-105 transition-transform duration-300">
-            <Cpu className="w-10 h-10 sm:w-12 sm:h-12 animate-pulse" />
-            <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center text-slate-900 shadow-md">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          {/* Official Emblem Logo */}
+          <div className="flex justify-center my-2">
+            <AcademyLogo variant="badge" size="xl" showSubtitle={false} className="shadow-2xl shadow-blue-500/15 hover:scale-105 transition-transform border-2 border-blue-200/80 dark:border-blue-800/80" />
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-tight sm:leading-none">
-            أكاديمية <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">الميكاترونكس</span> اليمنية
-          </h1>
-
           <div className="inline-block px-4 py-1.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60 text-blue-700 dark:text-blue-300 font-extrabold text-base sm:text-xl border border-blue-200/80 dark:border-blue-800/80 shadow-xs">
-            ⚡ "افهم الميكاترونكس بطريقة سهلة"
+            ⚡ "تعلم الميكاترونكس بطريقة أسهل"
           </div>
 
           <p className="text-sm sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-medium">

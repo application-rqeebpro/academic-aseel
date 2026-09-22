@@ -78,6 +78,11 @@ export interface DBStudentProgress {
   studentId: string;
   completedLessons: string[];
   quizScores: Record<string, number>;
+  lessonNotes?: Record<string, {
+    text: string;
+    lessonTitle?: string;
+    updatedAt: string;
+  }>;
   savedProjects: any[];
   simulatorSettings: Record<string, any>;
   updatedAt: string;
@@ -524,11 +529,15 @@ export const db = {
         studentId,
         completedLessons: [],
         quizScores: {},
+        lessonNotes: {},
         savedProjects: [],
         simulatorSettings: {},
         updatedAt: new Date().toISOString(),
       };
       saveDB(data);
+    }
+    if (!data.studentProgress[studentId].lessonNotes) {
+      data.studentProgress[studentId].lessonNotes = {};
     }
     return data.studentProgress[studentId];
   },

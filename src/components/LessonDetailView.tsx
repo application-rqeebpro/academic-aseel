@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lesson, QuizQuestion } from '../types';
+import { LessonNoteWidget } from './LessonNoteWidget';
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -171,6 +172,11 @@ export const LessonDetailView: React.FC<LessonDetailViewProps> = ({
         </div>
 
       </div>
+
+      {/* ============================================================ */}
+      {/* 📝 ملاحظاتي الشخصية على هذا الدرس */}
+      {/* ============================================================ */}
+      <LessonNoteWidget lessonId={lesson.id} lessonTitle={lesson.title} />
 
       {/* ============================================================ */}
       {/* 2 & 3. الشرح المبسط جدًا من الصفر + الفكرة الأساسية */}
