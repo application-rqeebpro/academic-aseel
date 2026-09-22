@@ -5,12 +5,13 @@
       "name": "مدير الأكاديمية",
       "phone": "785502919",
       "email": "admin@mechatronics.ye",
-      "passwordHash": "$2b$10$8zzAtKZqsqrnXQoHtifRheHTtyv06090GnMF8mzMsfnzl5OyOKeNq",
+      "passwordHash": "$2b$10$s.b/SVs7LXn2faeVsrJxXut6mT9Zxs.5gNOZybMUN0pplm/tUVGVm",
       "university": "أكاديمية الميكاترونكس اليمنية",
       "studyLevel": "السنة الأولى",
       "major": "إدارة المنصة والهندسة",
       "role": "admin",
-      "createdAt": "2026-09-15T18:56:53.699Z"
+      "createdAt": "2026-09-15T18:56:53.699Z",
+      "lastLoginAt": "2026-09-22T20:09:44.470Z"
     },
     {
       "id": "user-1789594875928-4b554003",
@@ -23,6 +24,30 @@
       "role": "student",
       "createdAt": "2026-09-16T21:41:16.027Z",
       "lastLoginAt": "2026-09-16T21:41:16.028Z"
+    },
+    {
+      "id": "user-1790107737979-a2f6ad",
+      "name": "طالب أسبوعي/شهري (4567)",
+      "phone": "771234567",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studyLevel": "السنة الأولى",
+      "major": "هندسة الميكاترونكس",
+      "passwordHash": "$2b$10$IYBnz.rMlZi6PS5Ub6zxQeNCUZxqKoPFwclP2rYio9rkxRC7t7pu2",
+      "role": "student",
+      "createdAt": "2026-09-22T20:08:58.105Z",
+      "lastLoginAt": "2026-09-22T20:08:58.105Z"
+    },
+    {
+      "id": "user-1790107790489-63e463",
+      "name": "أحمد محمد",
+      "phone": "779998877",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studyLevel": "السنة الأولى",
+      "major": "هندسة الميكاترونكس",
+      "passwordHash": "$2b$10$lvmbADkgoLMHlLat4s/qDO0WhpnoLj945in5NHCbJ0DGMQLk1yvyS",
+      "role": "student",
+      "createdAt": "2026-09-22T20:09:50.597Z",
+      "lastLoginAt": "2026-09-22T20:09:52.445Z"
     }
   ],
   "subscriptions": [
@@ -36,9 +61,52 @@
       "createdAt": "2026-09-16T21:41:16.028Z",
       "activationMethod": "whatsapp",
       "notes": "حساب مسجل جديد في انتظار تأكيد الدفع والتفعيل"
+    },
+    {
+      "id": "sub-1790107738105",
+      "userId": "user-1790107737979-a2f6ad",
+      "plan": "yearly",
+      "status": "active",
+      "startDate": "2026-09-22T20:08:58.105Z",
+      "expiryDate": "2027-09-22T20:08:58.105Z",
+      "createdAt": "2026-09-22T20:08:58.105Z",
+      "activatedAt": "2026-09-22T20:08:58.105Z",
+      "activationMethod": "activation_code",
+      "notes": "تم تسجيل الدخول والتفعيل عبر كود التفعيل 7820"
+    },
+    {
+      "id": "sub-1790107790598",
+      "userId": "user-1790107790489-63e463",
+      "plan": "yearly",
+      "status": "active",
+      "startDate": "2026-09-22T20:09:52.445Z",
+      "expiryDate": "2027-09-22T20:09:52.445Z",
+      "createdAt": "2026-09-22T20:09:50.598Z",
+      "activatedAt": "2026-09-22T20:09:52.445Z",
+      "activationMethod": "activation_code",
+      "notes": "تم تسجيل الدخول والتفعيل عبر كود التفعيل MCT-3666"
     }
   ],
   "activationCodes": [
+    {
+      "id": "code-1790107790598-253e",
+      "code": "MCT-3666",
+      "planType": "yearly",
+      "durationDays": 365,
+      "maxUses": 1,
+      "timesUsed": 1,
+      "isUsed": true,
+      "isActive": true,
+      "usedByStudents": [
+        {
+          "studentId": "user-1790107790489-63e463",
+          "studentName": "أحمد محمد",
+          "usedAt": "2026-09-22T20:09:50.598Z"
+        }
+      ],
+      "createdAt": "2026-09-22T20:09:50.598Z",
+      "notes": "تم التوليد التلقائي لطلب الاشتراك المقبول برقم: req-1790107742297-d331b4"
+    },
     {
       "id": "code-7820",
       "code": "7820",
@@ -48,7 +116,13 @@
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
-      "usedByStudents": [],
+      "usedByStudents": [
+        {
+          "studentId": "user-1790107737979-a2f6ad",
+          "studentName": "طالب أسبوعي/شهري (4567)",
+          "usedAt": "2026-09-22T20:08:58.105Z"
+        }
+      ],
       "createdAt": "2026-09-15T19:00:00.000Z",
       "notes": "كود أكاديمي سنوي معتمد من مالك المنصة"
     },
@@ -131,9 +205,50 @@
       "notes": "كود تجربة شهري (30 يوم)"
     }
   ],
-  "subscriptionRequests": [],
+  "subscriptionRequests": [
+    {
+      "id": "req-1790107742297-d331b4",
+      "userId": "guest",
+      "studentName": "أحمد محمد",
+      "phone": "779998877",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "plan": "yearly",
+      "priceUSD": 200,
+      "status": "approved",
+      "createdAt": "2026-09-22T20:09:02.297Z",
+      "notes": "ميكاترونكس - السنة الأولى - طريقة الدفع: Kuraimi"
+    }
+  ],
   "passwordResetTokens": [],
-  "studentProgress": {},
+  "studentProgress": {
+    "student-1789495512896": {
+      "studentId": "student-1789495512896",
+      "completedLessons": [],
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "simulatorSettings": {},
+      "updatedAt": "2026-09-22T17:19:40.970Z"
+    },
+    "user-1790107737979-a2f6ad": {
+      "studentId": "user-1790107737979-a2f6ad",
+      "completedLessons": [],
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "simulatorSettings": {},
+      "updatedAt": "2026-09-22T20:08:58.109Z"
+    },
+    "user-1790107790489-63e463": {
+      "studentId": "user-1790107790489-63e463",
+      "completedLessons": [],
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "simulatorSettings": {},
+      "updatedAt": "2026-09-22T20:09:52.447Z"
+    }
+  },
   "studentLessons": [],
   "settings": {
     "whatsappNumber": "785502919",
