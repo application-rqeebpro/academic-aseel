@@ -332,6 +332,17 @@ export interface ExplainSuggestedTool {
   reason: string;
 }
 
+export interface ImageBreakdownItem {
+  imageIndex: number;
+  imageTitle: string;
+  summary: string;
+  extractedContent: string;
+  detailedExplanation: string;
+  keyTakeaways?: string[];
+  solvedProblemsInImage?: string[];
+  previewUrl?: string;
+}
+
 export interface ExplainLessonResult {
   id: string;
   studentId?: string;
@@ -340,6 +351,8 @@ export interface ExplainLessonResult {
   sourceType: ExplainSourceType;
   fileName?: string;
   filePreviewUrl?: string;
+  imagesBreakdown?: ImageBreakdownItem[]; // 📸 الشرح التفصيلي صورة صورة / صفحة صفحة
+  totalImagesCount?: number;
   createdAt: string;
   explanationLevel: ExplainLevel;
   simpleIdea: string; // 💡 الدرس ببساطة: ما هو؟ ماذا يعني؟ لماذا ندرسه؟ أين يستخدم؟

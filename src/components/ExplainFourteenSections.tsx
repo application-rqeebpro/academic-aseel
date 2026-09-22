@@ -19,7 +19,9 @@ import {
   RefreshCw,
   Clock,
   Compass,
-  FileText
+  FileText,
+  Layers,
+  Image as ImageIcon
 } from 'lucide-react';
 import { ExplainLessonResult } from '../types';
 import { LessonNoteWidget } from './LessonNoteWidget';
@@ -82,6 +84,111 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
         lessonId={`explain_${analysisResult.lessonTitle || 'general'}`}
         lessonTitle={analysisResult.lessonTitle || 'الدرس المفسر بالذكاء الاصطناعي'}
       />
+
+      {/* 📸 تفكيك وشرح الصور بالتفصيل (صورة صورة / صفحة صفحة) */}
+      {analysisResult.imagesBreakdown && analysisResult.imagesBreakdown.length > 0 && (
+        <section id="section-images-breakdown" className="scroll-mt-24 p-6 sm:p-7 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-lg">
+                <Layers className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30">
+                    خاصية الشرح التسلسلي (صورة صورة)
+                  </span>
+                  <span className="text-xs text-slate-400 font-bold">
+                    إجمالي {analysisResult.imagesBreakdown.length} صور / صفحات
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-white mt-1">
+                  📸 تفكيك وشرح المستند صورة صورة
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {analysisResult.imagesBreakdown.map((item, idx) => (
+              <div 
+                key={`img-item-${idx}`}
+                className="p-5 sm:p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4 hover:border-amber-500/50 transition-all shadow-md"
+              >
+                <div className="flex flex-col md:flex-row gap-5 items-start">
+                  {item.previewUrl && (
+                    <div className="w-full md:w-56 shrink-0 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 flex items-center justify-center p-2 group relative">
+                      <img 
+                        src={item.previewUrl} 
+                        alt={item.imageTitle} 
+                        className="max-h-48 w-full object-contain rounded-lg group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-amber-300 font-black text-xs border border-amber-500/30">
+                        صورة #{item.imageIndex || (idx + 1)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+                        {item.imageIndex || (idx + 1)}
+                      </span>
+                      <h4 className="text-lg font-black text-amber-300">
+                        {item.imageTitle || `الصورة رقم ${idx + 1}`}
+                      </h4>
+                    </div>
+
+                    {item.summary && (
+                      <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-sm leading-relaxed">
+                        <span className="font-bold text-amber-400 block mb-1">💡 ملخص هذه الصورة:</span>
+                        {item.summary}
+                      </div>
+                    )}
+
+                    {item.extractedContent && (
+                      <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/90 text-amber-100 text-xs font-mono dir-ltr text-left overflow-x-auto">
+                        <span className="font-bold text-slate-400 block mb-1 text-right dir-rtl font-sans text-xs">📝 النصوص والمعادلات المستخرجة:</span>
+                        {item.extractedContent}
+                      </div>
+                    )}
+
+                    {item.detailedExplanation && (
+                      <div className="p-4 rounded-xl bg-blue-950/30 border border-blue-900/50 text-slate-200 text-sm leading-relaxed space-y-2">
+                        <span className="font-bold text-blue-300 flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-blue-400" />
+                          <span>الشرح التفصيلي لهذه الصورة:</span>
+                        </span>
+                        <p className="whitespace-pre-wrap">{item.detailedExplanation}</p>
+                      </div>
+                    )}
+
+                    {item.keyTakeaways && item.keyTakeaways.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-xs font-bold text-amber-300">📌 النقاط الرئيسية في هذه الصورة:</span>
+                        <ul className="list-disc list-inside text-xs text-slate-300 space-y-1 pr-2">
+                          {item.keyTakeaways.map((point, pIdx) => (
+                            <li key={pIdx}>{point}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {item.solvedProblemsInImage && item.solvedProblemsInImage.length > 0 && (
+                      <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 text-xs space-y-1">
+                        <span className="font-bold text-emerald-300 block">🧮 المسائل والتمارين المحلولة في هذه الصورة:</span>
+                        {item.solvedProblemsInImage.map((prob, prIdx) => (
+                          <div key={prIdx} className="bg-emerald-900/40 p-2 rounded border border-emerald-800/40">{prob}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 2. الدرس ببساطة (الفكرة العامة) */}
       <section id="section-2" className="scroll-mt-24 p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-blue-50/90 via-indigo-50/70 to-slate-50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-slate-900 border border-blue-200/80 dark:border-blue-900/60 shadow-sm space-y-4">

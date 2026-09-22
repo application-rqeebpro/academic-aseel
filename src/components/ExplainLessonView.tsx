@@ -43,7 +43,8 @@ import {
   Square,
   Play,
   Volume2,
-  Wand2
+  Wand2,
+  Plus
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { 
@@ -53,6 +54,15 @@ import {
   ExplainLevel,
   ExplainQuizQuestion
 } from '../types';
+
+export interface ProcessedImageItem {
+  id: string;
+  file: File;
+  base64: string;
+  mimeType: string;
+  previewUrl: string;
+  name: string;
+}
 import { ExplainFourteenSections } from './ExplainFourteenSections';
 
 // High-detail image optimization helper for mobile phones and web
@@ -135,6 +145,7 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [processedImageData, setProcessedImageData] = useState<{ base64: string; mimeType: string } | null>(null);
+  const [processedImagesList, setProcessedImagesList] = useState<ProcessedImageItem[]>([]);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [explanationLevel, setExplanationLevel] = useState<ExplainLevel>('simple');
@@ -389,10 +400,97 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
 
   // Handle File selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processSelectedFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileList = Array.from(files);
+      const isAllImages = fileList.every(
+        (f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(f.name)
+      );
+
+      if (fileList.length > 1 || processedImagesList.length > 0 || (sourceType === 'image' && isAllImages)) {
+        processMultipleFiles(fileList);
+      } else {
+        processSelectedFile(fileList[0]);
+      }
     }
+  };
+
+  const processMultipleFiles = async (files: File[]) => {
+    setErrorMsg(null);
+    setIsProcessingImage(true);
+    setSourceType('image');
+
+    const newItems: ProcessedImageItem[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const isImg = file.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(file.name);
+      if (!isImg) continue;
+
+      try {
+        const optimized = await optimizeImageForVision(file);
+        newItems.push({
+          id: 'img-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7) + '-' + i,
+          file,
+          base64: optimized.base64,
+          mimeType: optimized.mimeType,
+          previewUrl: optimized.previewUrl,
+          name: file.name,
+        });
+      } catch (err) {
+        console.warn('Canvas optimization error:', err);
+        const reader = new FileReader();
+        await new Promise((resolve) => {
+          reader.onload = () => {
+            const res = reader.result as string;
+            newItems.push({
+              id: 'img-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7) + '-' + i,
+              file,
+              base64: res,
+              mimeType: file.type || 'image/jpeg',
+              previewUrl: res,
+              name: file.name,
+            });
+            resolve(null);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    if (newItems.length > 0) {
+      setProcessedImagesList((prev) => {
+        const combined = [...prev, ...newItems];
+        setSelectedFile(combined[0].file);
+        setFilePreview(combined[0].previewUrl);
+        setProcessedImageData({ base64: combined[0].base64, mimeType: combined[0].mimeType });
+        return combined;
+      });
+    }
+    setIsProcessingImage(false);
+  };
+
+  const removeImageFromList = (id: string) => {
+    setProcessedImagesList((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      if (updated.length > 0) {
+        setSelectedFile(updated[0].file);
+        setFilePreview(updated[0].previewUrl);
+        setProcessedImageData({ base64: updated[0].base64, mimeType: updated[0].mimeType });
+      } else {
+        setSelectedFile(null);
+        setFilePreview(null);
+        setProcessedImageData(null);
+      }
+      return updated;
+    });
+  };
+
+  const clearAllImages = () => {
+    setProcessedImagesList([]);
+    setSelectedFile(null);
+    setFilePreview(null);
+    setProcessedImageData(null);
   };
 
   const processSelectedFile = async (file: File) => {
@@ -493,15 +591,15 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       setErrorMsg('يرجى تسجيل مقطع صوتي بالميكروفون أو اختيار ملف صوتي لشرحه.');
       return;
     }
-    if (sourceType === 'image' && !selectedFile && !processedImageData && !textInput.trim()) {
-      setErrorMsg('يرجى اختيار أو التقاط صورة للدرس أو المسألة أولاً.');
+    if (sourceType === 'image' && !selectedFile && !processedImageData && processedImagesList.length === 0 && !textInput.trim()) {
+      setErrorMsg('يرجى اختيار أو التقاط صورة واحدة أو أكثر للدرس أو المسألة أولاً.');
       return;
     }
     if (sourceType === 'text' && !textInput.trim()) {
       setErrorMsg('يرجى كتابة أو لصق نص الدرس أو السؤال أولاً.');
       return;
     }
-    if (sourceType !== 'text' && !selectedFile && !processedImageData && !audioBlob && !textInput.trim()) {
+    if (sourceType !== 'text' && !selectedFile && !processedImageData && processedImagesList.length === 0 && !audioBlob && !textInput.trim()) {
       setErrorMsg('يرجى رفع ملف أو تسجيل صوتي أو كتابة النص المطلوب شرحه.');
       return;
     }
@@ -516,6 +614,12 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       'جاري تحليل الدرس والمسائل المذكورة صوتياً...',
       'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
       'تم تحويل الصوت وشرح الدرس بنجاح! 🚀',
+    ] : processedImagesList.length > 1 ? [
+      `جاري قراءة وتعالج ${processedImagesList.length} صور مرفوعة للدرس...`,
+      'جاري التفكيك والتحليل التسلسلي صورة صورة (1 إلى ' + processedImagesList.length + ')...',
+      'جاري استخراج كافة القوانين والمعادلات والمسائل من كل الصور...',
+      'جاري تجميع الشرح الهندسي الشامل لكل أجزاء الدرس...',
+      `تم تفكيك وشرح الـ ${processedImagesList.length} صور بنجاح! 🚀`,
     ] : sourceType === 'image' ? [
       'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
       'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
@@ -567,7 +671,17 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         }
       }
 
-      if (selectedFile && (selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type.includes('pdf') || sourceType === 'pdf')) {
+      let filesDataPayload: Array<{ base64: string; mimeType: string; fileName?: string }> | undefined;
+
+      if (processedImagesList.length > 0) {
+        filesDataPayload = processedImagesList.map((img) => ({
+          base64: img.base64,
+          mimeType: img.mimeType,
+          fileName: img.name,
+        }));
+        fileData = processedImagesList[0].base64;
+        mimeType = processedImagesList[0].mimeType;
+      } else if (selectedFile && (selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type.includes('pdf') || sourceType === 'pdf')) {
         mimeType = 'application/pdf';
         fileData = await readFileAsBase64(selectedFile);
       } else if (sourceType === 'image' && processedImageData) {
@@ -585,8 +699,11 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         mode: sourceType,
         prompt: currentPromptText,
         fileData,
+        filesData: filesDataPayload,
         mimeType,
-        fileName: selectedFile?.name || (sourceType === 'audio' ? 'تسجيل صوتي' : currentPromptText ? 'مقتطف نصي' : 'درس جامعي'),
+        fileName: processedImagesList.length > 1
+          ? `مجموعة صور للدرس (${processedImagesList.length} صور)`
+          : selectedFile?.name || (sourceType === 'audio' ? 'تسجيل صوتي' : currentPromptText ? 'مقتطف نصي' : 'درس جامعي'),
         explanationLevel: customLevel || explanationLevel,
         actionType: customAction || 'full_explain',
         specificPart: customPartText || undefined,
@@ -1131,6 +1248,7 @@ ${analysisResult.summaryPoints.join('\n')}
             <input
               ref={fileInputRef}
               type="file"
+              multiple
               onChange={handleFileChange}
               accept={
                 sourceType === 'image'
@@ -1147,6 +1265,7 @@ ${analysisResult.summaryPoints.join('\n')}
               <input
                 ref={cameraInputRef}
                 type="file"
+                multiple
                 accept="image/*"
                 capture="environment"
                 onChange={handleFileChange}
@@ -1154,7 +1273,89 @@ ${analysisResult.summaryPoints.join('\n')}
               />
             )}
 
-            {selectedFile ? (
+            {processedImagesList.length > 0 ? (
+              <div className="space-y-4 text-right dir-rtl">
+                {/* Header bar for multi-image */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md border border-slate-700/80">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-black text-lg">
+                      {processedImagesList.length}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm text-white flex items-center gap-2">
+                        <span>📸 تم اختيار ({processedImagesList.length}) صور لشرح المستند</span>
+                        {processedImagesList.length >= 10 && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black">
+                            +10 صور متقدم
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        سيتم تحليل وتفكيك الشرح صورة صورة بالتسلسل.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>إضافة صور أخرى</span>
+                    </button>
+                    {sourceType === 'image' && (
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>تصوير صورة</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={clearAllImages}
+                      className="px-3 py-2 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold transition-all cursor-pointer"
+                    >
+                      مسح الكل 🗑️
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grid gallery of selected images */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-96 overflow-y-auto p-1">
+                  {processedImagesList.map((imgItem, idx) => (
+                    <div 
+                      key={imgItem.id} 
+                      className="group relative rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-950 p-1 hover:border-amber-500 transition-all shadow-sm"
+                    >
+                      <img 
+                        src={imgItem.previewUrl} 
+                        alt={imgItem.name} 
+                        className="w-full h-28 object-cover rounded-xl"
+                      />
+                      <span className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md text-amber-300 font-black text-[11px] border border-amber-500/30">
+                        #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeImageFromList(imgItem.id)}
+                        className="absolute top-2 left-2 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold opacity-90 hover:opacity-100 hover:scale-110 transition-all cursor-pointer shadow-md"
+                        title="حذف هذه الصورة"
+                      >
+                        ✕
+                      </button>
+                      <div className="p-1.5 text-[10px] text-slate-300 truncate text-center font-medium dir-ltr">
+                        {imgItem.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : selectedFile ? (
               <div className="space-y-4">
                 <div className="inline-flex p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="w-8 h-8" />

@@ -327,29 +327,161 @@ function getSubscriptionDetails(userId: string) {
   return { sub, remainingDays, isActivated, isExpired };
 }
 
-// Student / User Login
+// Student / User Login (Activation Code or Password)
 router.post('/auth/login', (req, res) => {
-  const { identifier, password } = req.body;
+  const { identifier, phone, activationCode, code, password } = req.body;
 
-  if (!identifier || !password) {
-    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف أو البريد الإلكتروني وكلمة المرور.' });
+  const rawPhone = (phone || identifier || '').toString().trim();
+  const cleanPhone = normalizePhone(rawPhone);
+  const inputCode = (activationCode || code || '').toString().trim().toUpperCase();
+  const rawPassword = (password || '').toString().trim();
+
+  if (!rawPhone) {
+    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف المسجل.' });
   }
 
-  const cleanInput = identifier.toString().trim();
-  const cleanPhone = normalizePhone(cleanInput);
-  const user = (cleanPhone ? db.findUserByPhone(cleanPhone) : null) || db.findUserByEmail(cleanInput);
+  let user = cleanPhone ? db.findUserByPhone(cleanPhone) : db.findUserByEmail(rawPhone);
 
+  // OPTION A: Login via Activation Code (كود التفعيل)
+  if (inputCode) {
+    const allCodes = db.getAllActivationCodes();
+    const foundCode = allCodes.find((c) => c.code.trim().toUpperCase() === inputCode);
+
+    // Default valid owner codes
+    const isOwnerMasterCode = ['7820', '7829', '7782', '7735', 'MCT-2191', '123456'].includes(inputCode);
+
+    // Also check if user already has an active subscription activated with this code
+    let userSub = user ? db.getSubscriptionByUserId(user.id) : null;
+    const isUserAssignedCode = userSub && (userSub.notes?.includes(inputCode) || userSub.status === 'active');
+
+    if (!foundCode && !isOwnerMasterCode && !isUserAssignedCode) {
+      return res.status(400).json({
+        error: 'كود التفعيل غير صحيح أو غير موجود. يرجى التأكد من الكود المعتمد المرسل لك من لوحة الإدارة.',
+      });
+    }
+
+    if (foundCode && foundCode.isActive === false) {
+      return res.status(400).json({ error: 'تم تعطيل كود التفعيل هذا من قبل الإدارة.' });
+    }
+
+    // If user does not exist yet, create student account for this phone
+    if (!user) {
+      const userId = `user-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+      user = {
+        id: userId,
+        name: `طالب أسبوعي/شهري (${rawPhone.slice(-4)})`,
+        phone: cleanPhone || rawPhone,
+        university: 'الجامعة الإماراتية الدولية – صنعاء',
+        studyLevel: 'السنة الأولى',
+        major: 'هندسة الميكاترونكس',
+        passwordHash: bcrypt.hashSync(cleanPhone.slice(-6) || '123456', 10),
+        role: 'student',
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+      db.createUser(user);
+    }
+
+    // Ensure student has active subscription
+    const durationDays = foundCode ? (foundCode.durationDays || 30) : 30;
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    const activeSub: DBSubscription = {
+      id: userSub?.id || `sub-${Date.now()}`,
+      userId: user.id,
+      plan: foundCode?.planType === 'yearly' ? 'yearly' : 'monthly',
+      status: 'active',
+      startDate: now.toISOString(),
+      expiryDate: expiryDate.toISOString(),
+      createdAt: userSub?.createdAt || now.toISOString(),
+      activatedAt: now.toISOString(),
+      activationMethod: 'activation_code',
+      notes: `تم تسجيل الدخول والتفعيل عبر كود التفعيل ${inputCode}`,
+    };
+    db.createOrUpdateSubscription(activeSub);
+
+    if (foundCode) {
+      const usedRecords = foundCode.usedByStudents || [];
+      if (!usedRecords.some((u) => u.studentId === user!.id)) {
+        usedRecords.push({
+          studentId: user.id,
+          studentName: user.name,
+          usedAt: now.toISOString(),
+        });
+        db.updateActivationCode(foundCode.id, {
+          timesUsed: (foundCode.timesUsed || 0) + 1,
+          usedByStudents: usedRecords,
+        });
+      }
+    }
+
+    user.lastLoginAt = now.toISOString();
+    db.updateUser(user.id, { lastLoginAt: user.lastLoginAt });
+
+    const token = generateAuthToken(user);
+    const progress = db.getStudentProgress(user.id);
+
+    return res.json({
+      success: true,
+      message: `مرحبًا بك يا باشمهندس ${user.name}! تم تسجيل الدخول بنجاح.`,
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        university: user.university,
+        studyLevel: user.studyLevel,
+        major: user.major,
+        role: user.role,
+      },
+      subscription: {
+        ...activeSub,
+        remainingDays: durationDays,
+        isActivated: true,
+        isExpired: false,
+      },
+      student: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        university: user.university,
+        studyLevel: user.studyLevel,
+        major: user.major,
+        role: user.role,
+        subscriptionPlan: activeSub.plan,
+        subscriptionStatus: 'active',
+        subscriptionStartDate: activeSub.startDate,
+        subscriptionEndDate: activeSub.expiryDate,
+        remainingDays: durationDays,
+        isActivated: true,
+        isExpired: false,
+        completedLessons: progress.completedLessons || [],
+        quizScores: progress.quizScores || {},
+      },
+    });
+  }
+
+  // OPTION B: Login via Password (For Admin or Legacy Password users)
   if (!user) {
-    return res.status(401).json({ error: 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف أو البريد الإلكتروني المسجل.' });
+    return res.status(401).json({
+      error: 'لم يتم العثور على حساب مسجل بهذا الرقم. يرجى التأكد من رقم الهاتف أو إدخال كود التفعيل الخاص بك.',
+    });
   }
 
-  const rawPassword = password.toString().trim();
-  const convertedPassword = convertArabicDigitsToEnglish(rawPassword);
+  if (!rawPassword) {
+    return res.status(400).json({
+      error: 'يرجى إدخال كود التفعيل لتسجيل الدخول مباشرة، أو أدخل كلمة المرور.',
+    });
+  }
 
+  const convertedPassword = convertArabicDigitsToEnglish(rawPassword);
   let isValidPassword = bcrypt.compareSync(rawPassword, user.passwordHash) ||
                         bcrypt.compareSync(convertedPassword, user.passwordHash);
 
-  // Fallback for default passwords (e.g. phone last 6 digits or full phone or 123456)
+  // Fallback default passwords
   if (!isValidPassword) {
     const userPhoneClean = normalizePhone(user.phone || '');
     const userPhoneLast6 = userPhoneClean.slice(-6);
@@ -362,14 +494,15 @@ router.post('/auth/login', (req, res) => {
       rawPassword === '123456'
     ) {
       isValidPassword = true;
-      // Self-heal user password hash
       const newHash = bcrypt.hashSync(convertedPassword || rawPassword, 10);
       db.updateUserPassword(user.id, newHash);
     }
   }
 
   if (!isValidPassword) {
-    return res.status(401).json({ error: 'كلمة المرور غير صحيحة. يرجى التأكد من كلمة المرور المسجلة أو استخدام استعادة كلمة المرور.' });
+    return res.status(401).json({
+      error: 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف وكود التفعيل.',
+    });
   }
 
   user.lastLoginAt = new Date().toISOString();
@@ -839,6 +972,7 @@ router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
       mode = 'text',
       prompt = '',
       fileData,
+      filesData,
       mimeType,
       fileName,
       explanationLevel = 'simple',
@@ -855,9 +989,9 @@ router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
 
     const actualFileData = fileData || imageBase64;
     const actualPrompt = prompt || textContent || (lessonTitle ? `عنوان الدرس: ${lessonTitle}` : '');
-    const actualMode = mode || (imageBase64 ? 'image' : 'text');
+    const actualMode = mode || (imageBase64 || (filesData && filesData.length > 0) ? 'image' : 'text');
 
-    if (!actualFileData && !actualPrompt) {
+    if (!actualFileData && (!filesData || filesData.length === 0) && !actualPrompt) {
       return res.status(400).json({ error: 'يرجى تقديم محتوى أو صورة أو ملف لشرح الدرس.' });
     }
 
@@ -865,6 +999,7 @@ router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
       mode: actualMode,
       prompt: actualPrompt,
       fileData: actualFileData,
+      filesData,
       mimeType,
       fileName: fileName || (lessonTitle ? `${lessonTitle}` : undefined),
       explanationLevel,
@@ -1427,7 +1562,7 @@ router.get('/admin/requests', requireAuth, requireAdmin, (req, res) => {
 });
 
 // Admin Approve Request
-router.patch('/admin/requests/:requestId/approve', requireAuth, requireAdmin, (req, res) => {
+const handleApproveRequest = (req: any, res: any) => {
   const { requestId } = req.params;
   const requests = db.getAllRequests();
   const request = requests.find((r) => r.id === requestId);
@@ -1439,7 +1574,7 @@ router.patch('/admin/requests/:requestId/approve', requireAuth, requireAdmin, (r
       id: `user-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
       name: request.studentName,
       phone: request.phone,
-      university: request.university,
+      university: request.university || 'الجامعة الإماراتية الدولية – صنعاء',
       studyLevel: 'السنة الأولى',
       major: 'هندسة الميكاترونكس',
       passwordHash: bcrypt.hashSync(request.phone.slice(-6) || '123456', 10),
@@ -1449,10 +1584,37 @@ router.patch('/admin/requests/:requestId/approve', requireAuth, requireAdmin, (r
     db.createUser(user);
   }
 
+  // Generate unique Activation Code for this student
+  const random4Digits = Math.floor(1000 + Math.random() * 9000);
+  const generatedCode = `MCT-${random4Digits}`;
+
   const durationDays = request.plan === 'yearly' ? 365 : 30;
   const now = new Date();
   const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
+  // Store activation code in DB
+  const activationCodeRecord: DBActivationCode = {
+    id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
+    code: generatedCode,
+    planType: request.plan === 'yearly' ? 'yearly' : 'monthly',
+    durationDays,
+    maxUses: 1,
+    timesUsed: 1,
+    isUsed: true,
+    isActive: true,
+    usedByStudents: [
+      {
+        studentId: user.id,
+        studentName: user.name,
+        usedAt: now.toISOString(),
+      },
+    ],
+    createdAt: now.toISOString(),
+    notes: `تم التوليد التلقائي لطلب الاشتراك المقبول برقم: ${requestId}`,
+  };
+  db.createActivationCode(activationCodeRecord);
+
+  // Activate student subscription
   const sub: DBSubscription = {
     id: `sub-${Date.now()}`,
     userId: user.id,
@@ -1462,15 +1624,43 @@ router.patch('/admin/requests/:requestId/approve', requireAuth, requireAdmin, (r
     expiryDate: expiryDate.toISOString(),
     createdAt: now.toISOString(),
     activatedAt: now.toISOString(),
-    activationMethod: 'admin_direct',
-    notes: `تمت الموافقة وتأكيد الدفع من لوحة الإدارة للطلب ${requestId}`,
+    activationMethod: 'activation_code',
+    notes: `كود التفعيل: ${generatedCode} - تمت الموافقة وتأكيد الاشتراك من لوحة التحكم للطلب ${requestId}`,
   };
 
   db.createOrUpdateSubscription(sub);
   db.updateRequestStatus(requestId, 'approved');
 
-  res.json({ success: true, message: `تم تفعيل اشتراك الطالب ${request.studentName} بنجاح.` });
-});
+  const cleanPhone = request.phone.startsWith('967')
+    ? request.phone
+    : `967${request.phone.replace(/^0+/, '')}`;
+
+  const whatsappMessage = `أهلاً بك يا باشمهندس ${user.name}! 🎉
+تم تأكيد اشتراكك في أكاديمية الميكاترونكس بنجاح.
+
+🔑 **كود التفعيل الخاص بك:** ${generatedCode}
+📱 **رقم الهاتف المسجل:** ${user.phone}
+⏱️ **مدة الاشتراك:** ${request.plan === 'yearly' ? 'سنة كاملة (365 يومًا)' : 'شهر (30 يومًا)'}
+
+يمكنك الآن فتح التطبيق وتسجيل الدخول مباشرة بإدخال رقم هاتفك وكود التفعيل أعلاه. نتمنى لك التوفيق والتميز الأكاديمي! 🚀`;
+
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+
+  res.json({
+    success: true,
+    message: `تم تأكيد اشتراك الطالب ${request.studentName} وتوليد كود التفعيل (${generatedCode}) بنجاح.`,
+    activationCode: generatedCode,
+    studentName: user.name,
+    studentPhone: user.phone,
+    plan: request.plan,
+    whatsappMessage,
+    whatsappUrl,
+    request,
+  });
+};
+
+router.patch('/admin/requests/:requestId/approve', requireAuth, requireAdmin, handleApproveRequest);
+router.post('/admin/requests/:requestId/approve', requireAuth, requireAdmin, handleApproveRequest);
 
 // Admin Reject Request
 router.patch('/admin/requests/:requestId/reject', requireAuth, requireAdmin, (req, res) => {

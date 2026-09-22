@@ -160,6 +160,7 @@ export interface ExplainRequestParams {
   mode: ExplainSourceType;
   prompt?: string;
   fileData?: string;
+  filesData?: Array<{ base64: string; mimeType?: string; fileName?: string }>;
   mimeType?: string;
   fileName?: string;
   explanationLevel?: ExplainLevel;
@@ -176,6 +177,7 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
     mode,
     prompt = '',
     fileData,
+    filesData,
     mimeType,
     fileName,
     explanationLevel = 'simple',
@@ -194,8 +196,34 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
 
       const isPdfRequest = mode === 'pdf' || (mimeType && mimeType.includes('pdf')) || (fileName && fileName.toLowerCase().endsWith('.pdf'));
 
-      // If a file / image / pdf / video is provided
-      if (fileData) {
+      // If multiple images/files are provided
+      if (filesData && Array.isArray(filesData) && filesData.length > 0) {
+        filesData.forEach((fileItem, idx) => {
+          let cleanBase64 = fileItem.base64;
+          let detectedMime = fileItem.mimeType;
+
+          const match = cleanBase64.match(/^data:([^;]+);base64,(.*)$/s);
+          if (match) {
+            detectedMime = detectedMime || match[1];
+            cleanBase64 = match[2];
+          }
+
+          cleanBase64 = cleanBase64.trim().replace(/\s+/g, '');
+          let actualMime = detectedMime || 'image/jpeg';
+          if (actualMime === 'image/jpg') actualMime = 'image/jpeg';
+
+          parts.push({
+            inlineData: {
+              mimeType: actualMime,
+              data: cleanBase64,
+            },
+          });
+          parts.push({
+            text: `[صورة ${idx + 1} من أصل ${filesData.length} - ${fileItem.fileName || `الصورة رقم ${idx + 1}`}]`
+          });
+        });
+      } else if (fileData) {
+        // Single file / image / pdf / video
         let cleanBase64 = fileData;
         let detectedMime = mimeType;
 
@@ -517,6 +545,17 @@ ${imageSpecificInstructions}
     "components": [],
     "analysisSummary": ""
   },
+  "imagesBreakdown": [
+    {
+      "imageIndex": 1,
+      "imageTitle": "📸 الصورة 1 / الصفحة 1: عنوان الصفحة أول الدرس",
+      "summary": "تلخيص الفكرة المعروضة في هذه الصورة/الصفحة بالتحديد",
+      "extractedContent": "المعادلات والقوانين والنصوص المستخرجة من هذه الصورة بوضوح",
+      "detailedExplanation": "الشرح والتبسيط خطوة بخطوة لما تحتويه هذه الصورة بالتحديد",
+      "keyTakeaways": ["نقطة هامة من الصورة 1"],
+      "solvedProblemsInImage": ["حل تمرين أو مسألة في الصورة 1"]
+    }
+  ],
   "clarificationNotice": "",
   "isImageBlurry": false,
   "isNotEducational": false,
@@ -579,6 +618,23 @@ ${imageSpecificInstructions}
           commonMistakes: Array.isArray(parsed.commonMistakes) ? parsed.commonMistakes : [],
           suggestedTools: Array.isArray(parsed.suggestedTools) ? parsed.suggestedTools : [],
           circuitAnalysis: parsed.circuitAnalysis,
+          imagesBreakdown: Array.isArray(parsed.imagesBreakdown)
+            ? parsed.imagesBreakdown.map((item: any, idx: number) => ({
+                imageIndex: item.imageIndex || (idx + 1),
+                imageTitle: item.imageTitle || `الصورة ${idx + 1}`,
+                summary: item.summary || '',
+                extractedContent: item.extractedContent || '',
+                detailedExplanation: item.detailedExplanation || '',
+                keyTakeaways: Array.isArray(item.keyTakeaways) ? item.keyTakeaways : [],
+                solvedProblemsInImage: Array.isArray(item.solvedProblemsInImage) ? item.solvedProblemsInImage : [],
+                previewUrl: filesData && filesData[idx]
+                  ? (filesData[idx].base64.startsWith('data:')
+                      ? filesData[idx].base64
+                      : `data:${filesData[idx].mimeType || 'image/jpeg'};base64,${filesData[idx].base64}`)
+                  : undefined,
+              }))
+            : undefined,
+          totalImagesCount: filesData?.length || (fileData ? 1 : 0),
           clarificationNotice: parsed.clarificationNotice,
           isImageBlurry: Boolean(parsed.isImageBlurry),
           isNotEducational: Boolean(parsed.isNotEducational),
