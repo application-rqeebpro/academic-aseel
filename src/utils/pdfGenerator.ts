@@ -95,3 +95,46 @@ export async function exportElementToPdf(
     throw new Error(error?.message || 'حدث خطأ أثناء إنشاء ملف PDF');
   }
 }
+
+export interface GenerateImageOptions {
+  fileName?: string;
+  onProgress?: (step: string) => void;
+  scale?: number;
+}
+
+/**
+ * High-resolution image exporter for Exam Papers & Engineering Documents.
+ * Renders the element directly to PNG, ideal for sharing via WhatsApp/Telegram or gallery saving.
+ */
+export async function exportElementToImage(
+  element: HTMLElement,
+  options: GenerateImageOptions = {}
+): Promise<void> {
+  const fileName = options.fileName || 'نموذج_اختبار_ميكاترونكس.png';
+
+  try {
+    options.onProgress?.('جاري تحويل نموذج الاختبار إلى صورة عالية الدقة...');
+
+    const canvas = await html2canvas(element, {
+      scale: options.scale || 2.2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+    });
+
+    options.onProgress?.('جاري تنزيل الصورة...');
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    const downloadLink = document.createElement('a');
+    downloadLink.download = fileName;
+    downloadLink.href = dataUrl;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    options.onProgress?.('تم تنزيل صورة نموذج الاختبار بنجاح!');
+  } catch (error: any) {
+    console.error('Image Export Error:', error);
+    throw new Error(error?.message || 'تعذر تصدير نموذج الاختبار كصورة');
+  }
+}

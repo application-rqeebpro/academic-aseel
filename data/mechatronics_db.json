@@ -11,7 +11,7 @@
       "major": "إدارة المنصة والهندسة",
       "role": "admin",
       "createdAt": "2026-09-15T18:56:53.699Z",
-      "lastLoginAt": "2026-09-22T20:09:44.470Z"
+      "lastLoginAt": "2026-09-23T14:16:38.569Z"
     },
     {
       "id": "user-1789594875928-4b554003",
@@ -23,7 +23,7 @@
       "passwordHash": "$2b$10$fBCl1z5OdWDiqyEfOEDNmeB0.wEeyzpjp8K9THcZyI/xY4d96P8pG",
       "role": "student",
       "createdAt": "2026-09-16T21:41:16.027Z",
-      "lastLoginAt": "2026-09-16T21:41:16.028Z"
+      "lastLoginAt": "2026-09-23T14:16:38.655Z"
     },
     {
       "id": "user-1790107737979-a2f6ad",
@@ -55,12 +55,13 @@
       "id": "sub-1789594876028",
       "userId": "user-1789594875928-4b554003",
       "plan": "monthly",
-      "status": "pending",
-      "startDate": "2026-09-16T21:41:16.028Z",
-      "expiryDate": "2026-09-16T21:41:16.028Z",
+      "status": "active",
+      "startDate": "2026-09-23T14:16:38.599Z",
+      "expiryDate": "2026-10-23T14:16:38.599Z",
       "createdAt": "2026-09-16T21:41:16.028Z",
-      "activationMethod": "whatsapp",
-      "notes": "حساب مسجل جديد في انتظار تأكيد الدفع والتفعيل"
+      "activatedAt": "2026-09-23T14:16:38.599Z",
+      "activationMethod": "activation_code",
+      "notes": "كود التفعيل: MCT-8269 - تم تفعيل الاشتراك من لوحة الإدارة"
     },
     {
       "id": "sub-1790107738105",
@@ -89,13 +90,32 @@
   ],
   "activationCodes": [
     {
+      "id": "code-1790172998599-80df",
+      "code": "MCT-8269",
+      "planType": "monthly",
+      "durationDays": 30,
+      "maxUses": 100,
+      "timesUsed": 0,
+      "isUsed": false,
+      "isActive": true,
+      "usedByStudents": [
+        {
+          "studentId": "user-1789594875928-4b554003",
+          "studentName": "Test Student",
+          "usedAt": "2026-09-23T14:16:38.599Z"
+        }
+      ],
+      "createdAt": "2026-09-23T14:16:38.599Z",
+      "notes": "تم التوليد والتفعيل المباشر للطالب: Test Student (777123456)"
+    },
+    {
       "id": "code-1790107790598-253e",
       "code": "MCT-3666",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 1,
+      "maxUses": 100,
       "timesUsed": 1,
-      "isUsed": true,
+      "isUsed": false,
       "isActive": true,
       "usedByStudents": [
         {
@@ -112,7 +132,7 @@
       "code": "7820",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 10,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -131,7 +151,7 @@
       "code": "7829",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 10,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -144,7 +164,7 @@
       "code": "7782",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 10,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -157,7 +177,7 @@
       "code": "7735",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 10,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -170,7 +190,7 @@
       "code": "MCT-2191",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 5,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -183,7 +203,7 @@
       "code": "MCT-7855",
       "planType": "yearly",
       "durationDays": 365,
-      "maxUses": 5,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -196,7 +216,7 @@
       "code": "MCT-30D1",
       "planType": "monthly",
       "durationDays": 30,
-      "maxUses": 10,
+      "maxUses": 100,
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
@@ -247,6 +267,15 @@
       "savedProjects": [],
       "simulatorSettings": {},
       "updatedAt": "2026-09-22T20:09:52.447Z"
+    },
+    "user-1789594875928-4b554003": {
+      "studentId": "user-1789594875928-4b554003",
+      "completedLessons": [],
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "simulatorSettings": {},
+      "updatedAt": "2026-09-23T14:16:38.648Z"
     }
   },
   "studentLessons": [],

@@ -45,6 +45,7 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
+          maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6 MB limit to prevent build errors on Vercel
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           runtimeCaching: [
             {
@@ -89,6 +90,19 @@ export default defineConfig(() => {
     },
     server: {
       hmr: false,
+    },
+    build: {
+      chunkSizeWarningLimit: 3000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-icons': ['lucide-react'],
+            'vendor-pdf': ['jspdf', 'html2canvas'],
+            'vendor-markdown': ['react-markdown'],
+          },
+        },
+      },
     },
   };
 });

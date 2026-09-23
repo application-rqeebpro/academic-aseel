@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StudentProfile, Subject, ExplainLessonResult } from '../types';
+import { StudentProfile, Subject, Lesson, ExplainLessonResult } from '../types';
 import { 
   GraduationCap, 
   School, 
@@ -43,6 +43,7 @@ interface DashboardViewProps {
   onOpenSavedLesson?: (lesson: ExplainLessonResult) => void;
   onOpenProfile?: () => void;
   whatsappNumber?: string;
+  onOpenExam?: (subject?: Subject, lesson?: Lesson) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -55,6 +56,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenSavedLesson,
   onOpenProfile,
   whatsappNumber = '785502919',
+  onOpenExam,
 }) => {
   const isPending = !student.isActivated || student.subscriptionStatus === 'pending';
   const isExpired = student.isExpired || (student.remainingDays !== undefined && student.remainingDays <= 0);
@@ -332,6 +334,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* 4.2 Official Expected Exam Papers Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950 via-slate-900 to-orange-950 border border-amber-500/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-xs font-bold text-amber-300">
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>نماذج اختبارات رسمية معتمدة لجامعات اليمن</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>📑 نماذج الاختبارات المتوقعة</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black shadow-xs">
+                تصدير PDF أو صورة PNG
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-amber-100/90 leading-relaxed">
+              احصل على <strong>نماذج امتحانات نهائية، ونصفية، واختبارات تقييمية للدروس والمواد</strong> مطابقة للمواصفات الأكاديمية الرسمية! تشمل <strong>أسئلة الاختيار من متعدد، الصواب والخطأ، المسائل الحسابية، ونموذج الإجابة وسلم الدرجات الكامل</strong> مع إمكانية التنزيل كملف PDF عالي الجودة للطباعة أو كصورة فورية للمشاركة على واتساب.
+            </p>
+          </div>
+
+          {onOpenExam && (
+            <button
+              onClick={() => onOpenExam(subjects[0])}
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+            >
+              <FileText className="w-5 h-5 text-slate-950" />
+              <span>استعراض نماذج الامتحانات (PDF / صورة) 📑</span>
+            </button>
+          )}
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-800/40 text-xs text-amber-200">
+          <span className="text-slate-400 font-bold">النماذج المتاحة:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🎓 امتحانات نهائية (100 درجة)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📋 امتحانات نصفية (50 درجة)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⏱️ كويزات فصيلة واختبارات دروس</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">✅ سلم الدرجات والحلول النموذجية</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🖼️ تنزيل فوري كصورة PNG أو PDF</span>
+        </div>
+      </div>
+
       {/* 5. Student Profile Information Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -519,6 +562,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="text-[11px] text-cyan-600 dark:text-cyan-400">مختبر إلكترونيات وتوصيل أسلاك</div>
             </div>
           </button>
+
+          {onOpenExam && (
+            <button
+              onClick={() => onOpenExam(subjects[0])}
+              className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/60 dark:to-orange-950/60 border-2 border-amber-500/50 hover:border-amber-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm font-black">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-extrabold text-xs sm:text-sm text-amber-950 dark:text-amber-200 flex items-center gap-1">
+                  <span>نماذج الاختبارات</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">PDF / صورة</span>
+                </div>
+                <div className="text-[11px] text-amber-700 dark:text-amber-400">امتحانات متوقعة مع سلم الدرجات</div>
+              </div>
+            </button>
+          )}
 
         </div>
       </div>

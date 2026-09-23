@@ -60,13 +60,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setError('');
     setSuccessMsg('');
 
-    if (!phoneInput.trim()) {
-      setError('يرجى إدخال رقم الهاتف المسجل.');
+    if (loginMode === 'code' && !codeInputValue.trim() && !phoneInput.trim()) {
+      setError('يرجى إدخال كود التفعيل المستلم عبر واتساب للدخول إلى التطبيق.');
       return;
     }
 
-    if (loginMode === 'code' && !codeInputValue.trim()) {
-      setError('يرجى إدخال كود التفعيل الخاص بك (المرسل عند الاشتراك).');
+    if (loginMode === 'password' && !phoneInput.trim()) {
+      setError('يرجى إدخال رقم الهاتف المسجل.');
       return;
     }
 
@@ -78,7 +78,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
     try {
       const payload = loginMode === 'code'
-        ? { phone: phoneInput.trim(), activationCode: codeInputValue.trim().toUpperCase() }
+        ? {
+            phone: phoneInput.trim(),
+            activationCode: (codeInputValue.trim() || phoneInput.trim()).toUpperCase(),
+          }
         : { identifier: phoneInput.trim(), password };
 
       const res = await fetch('/api/auth/login', {
@@ -290,48 +293,72 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {/* VIEW 1: Login Form */}
         {view === 'login' && (
           <form onSubmit={handleLoginSubmit} className="space-y-4">
-            {/* Phone Input */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
-                رقم الهاتف المسجل
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="مثال: 771234567"
-                  dir="ltr"
-                  className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
-                />
-              </div>
-            </div>
-
             {/* Mode A: Code Login (For Students) */}
-            {loginMode === 'code' && (
+            {loginMode === 'code' ? (
+              <>
+                {/* Activation Code Input First & Prominent */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
+                    كود التفعيل (رمز الاشتراك المعتمد) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-blue-600 dark:text-blue-400">
+                      <KeyRound className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={codeInputValue}
+                      onChange={(e) => setCodeInputValue(e.target.value.toUpperCase())}
+                      placeholder="مثال: MCT-4921"
+                      dir="ltr"
+                      autoFocus
+                      className="w-full pl-4 pr-11 py-3.5 rounded-2xl bg-blue-50/60 dark:bg-slate-800/80 border-2 border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white font-mono font-black placeholder:text-slate-400 focus:outline-hidden focus:ring-4 focus:ring-blue-500/20 transition-all text-base sm:text-lg text-center tracking-widest uppercase shadow-xs"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right pt-0.5">
+                    أدخل كود التفعيل المستلم من الإدارة عبر واتساب للدخول المباشر للتطبيق وتفعيل اشتراكك فوراً.
+                  </p>
+                </div>
+
+                {/* Phone Input (Optional or for Verification) */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
+                    رقم الهاتف المسجل <span className="text-[10px] text-slate-400 font-normal">(اختياري للتحقق الإضافي)</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="مثال: 771234567"
+                      dir="ltr"
+                      className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Phone Input for Password Mode */
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
-                  كود التفعيل (رمز الاشتراك)
+                  رقم الهاتف المسجل
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-blue-600 dark:text-blue-400">
-                    <KeyRound className="w-4 h-4" />
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Phone className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
-                    value={codeInputValue}
-                    onChange={(e) => setCodeInputValue(e.target.value.toUpperCase())}
-                    placeholder="أدخل كود التفعيل"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    placeholder="مثال: 771234567"
                     dir="ltr"
-                    className="w-full pl-4 pr-10 py-3 rounded-xl bg-blue-50/50 dark:bg-slate-800/80 border-2 border-blue-200 dark:border-blue-900 text-slate-900 dark:text-white font-mono font-bold placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-center tracking-widest uppercase"
+                    className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right pt-0.5">
-                  أدخل كود التفعيل المعتمد المرسل لك عبر واتساب لتسجيل دخولك وتفعيل الحساب مباشرة.
-                </p>
               </div>
             )}
 

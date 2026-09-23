@@ -464,4 +464,67 @@ export interface EngineeringAssignment {
   modelUsed?: string;
 }
 
+export type ExamType = 'final' | 'midterm' | 'quiz' | 'lesson_test';
+
+export interface ExamHeaderInfo {
+  republic: string;
+  ministry: string;
+  university: string;
+  faculty: string;
+  department: string;
+  courseTitle: string;
+  courseCode: string;
+  level: string;
+  semester: string;
+  academicYear: string;
+  examTypeLabel: string;
+  timeAllowed: string;
+  totalMarks: number;
+  professorName?: string;
+  examDate?: string;
+}
+
+export interface ExamQuestionItem {
+  id: string;
+  number: number;
+  text: string;
+  englishText?: string;
+  marks: number;
+  type: 'mcq' | 'true_false' | 'problem' | 'short_answer' | 'diagram_derivation';
+  options?: string[];
+  correctOptionIndex?: number;
+  modelAnswer: string;
+  explanation?: string;
+  formulaUsed?: string;
+  given?: string[];
+  required?: string;
+  steps?: string[];
+  diagramDescription?: string;
+}
+
+export interface ExamPart {
+  id: string;
+  partNumber: string; // e.g. "السؤال الأول (Question 1)"
+  title: string; // e.g. "أسئلة الاختيار من متعدد (Multiple Choice)"
+  instructions: string; // e.g. "اختر الإجابة الصحيحة لكل مما يلي مع نقل الرمز إلى جدول الإجابات:"
+  totalMarks: number;
+  questions: ExamQuestionItem[];
+}
+
+export interface ExamPaper {
+  id: string;
+  title: string;
+  subjectId: string;
+  subjectName: string;
+  lessonId?: string;
+  lessonTitle?: string;
+  examType: ExamType;
+  header: ExamHeaderInfo;
+  parts: ExamPart[];
+  totalMarks: number;
+  instructions: string[];
+  createdAt: string;
+  isCustomUploadedLesson?: boolean;
+}
+
 

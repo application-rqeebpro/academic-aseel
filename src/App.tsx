@@ -22,6 +22,7 @@ import { AiAssistantModal } from './components/AiAssistantModal';
 import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
 import { StudentProfileModal } from './components/StudentProfileModal';
+import { ExamModal } from './components/ExamModal';
 
 export default function App() {
   // Theme state
@@ -78,6 +79,29 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiInitialTopic, setAiInitialTopic] = useState('');
+  const [examModalConfig, setExamModalConfig] = useState<{
+    isOpen: boolean;
+    subject: Subject;
+    lesson?: Lesson | null;
+    customLessonTitle?: string;
+    customLessonContent?: any;
+  } | null>(null);
+
+  const handleOpenExamModal = (
+    subject?: Subject,
+    lesson?: Lesson | null,
+    customLessonTitle?: string,
+    customLessonContent?: any
+  ) => {
+    const targetSubject = subject || (lesson ? subjects.find((s) => s.id === lesson.subjectId) : null) || subjects[0];
+    setExamModalConfig({
+      isOpen: true,
+      subject: targetSubject,
+      lesson: lesson || null,
+      customLessonTitle,
+      customLessonContent,
+    });
+  };
 
   // Settings
   const [whatsappNumber, setWhatsappNumber] = useState('785502919');
@@ -415,6 +439,7 @@ export default function App() {
                 onMarkComplete={handleMarkLessonComplete}
                 isCompleted={student.completedLessons?.includes(activeLesson.id) || false}
                 savedQuizScore={student.quizScores?.[activeLesson.id]}
+                onOpenExam={(lesson) => handleOpenExamModal(undefined, lesson)}
               />
             ) : selectedLessonId && !activeLesson ? (
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center space-y-4 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -460,6 +485,7 @@ export default function App() {
                       setSelectedLessonId(null);
                     }}
                     whatsappNumber={whatsappNumber}
+                    onOpenExam={(subject, lesson) => handleOpenExamModal(subject, lesson)}
                   />
                 )}
 
@@ -512,6 +538,7 @@ export default function App() {
                       setSelectedLessonId(lessonId);
                     }}
                     completedLessons={student.completedLessons || []}
+                    onOpenExam={(subject, lesson) => handleOpenExamModal(subject, lesson)}
                   />
                 )}
 
@@ -602,6 +629,19 @@ export default function App() {
         onClose={() => setIsAdminOpen(false)}
         onSubjectsUpdated={() => fetchSettingsAndSubjects()}
       />
+
+      {/* Expected Exam Paper Modal (PDF & Image Export) */}
+      {examModalConfig?.isOpen && (
+        <ExamModal
+          isOpen={examModalConfig.isOpen}
+          onClose={() => setExamModalConfig(null)}
+          subject={examModalConfig.subject}
+          lesson={examModalConfig.lesson}
+          customLessonTitle={examModalConfig.customLessonTitle}
+          customLessonContent={examModalConfig.customLessonContent}
+          student={student || undefined}
+        />
+      )}
 
       {/* Footer */}
       <footer className="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">

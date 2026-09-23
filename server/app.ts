@@ -151,6 +151,17 @@ function getGeminiClient(): GoogleGenAI | null {
 // Create Express App
 export const app = express();
 
+// Handle Vercel Serverless Rewrites Path Normalization
+app.use((req, res, next) => {
+  const vercelPath = (req.headers['x-matched-path'] || req.headers['x-forwarded-uri'] || req.headers['x-now-route-matches']) as string;
+  if (vercelPath && typeof vercelPath === 'string' && vercelPath.startsWith('/api') && req.url === '/api') {
+    const qIndex = req.url.indexOf('?');
+    const query = qIndex !== -1 ? req.url.substring(qIndex) : '';
+    req.url = vercelPath + query;
+  }
+  next();
+});
+
 // CORS Headers & Options Preflight
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -167,6 +178,16 @@ app.use(authenticateToken);
 
 // Setup an API router so routes work both on /api/... and /...
 const router = express.Router();
+
+// Root API Endpoint
+router.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    platform: 'أكاديمية الميكاترونكس اليمنية',
+    version: '1.0.0',
+    time: new Date().toISOString(),
+  });
+});
 
 // Health Check
 router.get('/health', (req, res) => {
@@ -383,26 +404,48 @@ function getSubscriptionDetails(userId: string) {
 router.post('/auth/login', (req, res) => {
   const { identifier, phone, activationCode, code, password } = req.body;
 
-  const rawPhone = (phone || identifier || '').toString().trim();
-  const cleanPhone = normalizePhone(rawPhone);
-  const inputCode = (activationCode || code || '').toString().trim().toUpperCase();
+  let rawPhone = (phone || identifier || '').toString().trim();
+  let inputCode = (activationCode || code || '').toString().trim().toUpperCase();
   const rawPassword = (password || '').toString().trim();
 
-  if (!rawPhone) {
-    return res.status(400).json({ error: 'يرجى إدخال رقم الهاتف المسجل.' });
+  const allCodes = db.getAllActivationCodes();
+
+  // If identifier matches an activation code (e.g. MCT-XXXX or 4-digit code), recognize it as inputCode
+  if (!inputCode && rawPhone) {
+    const isCodeMatch = allCodes.some((c) => c.code.trim().toUpperCase() === rawPhone.toUpperCase());
+    if (isCodeMatch || rawPhone.toUpperCase().startsWith('MCT-')) {
+      inputCode = rawPhone.toUpperCase();
+      rawPhone = '';
+    }
   }
 
-  let user = cleanPhone ? db.findUserByPhone(cleanPhone) : db.findUserByEmail(rawPhone);
+  const cleanPhone = normalizePhone(rawPhone);
 
   // OPTION A: Login via Activation Code (كود التفعيل)
   if (inputCode) {
-    const allCodes = db.getAllActivationCodes();
     const foundCode = allCodes.find((c) => c.code.trim().toUpperCase() === inputCode);
 
-    // Also check if user has an active subscription with notes or assigned code
+    // Try finding the user by phone first
+    let user = cleanPhone ? db.findUserByPhone(cleanPhone) : (rawPhone ? db.findUserByEmail(rawPhone) : undefined);
+
+    // If not found by phone, look up who this code is assigned or used by
+    if (!user && foundCode?.usedByStudents && foundCode.usedByStudents.length > 0) {
+      const assignedId = foundCode.usedByStudents[0].studentId;
+      user = db.findUserById(assignedId);
+    }
+
+    // If still not found, search all subscriptions for notes containing this code
+    if (!user) {
+      const allSubs = db.getAllSubscriptions();
+      const matchedSub = allSubs.find((s) => s.notes && s.notes.toUpperCase().includes(inputCode));
+      if (matchedSub) {
+        user = db.findUserById(matchedSub.userId);
+      }
+    }
+
     let userSub = user ? db.getSubscriptionByUserId(user.id) : null;
-    const isUserAssignedCode = userSub && (
-      (userSub.notes && userSub.notes.toUpperCase().includes(inputCode)) ||
+    const isUserAssignedCode = Boolean(
+      (userSub?.notes && userSub.notes.toUpperCase().includes(inputCode)) ||
       (foundCode?.usedByStudents?.some((u) => u.studentId === user?.id))
     );
 
@@ -416,22 +459,28 @@ router.post('/auth/login', (req, res) => {
       return res.status(400).json({ error: 'تم تعطيل كود التفعيل هذا من قبل الإدارة.' });
     }
 
-    // If user does not exist yet, create student account for this phone
+    // If user does not exist yet and phone was provided, create student account for this phone
     if (!user) {
-      const userId = `user-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
-      user = {
-        id: userId,
-        name: `طالب الأكاديمية (${rawPhone.slice(-4)})`,
-        phone: cleanPhone || rawPhone,
-        university: 'الجامعة الإماراتية الدولية – صنعاء',
-        studyLevel: 'السنة الأولى',
-        major: 'هندسة الميكاترونكس',
-        passwordHash: bcrypt.hashSync(cleanPhone.slice(-6) || '123456', 10),
-        role: 'student',
-        createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString(),
-      };
-      db.createUser(user);
+      if (cleanPhone || rawPhone) {
+        const userId = `user-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+        user = {
+          id: userId,
+          name: `طالب الأكاديمية (${(cleanPhone || rawPhone).slice(-4)})`,
+          phone: cleanPhone || rawPhone,
+          university: 'الجامعة الإماراتية الدولية – صنعاء',
+          studyLevel: 'السنة الأولى',
+          major: 'هندسة الميكاترونكس',
+          passwordHash: bcrypt.hashSync((cleanPhone || rawPhone).slice(-6) || '123456', 10),
+          role: 'student',
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+        };
+        db.createUser(user);
+      } else {
+        return res.status(400).json({
+          error: 'يرجى إدخال رقم هاتفك مع كود التفعيل لربط حسابك وتأكيد هويتك.',
+        });
+      }
     }
 
     // Determine duration and plan
@@ -553,6 +602,7 @@ router.post('/auth/login', (req, res) => {
   }
 
   // OPTION B: Login via Password (For Students with Password or Admin)
+  const user = cleanPhone ? db.findUserByPhone(cleanPhone) : (rawPhone ? db.findUserByEmail(rawPhone) : undefined);
   if (!user) {
     return res.status(401).json({
       error: 'لم يتم العثور على حساب مسجل بهذا الرقم. يرجى التأكد من رقم الهاتف أو إدخال كود التفعيل الخاص بك.',
@@ -839,18 +889,31 @@ router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
     });
   }
 
-  const maxUses = foundCode.maxUses || 1;
-  if (foundCode.timesUsed >= maxUses) {
-    return res.status(400).json({
-      error: 'هذا الكود مستخدم مسبقًا بالكامل.',
-    });
+  const alreadyUsedByStudent = foundCode.usedByStudents?.some((u) => u.studentId === req.user!.id);
+  const userSub = db.getSubscriptionByUserId(req.user!.id);
+
+  // If student already has this code linked and active, confirm activation without error
+  if (alreadyUsedByStudent && userSub && userSub.status === 'active') {
+    const remainingMs = new Date(userSub.expiryDate).getTime() - Date.now();
+    if (remainingMs > 0) {
+      const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+      return res.json({
+        success: true,
+        message: `حسابك مفعل مسبقًا بهذا الكود وهو نشط حاليًا وصالح لمدة ${remainingDays} يوم حتى ${new Date(userSub.expiryDate).toLocaleDateString('ar-YE')}.`,
+        subscription: {
+          ...userSub,
+          remainingDays,
+          isActivated: true,
+          isExpired: false,
+        },
+      });
+    }
   }
 
-  // Check if this student already used this code
-  const alreadyUsedByStudent = foundCode.usedByStudents?.some((u) => u.studentId === req.user!.id);
-  if (alreadyUsedByStudent) {
+  const maxUses = foundCode.maxUses || 100;
+  if (!alreadyUsedByStudent && (foundCode.timesUsed || 0) >= maxUses) {
     return res.status(400).json({
-      error: 'لقد استخدمت هذا الكود مسبقًا على حسابك.',
+      error: 'هذا الكود مستخدم مسبقًا بالكامل.',
     });
   }
 
@@ -1723,8 +1786,13 @@ const handleApproveRequest = (req: any, res: any) => {
   }
 
   // Generate unique Activation Code for this student
-  const random4Digits = Math.floor(1000 + Math.random() * 9000);
-  const generatedCode = `MCT-${random4Digits}`;
+  let generatedCode = '';
+  let tries = 0;
+  do {
+    const random4Digits = Math.floor(1000 + Math.random() * 9000);
+    generatedCode = `MCT-${random4Digits}`;
+    tries++;
+  } while (db.getAllActivationCodes().some((c) => c.code.toUpperCase() === generatedCode) && tries < 20);
 
   const durationDays = request.plan === 'yearly' ? 365 : 30;
   const now = new Date();
@@ -1736,9 +1804,9 @@ const handleApproveRequest = (req: any, res: any) => {
     code: generatedCode,
     planType: request.plan === 'yearly' ? 'yearly' : 'monthly',
     durationDays,
-    maxUses: 1,
-    timesUsed: 1,
-    isUsed: true,
+    maxUses: 100,
+    timesUsed: 0,
+    isUsed: false,
     isActive: true,
     usedByStudents: [
       {
@@ -1877,18 +1945,23 @@ const handleActivateStudentWithCode = (req: any, res: any) => {
   const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
   // Generate unique actual code
-  const random4Digits = Math.floor(1000 + Math.random() * 9000);
-  const generatedCode = `MCT-${random4Digits}`;
+  let generatedCode = '';
+  let tries = 0;
+  do {
+    const random4Digits = Math.floor(1000 + Math.random() * 9000);
+    generatedCode = `MCT-${random4Digits}`;
+    tries++;
+  } while (db.getAllActivationCodes().some((c) => c.code.toUpperCase() === generatedCode) && tries < 20);
 
-  // Store code in activationCodes
+  // Store code in activationCodes with active status and re-usable limit for this student
   const codeRecord: DBActivationCode = {
     id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
     code: generatedCode,
     planType: plan === 'yearly' ? 'yearly' : 'monthly',
     durationDays,
-    maxUses: 1,
-    timesUsed: 1,
-    isUsed: true,
+    maxUses: 100,
+    timesUsed: 0,
+    isUsed: false,
     isActive: true,
     usedByStudents: [
       {
@@ -1973,16 +2046,23 @@ const handleResendStudentCode = (req: any, res: any) => {
 
   if (!code) {
     // Generate new code
-    const random4Digits = Math.floor(1000 + Math.random() * 9000);
-    code = `MCT-${random4Digits}`;
+    let generatedCode = '';
+    let tries = 0;
+    do {
+      const random4Digits = Math.floor(1000 + Math.random() * 9000);
+      generatedCode = `MCT-${random4Digits}`;
+      tries++;
+    } while (db.getAllActivationCodes().some((c) => c.code.toUpperCase() === generatedCode) && tries < 20);
+    code = generatedCode;
+
     const codeRecord: DBActivationCode = {
       id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
       code,
       planType: sub?.plan === 'yearly' ? 'yearly' : 'monthly',
       durationDays,
-      maxUses: 1,
-      timesUsed: 1,
-      isUsed: true,
+      maxUses: 100,
+      timesUsed: 0,
+      isUsed: false,
       isActive: true,
       usedByStudents: [{ studentId: user.id, studentName: user.name, usedAt: new Date().toISOString() }],
       createdAt: new Date().toISOString(),

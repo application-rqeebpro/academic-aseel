@@ -106,6 +106,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   const [activatingStudentId, setActivatingStudentId] = useState<string | null>(null);
   const [quickStudentId, setQuickStudentId] = useState<string>('');
   const [quickPlan, setQuickPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
 
   // Students State
   const [students, setStudents] = useState<any[]>([]);
@@ -650,9 +651,18 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert(`تم نسخ: ${text}`);
+  const copyToClipboard = (text: string, label = 'النص') => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(text);
+      }
+      setCopiedNotice(`تم نسخ ${label} بنجاح! 📋`);
+      setTimeout(() => {
+        setCopiedNotice(null);
+      }, 3000);
+    } catch (e) {
+      console.error('Clipboard copy error:', e);
+    }
   };
 
   const filteredStudents = students.filter((s) => {
@@ -668,6 +678,13 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+      {copiedNotice && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-60 px-5 py-2.5 rounded-2xl bg-slate-900/95 dark:bg-emerald-950/95 text-white text-xs font-bold shadow-2xl border border-emerald-500/50 backdrop-blur-md flex items-center gap-2 animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{copiedNotice}</span>
+        </div>
+      )}
+
       <div className="relative w-full max-w-6xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
         
         {/* Modal Top Header */}
@@ -1252,66 +1269,40 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                               {/* Admin Actions */}
                               <td className="p-3 text-center">
                                 <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                                  {/* 1-Click Instant Activation for Pending / Expired */}
-                                  {st.subscriptionStatus !== 'active' || st.isExpired ? (
-                                    <>
-                                      <button
-                                        onClick={() => handleActivateStudentWithCode(st.id, 'monthly')}
-                                        disabled={activatingStudentId === st.id}
-                                        className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs disabled:opacity-50 cursor-pointer transition-all"
-                                        title="تفعيل فوري بنقرة واحدة (شهري 30 يوماً) وتوليد كود وإرسال لواتساب"
-                                      >
-                                        {activatingStudentId === st.id ? (
-                                          <RefreshCw className="w-3 h-3 animate-spin" />
-                                        ) : (
-                                          <Zap className="w-3 h-3 fill-current" />
-                                        )}
-                                        <span>تفعيل بنقرة واحدة (30 يوم)</span>
-                                      </button>
+                                  {/* Explicit "تفعيل الاشتراك" Button beside each student */}
+                                  <button
+                                    onClick={() => handleActivateStudentWithCode(st.id, st.subscriptionPlan || 'monthly')}
+                                    disabled={activatingStudentId === st.id}
+                                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer transition-all ring-2 ring-emerald-500/20"
+                                    title="تفعيل الاشتراك وتوليد كود فريد وتحديث قاعدة البيانات وفتح رابط الواتساب الجاهز للنسخ"
+                                  >
+                                    {activatingStudentId === st.id ? (
+                                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Zap className="w-3.5 h-3.5 fill-current" />
+                                    )}
+                                    <span>تفعيل الاشتراك</span>
+                                  </button>
 
-                                      <button
-                                        onClick={() => handleActivateStudentWithCode(st.id, 'yearly')}
-                                        disabled={activatingStudentId === st.id}
-                                        className="px-2 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow-xs disabled:opacity-50 cursor-pointer transition-all"
-                                        title="تفعيل فوري بنقرة واحدة (سنوي 365 يوماً)"
-                                      >
-                                        سنوي
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {/* Direct WhatsApp Instant Link */}
-                                      <a
-                                        href={getDirectWhatsAppUrl(st)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer transition-all"
-                                        title="فتح واتساب مباشرة وإرسال رسالة التفعيل المعتمدة"
-                                      >
-                                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                                        <span>واتساب مباشر</span>
-                                      </a>
+                                  {/* Yearly Activation Option */}
+                                  <button
+                                    onClick={() => handleActivateStudentWithCode(st.id, 'yearly')}
+                                    disabled={activatingStudentId === st.id}
+                                    className="px-2 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow-xs disabled:opacity-50 cursor-pointer transition-all"
+                                    title="تفعيل الاشتراك لمدة سنة كاملة (365 يوم)"
+                                  >
+                                    سنوي
+                                  </button>
 
-                                      {/* One-Click Renew / Generate Fresh Code */}
-                                      <button
-                                        onClick={() => handleActivateStudentWithCode(st.id, st.subscriptionPlan || 'monthly')}
-                                        disabled={activatingStudentId === st.id}
-                                        className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-800 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
-                                        title="تجديد وتوليد كود جديد بنقرة واحدة"
-                                      >
-                                        <RefreshCw className={`w-3 h-3 ${activatingStudentId === st.id ? 'animate-spin' : ''}`} />
-                                        <span>تجديد بكود جديد</span>
-                                      </button>
-
-                                      <button
-                                        onClick={() => handleStudentStatusChange(st.id, 'suspended')}
-                                        className="px-2 py-1 rounded-lg bg-amber-600 text-white font-bold text-[11px] hover:bg-amber-700 cursor-pointer"
-                                        title="تعليق الحساب مؤقتًا"
-                                      >
-                                        تعليق
-                                      </button>
-                                    </>
-                                  )}
+                                  {/* Open/Resend WhatsApp link and message */}
+                                  <button
+                                    onClick={() => handleResendStudentCode(st.id)}
+                                    className="px-2 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-800 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
+                                    title="عرض ونسخ رابط ورسالة الواتساب"
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                                    <span>واتساب</span>
+                                  </button>
 
                                   {/* Extend 30 days */}
                                   <button
@@ -1321,6 +1312,17 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                                   >
                                     +30 يوم
                                   </button>
+
+                                  {/* Suspend status change if active */}
+                                  {st.subscriptionStatus === 'active' && !st.isExpired && (
+                                    <button
+                                      onClick={() => handleStudentStatusChange(st.id, 'suspended')}
+                                      className="px-2 py-1 rounded-lg bg-amber-600 text-white font-bold text-[11px] hover:bg-amber-700 cursor-pointer"
+                                      title="تعليق الحساب مؤقتًا"
+                                    >
+                                      تعليق
+                                    </button>
+                                  )}
 
                                   {/* Delete */}
                                   <button
@@ -1962,6 +1964,42 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* WhatsApp Direct Link Ready to Copy */}
+              <div className="text-right space-y-1.5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(approvalModalData.whatsappUrl, 'رابط الواتساب')}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>نسخ الرابط</span>
+                  </button>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>رابط واتساب جاهز للنسخ:</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 p-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <input
+                    type="text"
+                    readOnly
+                    value={approvalModalData.whatsappUrl}
+                    className="w-full text-xs px-2 py-1 bg-transparent font-mono text-slate-700 dark:text-slate-300 focus:outline-hidden"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(approvalModalData.whatsappUrl, 'رابط الواتساب')}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                    title="نسخ رابط واتساب"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>نسخ</span>
+                  </button>
+                </div>
               </div>
 
               {/* Message Preview */}

@@ -28,6 +28,7 @@ interface LessonDetailViewProps {
   onMarkComplete: (lessonId: string, quizScore?: number) => void;
   isCompleted: boolean;
   savedQuizScore?: number;
+  onOpenExam?: (lesson: Lesson) => void;
 }
 
 export const LessonDetailView: React.FC<LessonDetailViewProps> = ({
@@ -37,6 +38,7 @@ export const LessonDetailView: React.FC<LessonDetailViewProps> = ({
   onMarkComplete,
   isCompleted,
   savedQuizScore,
+  onOpenExam,
 }) => {
   // Quiz state
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | number | boolean>>({});
@@ -107,6 +109,17 @@ export const LessonDetailView: React.FC<LessonDetailViewProps> = ({
           </button>
 
           <div className="flex items-center gap-2">
+            {onOpenExam && (
+              <button
+                onClick={() => onOpenExam(lesson)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer"
+                title="استخراج نموذج اختبار رسمي متوقع لهذا الدرس كصورة أو ملف PDF"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>نموذج اختبار الدرس (PDF / صورة)</span>
+              </button>
+            )}
+
             <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
               <span>{lesson.readingTimeMinutes} دقيقة</span>
@@ -613,14 +626,27 @@ export const LessonDetailView: React.FC<LessonDetailViewProps> = ({
             </p>
           </div>
 
-          {quizSubmitted && (
-            <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center sm:text-right">
-              <span className="text-xs text-slate-500 block">نتيجتك في الاختبار</span>
-              <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                {quizScore}%
-              </span>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenExam && (
+              <button
+                onClick={() => onOpenExam(lesson)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer"
+                title="تصدير كنموذج امتحان رسمي مع الحلول والدرجات بصيغة PDF أو صورة"
+              >
+                <FileText className="w-4 h-4" />
+                <span>نموذج امتحان متوقع (PDF / صورة) 📑</span>
+              </button>
+            )}
+
+            {quizSubmitted && (
+              <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center sm:text-right">
+                <span className="text-xs text-slate-500 block">نتيجتك في الاختبار</span>
+                <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                  {quizScore}%
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Quiz questions */}

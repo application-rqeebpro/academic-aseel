@@ -64,6 +64,8 @@ export interface ProcessedImageItem {
   name: string;
 }
 import { ExplainFourteenSections } from './ExplainFourteenSections';
+import { ExamModal } from './ExamModal';
+import { INITIAL_SUBJECTS } from '../data/initialData';
 
 // High-detail image optimization helper for mobile phones and web
 const optimizeImageForVision = (
@@ -172,6 +174,7 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
 
   // Interactive modes
   const [showStudySheet, setShowStudySheet] = useState(false);
+  const [showExamModal, setShowExamModal] = useState(false);
   const [showExplainPartModal, setShowExplainPartModal] = useState(false);
   const [customPartText, setCustomPartText] = useState('');
   const [partAction, setPartAction] = useState<'explain' | 'simplify' | 'example' | 'solve' | 'verify'>('explain');
@@ -1990,6 +1993,16 @@ ${analysisResult.summaryPoints.join('\n')}
 
                 <button
                   type="button"
+                  onClick={() => setShowExamModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  title="استخراج نموذج اختبار رسمي متوقع لهذا الدرس كصورة أو ملف PDF"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>📑 نموذج اختبار متوقع (PDF / صورة)</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleDidNotUnderstand}
                   className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 border border-rose-200 dark:border-rose-900 transition-all cursor-pointer"
                 >
@@ -3143,6 +3156,28 @@ ${analysisResult.summaryPoints.map((s) => `- ${s}`).join('\n')}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Exam Paper Modal for Download as PDF / Image */}
+      {showExamModal && analysisResult && (
+        <ExamModal
+          isOpen={showExamModal}
+          onClose={() => setShowExamModal(false)}
+          subject={
+            INITIAL_SUBJECTS.find((s) => 
+              s.name.includes(analysisResult.subjectName) || 
+              analysisResult.subjectName.includes(s.name) ||
+              s.englishName.toLowerCase().includes(analysisResult.subjectName.toLowerCase())
+            ) || INITIAL_SUBJECTS[0]
+          }
+          customLessonTitle={analysisResult.lessonTitle}
+          customLessonContent={analysisResult}
+          student={{
+            name: student.name,
+            university: student.university,
+            phone: student.phone,
+          } as any}
+        />
       )}
 
     </div>

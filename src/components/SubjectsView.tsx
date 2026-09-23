@@ -19,6 +19,7 @@ interface SubjectsViewProps {
   onSelectSubject: (subjectId: string) => void;
   onSelectLesson: (lessonId: string) => void;
   completedLessons: string[];
+  onOpenExam?: (subject: Subject, lesson?: Lesson) => void;
 }
 
 export const SubjectsView: React.FC<SubjectsViewProps> = ({
@@ -28,6 +29,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   onSelectSubject,
   onSelectLesson,
   completedLessons,
+  onOpenExam,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [semesterFilter, setSemesterFilter] = useState<'all' | 'الفصل الأول' | 'الفصل الثاني'>('all');
@@ -81,7 +83,18 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {onOpenExam && (
+                <button
+                  onClick={() => onOpenExam(currentSubject)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-md transition-all cursor-pointer"
+                  title="استخراج نموذج اختبار رسمي شامل للمادة كصورة أو ملف PDF"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>نماذج اختبارات المادة (PDF / صورة) 📑</span>
+                </button>
+              )}
+
               <span className="text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                 {currentSubjectLessons.length} دروس منظمة
               </span>
@@ -145,7 +158,22 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {onOpenExam && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenExam(currentSubject, lesson);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-slate-950 text-xs font-bold transition-all border border-amber-500/30 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          title="استخراج نموذج اختبار رسمي لهذا الدرس (PDF / صورة)"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>نموذج اختبار (PDF / صورة)</span>
+                        </button>
+                      )}
+
                       <button className="px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold group-hover:bg-blue-600 group-hover:text-white transition-all flex items-center gap-1.5">
                         <span>فتح الشرح الكامل (15 قسمًا)</span>
                         <ChevronLeft className="w-4 h-4" />
@@ -251,14 +279,31 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   </p>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 font-medium">
-                    {subj.lessonsCount} درسًا معتمدًا
-                  </span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:-translate-x-1 transition-transform">
-                    <span>استعراض الدروس</span>
-                    <ChevronLeft className="w-4 h-4" />
-                  </span>
+                <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  {onOpenExam && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenExam(subj);
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-700 dark:text-amber-300 hover:text-slate-950 text-xs font-black transition-all border border-amber-500/25 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      title="استعراض وتنزيل نماذج اختبارات متوقعة لهذه المادة"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>نماذج اختبارات المادة (PDF / صورة) 📑</span>
+                    </button>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-medium">
+                      {subj.lessonsCount} درسًا معتمدًا
+                    </span>
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 group-hover:-translate-x-1 transition-transform">
+                      <span>استعراض الدروس</span>
+                      <ChevronLeft className="w-4 h-4" />
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
