@@ -5,10 +5,10 @@ import {
   CheckCircle2, 
   AlertCircle, 
   ShieldCheck, 
-  ArrowLeft, 
   Loader2, 
-  Sparkles,
-  MessageCircle
+  MessageCircle,
+  Phone,
+  Sparkles
 } from 'lucide-react';
 
 interface ActivationCodeViewProps {
@@ -23,6 +23,8 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
   whatsappNumber = '785502919',
 }) => {
   const [code, setCode] = useState('');
+  const [phone, setPhone] = useState('');
+  const [showPhoneField, setShowPhoneField] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -40,84 +42,69 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('mct_auth_token');
-      if (!token) {
-        setError('يرجى إنشاء حساب أو تسجيل الدخول أولاً قبل إدخال كود التفعيل لربط الاشتراك بحسابك.');
-        setLoading(false);
-        return;
+      const existingToken = localStorage.getItem('mct_auth_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (existingToken) {
+        headers['Authorization'] = `Bearer ${existingToken}`;
       }
 
       const res = await fetch('/api/activate-code', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ code: cleanCode }),
+        headers,
+        body: JSON.stringify({ 
+          code: cleanCode,
+          phone: phone.trim() || undefined,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.requirePhone) {
+          setShowPhoneField(true);
+        }
         throw new Error(data.error || 'كود التفعيل غير صحيح.');
       }
 
       setSuccessMsg(data.message || 'تم تفعيل الاشتراك بنجاح!');
 
-      // Fetch latest profile or construct updated student
-      setTimeout(async () => {
-        try {
-          const meRes = await fetch('/api/auth/me', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          if (meRes.ok) {
-            const meData = await meRes.json();
-            const updatedStudent: StudentProfile = {
-              id: meData.user.id,
-              name: meData.user.name,
-              phone: meData.user.phone,
-              email: meData.user.email,
-              university: meData.user.university,
-              studyLevel: meData.user.studyLevel,
-              major: meData.user.major,
-              role: meData.user.role,
-              subscriptionPlan: meData.subscription?.plan || 'monthly',
-              subscriptionStatus: 'active',
-              subscriptionStartDate: meData.subscription?.startDate,
-              subscriptionEndDate: meData.subscription?.expiryDate,
-              remainingDays: meData.subscription?.remainingDays || 30,
-              isActivated: true,
-              isExpired: false,
-              completedLessons: meData.progress?.completedLessons || [],
-              quizScores: meData.progress?.quizScores || {},
-            };
-            onActivationSuccess(updatedStudent);
-            return;
-          }
-        } catch (e) {
-          // fallback
-        }
+      // Save returned token to authenticate user immediately
+      if (data.token) {
+        localStorage.setItem('mct_auth_token', data.token);
+      }
 
-        // Fallback update
-        const fallbackStudent: StudentProfile = {
-          id: `student-${Date.now()}`,
-          name: 'طالب الأكاديمية',
-          phone: '',
-          university: 'الجامعة الإماراتية الدولية – صنعاء',
-          studyLevel: 'السنة الأولى',
-          major: 'هندسة الميكاترونكس',
-          subscriptionPlan: data.subscription?.plan || 'monthly',
-          subscriptionStatus: 'active',
-          subscriptionStartDate: data.subscription?.startDate,
-          subscriptionEndDate: data.subscription?.expiryDate,
-          remainingDays: data.subscription?.remainingDays || 30,
-          isActivated: true,
-          isExpired: false,
-          completedLessons: [],
-          quizScores: {},
-        };
-        onActivationSuccess(fallbackStudent);
-      }, 1200);
+      const activatedStudent: StudentProfile = data.student
+        ? {
+            ...data.student,
+            completedLessons: data.student.completedLessons || [],
+            quizScores: data.student.quizScores || {},
+          }
+        : {
+            id: data.user?.id || `student-${Date.now()}`,
+            name: data.user?.name || 'طالب الأكاديمية',
+            phone: data.user?.phone || phone.trim(),
+            university: data.user?.university || 'الجامعة الإماراتية الدولية – صنعاء',
+            studyLevel: data.user?.studyLevel || 'السنة الأولى',
+            major: data.user?.major || 'هندسة الميكاترونكس',
+            role: data.user?.role || 'student',
+            subscriptionPlan: data.subscription?.plan || 'monthly',
+            subscriptionStatus: 'active',
+            subscriptionStartDate: data.subscription?.startDate,
+            subscriptionEndDate: data.subscription?.expiryDate,
+            remainingDays: data.subscription?.remainingDays || 30,
+            isActivated: true,
+            isExpired: false,
+            completedLessons: [],
+            quizScores: {},
+          };
+
+      localStorage.setItem('mct_student', JSON.stringify(activatedStudent));
+
+      setTimeout(() => {
+        onActivationSuccess(activatedStudent);
+      }, 1000);
 
     } catch (err: any) {
       setError(err.message || 'كود التفعيل غير صحيح.');
@@ -145,7 +132,7 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
             تفعيل الاشتراك
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            أدخل كود التفعيل الذي استلمته من إدارة الأكاديمية بعد تأكيد الدفع
+            أدخل كود التفعيل المستلم من الإدارة عبر واتساب لتفعيل اشتراكك وبدء التصفح مباشرة
           </p>
         </div>
 
@@ -167,9 +154,10 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
 
         {/* Activation Form */}
         <form onSubmit={handleActivate} className="space-y-4">
+          {/* Activation Code Input */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
-              أدخل كود التفعيل
+              كود التفعيل (رمز الاشتراك المعتمد) <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -179,15 +167,41 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
                   setCode(e.target.value.toUpperCase());
                   setError('');
                 }}
-                placeholder="أدخل كود التفعيل الخاص بك"
+                placeholder="أدخل كود التفعيل"
                 dir="ltr"
-                className="w-full text-center tracking-widest text-lg sm:text-xl font-mono font-black py-4 px-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                autoFocus
+                className="w-full text-center tracking-widest text-lg sm:text-xl font-mono font-black py-4 px-4 rounded-2xl bg-blue-50/50 dark:bg-slate-800/80 border-2 border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all uppercase"
               />
             </div>
             <p className="text-[11px] text-slate-400 text-right">
-              يتم التحقق من صحة الكود وصلاحيته مباشرة على خادم الأكاديمية.
+              يتم التحقق من صحة الكود وتفعيل الحساب مباشرة على خادم الأكاديمية.
             </p>
           </div>
+
+          {/* Optional Phone Input or if requested */}
+          {(showPhoneField || !localStorage.getItem('mct_auth_token')) && (
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
+                رقم الهاتف المسجل <span className="text-[10px] text-slate-400 font-normal">(لتأكيد الربط بحسابك)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setError('');
+                  }}
+                  placeholder="أدخل رقم الهاتف المسجل"
+                  dir="ltr"
+                  className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
+                />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -197,12 +211,12 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>جاري التحقق والتفعيل...</span>
+                <span>جاري التحقق وتفعيل الحساب...</span>
               </>
             ) : (
               <>
                 <ShieldCheck className="w-5 h-5" />
-                <span>تفعيل الاشتراك</span>
+                <span>تفعيل الاشتراك والتصفح الآن</span>
               </>
             )}
           </button>

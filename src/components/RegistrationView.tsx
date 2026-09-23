@@ -182,7 +182,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="مثال: أحمد عبدالكريم الصبري"
+                placeholder="الاسم الثلاثي أو الرباعي"
                 className="w-full px-4 py-2.5 pr-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <User className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
@@ -200,7 +200,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="مثال: 771234567"
+                placeholder="رقم الهاتف المسجل"
                 className="w-full px-4 py-2.5 pr-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 dir="ltr"
               />
@@ -243,7 +243,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@example.com"
+                placeholder="البريد الإلكتروني (اختياري)"
                 className="w-full px-4 py-2.5 pr-10 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 dir="ltr"
               />

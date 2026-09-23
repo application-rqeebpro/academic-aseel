@@ -163,15 +163,17 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               /* Visitor view: Owner icon button, "تسجيل الدخول", and "اشترك الآن" */
               <>
-                {/* Owner / Admin Control Panel Icon Button */}
-                <button
-                  onClick={onOpenAdmin}
-                  className="p-2 sm:p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200 dark:border-indigo-800 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
-                  title="لوحة تحكم المالك / الإدارة"
-                  aria-label="Owner Admin Control Panel"
-                >
-                  <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                </button>
+                {/* Visitor view: Owner icon button, "تفعيل الكود", "تسجيل الدخول", and "اشترك الآن" */}
+                {onOpenActivation && (
+                  <button
+                    onClick={onOpenActivation}
+                    className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60 font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-2xs"
+                    title="تفعيل الاشتراك بكود التفعيل المعتمد"
+                  >
+                    <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>تفعيل الاشتراك بكود</span>
+                  </button>
+                )}
 
                 <button
                   onClick={onOpenLogin}
@@ -187,6 +189,16 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>اشترك الآن</span>
+                </button>
+
+                {/* Owner / Admin Control Panel Icon Button */}
+                <button
+                  onClick={onOpenAdmin}
+                  className="p-2 sm:p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200 dark:border-indigo-800 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                  title="لوحة تحكم المالك / الإدارة"
+                  aria-label="Owner Admin Control Panel"
+                >
+                  <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </button>
               </>
             )}

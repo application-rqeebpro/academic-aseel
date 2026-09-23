@@ -25,13 +25,15 @@ import {
   Play,
   Sliders,
   Sparkle,
-  Binary
+  Binary,
+  KeyRound
 } from 'lucide-react';
 import { Subject } from '../types';
 
 interface WelcomeViewProps {
   onRegister: () => void;
   onLogin: () => void;
+  onOpenActivation?: () => void;
   onOpenAdmin?: () => void;
   subjects?: Subject[];
   monthlyPriceUSD?: number;
@@ -41,6 +43,7 @@ interface WelcomeViewProps {
 export const WelcomeView: React.FC<WelcomeViewProps> = ({
   onRegister,
   onLogin,
+  onOpenActivation,
   onOpenAdmin,
   subjects = [],
   monthlyPriceUSD = 20,
@@ -105,16 +108,26 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2 max-w-md mx-auto sm:max-w-none">
           <button
             onClick={onRegister}
-            className="w-full sm:w-auto min-w-[220px] flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-base sm:text-lg shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer group"
+            className="w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-base shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer group"
           >
             <UserPlus className="w-5 h-5 group-hover:rotate-12 transition-transform" />
             <span>اشترك الآن</span>
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </button>
 
+          {onOpenActivation && (
+            <button
+              onClick={onOpenActivation}
+              className="w-full sm:w-auto min-w-[190px] flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-2 border-amber-300 dark:border-amber-700 font-extrabold text-base transition-all cursor-pointer shadow-xs hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <KeyRound className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <span>تفعيل كود الاشتراك</span>
+            </button>
+          )}
+
           <button
             onClick={onLogin}
-            className="w-full sm:w-auto min-w-[180px] flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-white border-2 border-slate-200 dark:border-slate-800 font-extrabold text-base transition-all cursor-pointer shadow-xs hover:border-blue-400 dark:hover:border-blue-600"
+            className="w-full sm:w-auto min-w-[170px] flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-white border-2 border-slate-200 dark:border-slate-800 font-extrabold text-base transition-all cursor-pointer shadow-xs hover:border-blue-400 dark:hover:border-blue-600"
           >
             <LogIn className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <span>تسجيل الدخول</span>

@@ -23,6 +23,7 @@ interface LoginModalProps {
   onClose: () => void;
   onLoginSuccess: (student: StudentProfile, token: string) => void;
   onOpenRegister: () => void;
+  onOpenActivation?: () => void;
   whatsappNumber?: string;
 }
 
@@ -31,6 +32,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onClose,
   onLoginSuccess,
   onOpenRegister,
+  onOpenActivation,
   whatsappNumber = '785502919',
 }) => {
   const [loginMode, setLoginMode] = useState<'code' | 'password'>('code');
@@ -309,14 +311,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       type="text"
                       value={codeInputValue}
                       onChange={(e) => setCodeInputValue(e.target.value.toUpperCase())}
-                      placeholder="مثال: MCT-4921"
+                      placeholder="أدخل كود التفعيل"
                       dir="ltr"
                       autoFocus
                       className="w-full pl-4 pr-11 py-3.5 rounded-2xl bg-blue-50/60 dark:bg-slate-800/80 border-2 border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white font-mono font-black placeholder:text-slate-400 focus:outline-hidden focus:ring-4 focus:ring-blue-500/20 transition-all text-base sm:text-lg text-center tracking-widest uppercase shadow-xs"
                     />
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right pt-0.5">
-                    أدخل كود التفعيل المستلم من الإدارة عبر واتساب للدخول المباشر للتطبيق وتفعيل اشتراكك فوراً.
+                    أدخل كود التفعيل المستلم من الإدارة عبر واتساب للدخول المباشر للتطبيق.
                   </p>
                 </div>
 
@@ -333,7 +335,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       type="text"
                       value={phoneInput}
                       onChange={(e) => setPhoneInput(e.target.value)}
-                      placeholder="مثال: 771234567"
+                      placeholder="أدخل رقم الهاتف المسجل"
                       dir="ltr"
                       className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
                     />
@@ -354,7 +356,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="text"
                     value={phoneInput}
                     onChange={(e) => setPhoneInput(e.target.value)}
-                    placeholder="مثال: 771234567"
+                    placeholder="أدخل رقم الهاتف المسجل"
                     dir="ltr"
                     className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
                   />
@@ -441,7 +443,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   type="text"
                   value={resetPhone}
                   onChange={(e) => setResetPhone(e.target.value)}
-                  placeholder="مثال: 771234567"
+                  placeholder="أدخل رقم الهاتف المسجل"
                   dir="ltr"
                   className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
                 />
@@ -509,7 +511,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type="text"
                 value={resetCodeInput}
                 onChange={(e) => setResetCodeInput(e.target.value)}
-                placeholder="123456"
+                placeholder="أدخل رمز التحقق"
                 dir="ltr"
                 maxLength={6}
                 className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono font-bold text-center tracking-widest text-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500"
@@ -575,22 +577,40 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </form>
         )}
 
-        {/* Switch to Register */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-center space-y-2">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            ليس لديك حساب طالب حتى الآن؟
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onOpenRegister();
-            }}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline cursor-pointer"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>إنشاء حساب جديد والاشتراك</span>
-          </button>
+        {/* Switch to Register or Activate */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-center space-y-3">
+          {onOpenActivation && (
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenActivation();
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/80 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+              >
+                <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span>لديك كود تفعيل جديد؟ تفعيل الاشتراك والتصفح الآن</span>
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              ليس لديك حساب طالب حتى الآن؟
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenRegister();
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>إنشاء حساب جديد والاشتراك</span>
+            </button>
+          </div>
         </div>
 
       </div>

@@ -48,6 +48,18 @@
       "role": "student",
       "createdAt": "2026-09-22T20:09:50.597Z",
       "lastLoginAt": "2026-09-22T20:09:52.445Z"
+    },
+    {
+      "id": "user-1790177590221-afc1dd",
+      "name": "طالب الأكاديمية",
+      "phone": "770000001",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studyLevel": "السنة الأولى",
+      "major": "هندسة الميكاترونكس",
+      "passwordHash": "$2b$10$2WLzAytSvT5RhaGjgKjhD.jUq6xzrpf1YJ0UfrPllvRuRkUAYarCu",
+      "role": "student",
+      "createdAt": "2026-09-23T15:33:10.346Z",
+      "lastLoginAt": "2026-09-23T15:33:13.687Z"
     }
   ],
   "subscriptions": [
@@ -86,6 +98,18 @@
       "activatedAt": "2026-09-22T20:09:52.445Z",
       "activationMethod": "activation_code",
       "notes": "تم تسجيل الدخول والتفعيل عبر كود التفعيل MCT-3666"
+    },
+    {
+      "id": "sub-1790177590347",
+      "userId": "user-1790177590221-afc1dd",
+      "plan": "yearly",
+      "status": "active",
+      "startDate": "2026-09-23T15:33:10.347Z",
+      "expiryDate": "2027-09-23T15:33:10.347Z",
+      "createdAt": "2026-09-23T15:33:10.347Z",
+      "activatedAt": "2026-09-23T15:33:10.347Z",
+      "activationMethod": "activation_code",
+      "notes": "تم التفعيل عبر الكود المعتمد MCT-2191"
     }
   ],
   "activationCodes": [
@@ -194,7 +218,13 @@
       "timesUsed": 0,
       "isUsed": false,
       "isActive": true,
-      "usedByStudents": [],
+      "usedByStudents": [
+        {
+          "studentId": "user-1790177590221-afc1dd",
+          "studentName": "طالب الأكاديمية",
+          "usedAt": "2026-09-23T15:33:10.347Z"
+        }
+      ],
       "createdAt": "2026-09-15T19:00:00.000Z",
       "notes": "كود تفعيل سنوي للنخبة"
     },
@@ -276,6 +306,15 @@
       "savedProjects": [],
       "simulatorSettings": {},
       "updatedAt": "2026-09-23T14:16:38.648Z"
+    },
+    "user-1790177590221-afc1dd": {
+      "studentId": "user-1790177590221-afc1dd",
+      "completedLessons": [],
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "simulatorSettings": {},
+      "updatedAt": "2026-09-23T15:33:10.351Z"
     }
   },
   "studentLessons": [],

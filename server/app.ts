@@ -859,9 +859,9 @@ router.get('/auth/me', requireAuth, (req: AuthenticatedRequest, res) => {
   });
 });
 
-// Activate Subscription Code
-router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
-  const { code } = req.body;
+// Activate Subscription Code (Works for logged-in students AND new/unauthenticated students directly)
+router.post('/activate-code', (req: AuthenticatedRequest, res) => {
+  const { code, phone } = req.body;
 
   if (!code || typeof code !== 'string') {
     return res.status(400).json({ error: 'يرجى إدخال كود التفعيل المكون من أرقام أو حروف.' });
@@ -873,7 +873,7 @@ router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
 
   if (!foundCode) {
     return res.status(400).json({
-      error: 'كود التفعيل غير صحيح أو غير موجود. يرجى التأكد من الكود المرسل لك من إدارة الأكاديمية.',
+      error: 'كود التفعيل غير صحيح أو غير موجود. يرجى التأكد من كود التفعيل المستلم من الإدارة.',
     });
   }
 
@@ -889,47 +889,119 @@ router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
     });
   }
 
-  const alreadyUsedByStudent = foundCode.usedByStudents?.some((u) => u.studentId === req.user!.id);
-  const userSub = db.getSubscriptionByUserId(req.user!.id);
+  // Determine target student / user:
+  // 1. Authenticated user from JWT header (if provided)
+  let targetUser = req.user;
 
-  // If student already has this code linked and active, confirm activation without error
-  if (alreadyUsedByStudent && userSub && userSub.status === 'active') {
-    const remainingMs = new Date(userSub.expiryDate).getTime() - Date.now();
+  // 2. If phone is provided, find user by phone
+  const cleanPhone = phone ? normalizePhone(phone) : '';
+  if (!targetUser && cleanPhone) {
+    targetUser = db.findUserByPhone(cleanPhone);
+  }
+
+  // 3. If code was assigned to a student in usedByStudents
+  if (!targetUser && foundCode.usedByStudents && foundCode.usedByStudents.length > 0) {
+    const studentId = foundCode.usedByStudents[0].studentId;
+    targetUser = db.findUserById(studentId);
+  }
+
+  // 4. If code is in notes of an existing subscription
+  if (!targetUser) {
+    const allSubs = db.getAllSubscriptions();
+    const matchedSub = allSubs.find((s) => s.notes && s.notes.toUpperCase().includes(cleanCode));
+    if (matchedSub) {
+      targetUser = db.findUserById(matchedSub.userId);
+    }
+  }
+
+  // 5. If user still not found:
+  if (!targetUser) {
+    if (cleanPhone) {
+      // Auto-create student account for this phone
+      const userId = `user-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+      targetUser = {
+        id: userId,
+        name: 'طالب الأكاديمية',
+        phone: cleanPhone,
+        university: 'الجامعة الإماراتية الدولية – صنعاء',
+        studyLevel: 'السنة الأولى',
+        major: 'هندسة الميكاترونكس',
+        passwordHash: bcrypt.hashSync(cleanPhone.slice(-6) || '123456', 10),
+        role: 'student',
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      };
+      db.createUser(targetUser);
+    } else {
+      return res.status(400).json({
+        error: 'يرجى إدخال رقم هاتفك المسجل لربط كود التفعيل بحسابك وتنشيطه فوراً.',
+        requirePhone: true,
+      });
+    }
+  }
+
+  const durationDays = foundCode.durationDays || (foundCode.planType === 'yearly' ? 365 : 30);
+  const now = new Date();
+  const userSub = db.getSubscriptionByUserId(targetUser.id);
+  const alreadyUsedByThisStudent = foundCode.usedByStudents?.some((u) => u.studentId === targetUser!.id);
+
+  // If already active and valid with remaining time
+  if (alreadyUsedByThisStudent && userSub && userSub.status === 'active') {
+    const remainingMs = new Date(userSub.expiryDate).getTime() - now.getTime();
     if (remainingMs > 0) {
       const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+      const token = generateAuthToken(targetUser);
+      const progress = db.getStudentProgress(targetUser.id);
       return res.json({
         success: true,
         message: `حسابك مفعل مسبقًا بهذا الكود وهو نشط حاليًا وصالح لمدة ${remainingDays} يوم حتى ${new Date(userSub.expiryDate).toLocaleDateString('ar-YE')}.`,
+        token,
         subscription: {
           ...userSub,
           remainingDays,
           isActivated: true,
           isExpired: false,
         },
+        student: {
+          id: targetUser.id,
+          name: targetUser.name,
+          phone: targetUser.phone,
+          email: targetUser.email,
+          university: targetUser.university,
+          studyLevel: targetUser.studyLevel,
+          major: targetUser.major,
+          role: targetUser.role,
+          subscriptionPlan: userSub.plan,
+          subscriptionStatus: 'active',
+          subscriptionStartDate: userSub.startDate,
+          subscriptionEndDate: userSub.expiryDate,
+          remainingDays,
+          isActivated: true,
+          isExpired: false,
+          completedLessons: progress.completedLessons || [],
+          quizScores: progress.quizScores || {},
+        },
       });
     }
   }
 
   const maxUses = foundCode.maxUses || 100;
-  if (!alreadyUsedByStudent && (foundCode.timesUsed || 0) >= maxUses) {
+  if (!alreadyUsedByThisStudent && (foundCode.timesUsed || 0) >= maxUses) {
     return res.status(400).json({
       error: 'هذا الكود مستخدم مسبقًا بالكامل.',
     });
   }
 
   // Activate subscription for student
-  const durationDays = foundCode.durationDays || (foundCode.planType === 'yearly' ? 365 : 30);
-  const now = new Date();
   const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
-
   const updatedSub: DBSubscription = {
-    id: `sub-${Date.now()}`,
-    userId: req.user!.id,
+    id: userSub?.id || `sub-${Date.now()}`,
+    userId: targetUser.id,
     plan: foundCode.planType === 'yearly' ? 'yearly' : 'monthly',
     status: 'active',
     startDate: now.toISOString(),
     expiryDate: expiryDate.toISOString(),
-    createdAt: now.toISOString(),
+    createdAt: userSub?.createdAt || now.toISOString(),
     activatedAt: now.toISOString(),
     activationMethod: 'activation_code',
     notes: `تم التفعيل عبر الكود المعتمد ${cleanCode}`,
@@ -937,27 +1009,38 @@ router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
   db.createOrUpdateSubscription(updatedSub);
 
   // Update activation code stats
-  const updatedTimesUsed = (foundCode.timesUsed || 0) + 1;
-  const isNowUsed = updatedTimesUsed >= maxUses;
-
   const usedRecords = foundCode.usedByStudents || [];
-  usedRecords.push({
-    studentId: req.user!.id,
-    studentName: req.user!.name,
-    usedAt: now.toISOString(),
-  });
+  if (!usedRecords.some((u) => u.studentId === targetUser!.id)) {
+    usedRecords.push({
+      studentId: targetUser.id,
+      studentName: targetUser.name,
+      usedAt: now.toISOString(),
+    });
+  }
 
   db.updateActivationCode(foundCode.id, {
-    timesUsed: updatedTimesUsed,
-    isUsed: isNowUsed,
+    timesUsed: (foundCode.timesUsed || 0) + 1,
+    isUsed: (foundCode.timesUsed || 0) + 1 >= maxUses,
     usedByStudents: usedRecords,
   });
 
-  const progress = db.getStudentProgress(req.user!.id);
+  // Mark pending subscription requests for this phone as approved
+  const requests = db.getAllRequests();
+  const userReq = requests.find((r) => r.phone === targetUser!.phone && r.status === 'pending');
+  if (userReq) {
+    db.updateRequestStatus(userReq.id, 'approved');
+  }
+
+  targetUser.lastLoginAt = now.toISOString();
+  db.updateUser(targetUser.id, { lastLoginAt: targetUser.lastLoginAt });
+
+  const token = generateAuthToken(targetUser);
+  const progress = db.getStudentProgress(targetUser.id);
 
   res.json({
     success: true,
-    message: `تهانينا يا باشمهندس ${req.user!.name}! تم تفعيل اشتراكك بنجاح لمدة ${durationDays} يومًا.`,
+    message: `تهانينا يا باشمهندس ${targetUser.name}! تم تفعيل اشتراكك بنجاح لمدة ${durationDays} يومًا. يمكنك الآن التصفح فوراً.`,
+    token,
     subscription: {
       ...updatedSub,
       remainingDays: durationDays,
@@ -965,16 +1048,16 @@ router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
       isExpired: false,
     },
     student: {
-      id: req.user!.id,
-      name: req.user!.name,
-      phone: req.user!.phone,
-      email: req.user!.email,
-      university: req.user!.university,
-      studyLevel: req.user!.studyLevel,
-      major: req.user!.major,
-      role: req.user!.role,
+      id: targetUser.id,
+      name: targetUser.name,
+      phone: targetUser.phone,
+      email: targetUser.email,
+      university: targetUser.university,
+      studyLevel: targetUser.studyLevel,
+      major: targetUser.major,
+      role: targetUser.role,
       subscriptionPlan: updatedSub.plan,
-      subscriptionStatus: updatedSub.status,
+      subscriptionStatus: 'active',
       subscriptionStartDate: updatedSub.startDate,
       subscriptionEndDate: updatedSub.expiryDate,
       remainingDays: durationDays,

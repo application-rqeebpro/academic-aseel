@@ -374,6 +374,7 @@ export default function App() {
               <WelcomeView
                 onRegister={handleStartRegistration}
                 onLogin={handleOpenLogin}
+                onOpenActivation={() => setOnboardingStep('code')}
                 onOpenAdmin={() => setIsAdminOpen(true)}
                 subjects={subjects}
                 monthlyPriceUSD={monthlyPriceUSD}
@@ -411,7 +412,7 @@ export default function App() {
             {onboardingStep === 'code' && (
               <ActivationCodeView
                 onActivationSuccess={handleActivationSuccess}
-                onBack={() => setOnboardingStep('payment')}
+                onBack={() => setOnboardingStep('welcome')}
                 whatsappNumber={whatsappNumber}
               />
             )}
@@ -592,6 +593,10 @@ export default function App() {
         onOpenRegister={() => {
           setIsLoginModalOpen(false);
           setOnboardingStep('registration');
+        }}
+        onOpenActivation={() => {
+          setIsLoginModalOpen(false);
+          setOnboardingStep('code');
         }}
         whatsappNumber={whatsappNumber}
       />
