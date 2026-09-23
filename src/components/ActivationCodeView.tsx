@@ -179,7 +179,7 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
                   setCode(e.target.value.toUpperCase());
                   setError('');
                 }}
-                placeholder="مثال: MCT-Y1234 أو كود الأكاديمية"
+                placeholder="أدخل كود التفعيل الخاص بك"
                 dir="ltr"
                 className="w-full text-center tracking-widest text-lg sm:text-xl font-mono font-black py-4 px-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
               />

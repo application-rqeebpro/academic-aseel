@@ -8,3 +8,16 @@
     font-family: 'JetBrains Mono', monospace;
   }
 }
+
+@keyframes progress-shimmer {
+  0% {
+    transform: translateX(150%);
+  }
+  100% {
+    transform: translateX(-150%);
+  }
+}
+
+.animate-progress-shimmer {
+  animation: progress-shimmer 2.2s infinite ease-in-out;
+}

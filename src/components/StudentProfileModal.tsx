@@ -221,18 +221,45 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block">حالة الاشتراك:</span>
                   <span className={`text-sm font-black ${student.isActivated ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
                     {student.isActivated 
-                      ? `نشط ومفعل (${student.subscriptionPlan === 'yearly' ? 'اشتراك سنوي' : 'اشتراك شهري'})` 
+                      ? `نشط ومفعل (${student.subscriptionPlan === 'yearly' ? 'اشتراك سنوي - 365 يوم' : 'اشتراك شهري - 30 يوم'})` 
                       : 'قيد التفعيل وتأكيد الدفع'}
                   </span>
                 </div>
               </div>
               <div className="text-left">
                 <span className="text-xs text-slate-500 dark:text-slate-400 block">المتبقي:</span>
-                <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">
-                  {student.isActivated ? `${student.remainingDays} يوم` : 'بانتظار الكود'}
+                <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                  {student.isActivated 
+                    ? (student.remainingDays > 0 
+                        ? `${student.remainingDays} يوم` 
+                        : `${student.remainingHours || 0} ساعة`)
+                    : 'بانتظار الكود'}
                 </span>
               </div>
             </div>
+
+            {/* Exact Dates Details */}
+            {student.isActivated && (student.subscriptionStartDate || student.subscriptionEndDate) && (
+              <div className="mt-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/40 grid grid-cols-2 gap-2 text-xs">
+                {student.subscriptionStartDate && (
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">تاريخ بدء الاشتراك:</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200">
+                      {new Date(student.subscriptionStartDate).toLocaleDateString('ar-YE', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                )}
+                {student.subscriptionEndDate && (
+                  <div className="text-left">
+                    <span className="text-slate-400 block text-[10px]">تاريخ الانتهاء بالدقة:</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200">
+                      {new Date(student.subscriptionEndDate).toLocaleDateString('ar-YE', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      {' '}<span className="text-[10px] text-slate-400 font-mono">({new Date(student.subscriptionEndDate).toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' })})</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {!student.isActivated && onOpenActivation && (
               <button

@@ -154,6 +154,14 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
   // Analysis & Progress states
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progressStage, setProgressStage] = useState(0);
+  const [analysisPercent, setAnalysisPercent] = useState(12);
+  const [analysisElapsedSeconds, setAnalysisElapsedSeconds] = useState(0);
+  const [reassuranceTipIndex, setReassuranceTipIndex] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const progressTimerRef = useRef<any>(null);
+  const percentTimerRef = useRef<any>(null);
+  const elapsedTimerRef = useRef<any>(null);
+  const tipTimerRef = useRef<any>(null);
   const [analysisResult, setAnalysisResult] = useState<ExplainLessonResult | null>(initialLessonToOpen);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -272,19 +280,25 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         const reader = new FileReader();
         reader.onloadend = () => {
           const res = reader.result as string;
-          const match = res.match(/^data:([^;]+);base64,(.*)$/s);
-          resolve(match ? match[2] : res);
+          if (res && res.includes(',')) {
+            resolve(res.split(',')[1]);
+          } else {
+            resolve(res || '');
+          }
         };
         reader.onerror = reject;
         reader.readAsDataURL(blobOrFile);
       });
+
+      const rawType = mimeType || blobOrFile.type || 'audio/webm';
+      const cleanMime = rawType.split(';')[0].trim() || 'audio/webm';
 
       const res = await fetch('/api/transcribe-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           audioData: base64Data,
-          mimeType: mimeType || blobOrFile.type || 'audio/webm',
+          mimeType: cleanMime,
         }),
       });
 
@@ -322,6 +336,85 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     'جاري إعداد الأمثلة المحلولة والاختبار التجريبي...',
     'تم تجهيز شرح الدرس بنجاح!',
   ];
+
+  const REASSURANCE_TIPS = [
+    '⚡ جاري استخراج المعادلات والرموز الفيزيائية بدقة هندسية عبر ذكاء Gemini...',
+    '🧠 النموذج يحلل العلاقات الرياضية والدوائر لتقديم شرح مبسط ومفصل خطوة بخطوة...',
+    '📐 يتم إعداد مسائل محلولة رقمياً متوافقة تماماً مع تخصص هندسة الميكاترونكس...',
+    '⏱️ فحص ملفات الـ PDF والملازم يستغرق بضع ثوانٍ إضافية لضمان دقة القوانين...',
+    '💡 لا تقلق! النظام متصل ويعالج البيانات مباشرة وبنشاط ولم يتوقف التطبيق...',
+    '🎯 يتم بناء ورقة المذاكرة الشاملة والاختبار التجريبي للدرس حالياً...',
+  ];
+
+  const formatElapsedSeconds = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const getAnalysisPipelineSteps = () => {
+    if (sourceType === 'pdf') {
+      return [
+        { title: 'قراءة وفهرسة الـ PDF', subtitle: 'استخراج الصفحات والنصوص الهندسية' },
+        { title: 'تحليل القوانين والمعادلات', subtitle: 'فحص الرموز والوحدات الفيزيائية' },
+        { title: 'معالجة Gemini الذكية', subtitle: 'تفكيك المفاهيم وشرح الدرس بالتفصيل' },
+        { title: 'بناء الأقسام الـ 14 والتمارين', subtitle: 'تجهيز الأمثلة المحلولة والاختبار' },
+      ];
+    }
+    if (processedImagesList.length > 1) {
+      return [
+        { title: `قراءة ${processedImagesList.length} صور`, subtitle: 'تهيئة وفحص جودة الصور' },
+        { title: 'ربط المحتوى الهندسي', subtitle: 'تجميع القوانين والمسائل المتفرقة' },
+        { title: 'تحليل Gemini الشامل', subtitle: 'صياغة الشرح الأكاديمي المتسلسل' },
+        { title: 'صياغة المخرجات والتمارين', subtitle: 'إعداد الأقسام الـ 14 وورقة المذاكرة' },
+      ];
+    }
+    if (sourceType === 'image') {
+      return [
+        { title: 'فحص الصورة والمستند', subtitle: 'التعرف البصري عالي الدقة (Vision)' },
+        { title: 'استخراج القوانين والدوائر', subtitle: 'رصد المكونات والمعادلات المكتوبة' },
+        { title: 'التحليل الهندسي عبر Gemini', subtitle: 'تفكيك الشرح خطوة بخطوة' },
+        { title: 'تجهيز الأقسام الـ 14 والاختبار', subtitle: 'صياغة المخرجات النهائية' },
+      ];
+    }
+    if (sourceType === 'audio') {
+      return [
+        { title: 'تحويل الصوت إلى نص', subtitle: 'تفريغ دقيق للمصطلحات العلمية' },
+        { title: 'استخراج المعطيات الهندسية', subtitle: 'رصد القوانين والمفاهيم المطروحة' },
+        { title: 'معالجة Gemini الشاملة', subtitle: 'توليد الشرح الأكاديمي المنظم' },
+        { title: 'إعداد المسائل والاختبار', subtitle: 'بناء الأقسام الـ 14 التفاعلية' },
+      ];
+    }
+    return [
+      { title: 'قراءة وفحص السؤال', subtitle: 'تحليل المتغيرات والمطلوب' },
+      { title: 'تحديد القوانين ذات الصلة', subtitle: 'استدعاء النظريات الهندسية' },
+      { title: 'المعالجة عبر Gemini', subtitle: 'شرح مبسط لطالب الميكاترونكس' },
+      { title: 'إعداد الأمثلة والاختبار', subtitle: 'تجهيز الشرح النهائي الشامل' },
+    ];
+  };
+
+  const handleCancelAnalysis = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    if (percentTimerRef.current) clearInterval(percentTimerRef.current);
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+    if (tipTimerRef.current) clearInterval(tipTimerRef.current);
+    setIsAnalyzing(false);
+    setErrorMsg('تم إلغاء تحليل ومعالجة الملف بناءً على طلبك.');
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (percentTimerRef.current) clearInterval(percentTimerRef.current);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      if (tipTimerRef.current) clearInterval(tipTimerRef.current);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
 
   // Load student saved lessons from localStorage & API on mount
   useEffect(() => {
@@ -606,7 +699,16 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
 
     setIsAnalyzing(true);
     setProgressStage(0);
+    setAnalysisPercent(12);
+    setAnalysisElapsedSeconds(0);
+    setReassuranceTipIndex(0);
     setErrorMsg(null);
+
+    // Clear previous timers if any
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    if (percentTimerRef.current) clearInterval(percentTimerRef.current);
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+    if (tipTimerRef.current) clearInterval(tipTimerRef.current);
 
     const stages = sourceType === 'audio' ? [
       'جاري استماع الميكروفون وتحويل الصوت إلى نص...',
@@ -614,6 +716,12 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       'جاري تحليل الدرس والمسائل المذكورة صوتياً...',
       'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
       'تم تحويل الصوت وشرح الدرس بنجاح! 🚀',
+    ] : sourceType === 'pdf' ? [
+      'جاري قراءة واستخراج نصوص ومعادلات ملف الـ PDF...',
+      'جاري فهرسة صفحات ومفاهيم الدرس الهندسي...',
+      'جاري استخراج القوانين والمسائل المحلولة والأمثلة...',
+      'جاري إعداد الشرح الشامل لطلاب الميكاترونكس وفق الأقسام الـ 14...',
+      'تم تحليل ملف الـ PDF وشرح الدرس بنجاح! 🚀',
     ] : processedImagesList.length > 1 ? [
       `جاري قراءة وتعالج ${processedImagesList.length} صور مرفوعة للدرس...`,
       'جاري التفكيك والتحليل التسلسلي صورة صورة (1 إلى ' + processedImagesList.length + ')...',
@@ -629,17 +737,40 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
     ] : PROGRESS_STAGES;
 
     // Progress ticker
-    const interval = setInterval(() => {
+    progressTimerRef.current = setInterval(() => {
       setProgressStage((prev) => {
         if (prev < stages.length - 2) {
           return prev + 1;
         }
         return prev;
       });
-    }, 1300);
+    }, 1800);
+
+    // Elapsed seconds ticker
+    elapsedTimerRef.current = setInterval(() => {
+      setAnalysisElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    // Dynamic percent progression towards 94%
+    percentTimerRef.current = setInterval(() => {
+      setAnalysisPercent((prev) => {
+        if (prev < 35) return prev + 4.5;
+        if (prev < 65) return prev + 2.5;
+        if (prev < 82) return prev + 1.2;
+        if (prev < 93) return prev + 0.5;
+        return prev;
+      });
+    }, 500);
+
+    // Reassurance tips cycle
+    tipTimerRef.current = setInterval(() => {
+      setReassuranceTipIndex((prev) => (prev + 1) % REASSURANCE_TIPS.length);
+    }, 3200);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 65000);
+    abortControllerRef.current = controller;
+    const timeoutDuration = (sourceType === 'pdf' || processedImagesList.length > 2) ? 150000 : 90000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
     try {
       let fileData: string | undefined;
@@ -650,12 +781,14 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         try {
           const audioTarget = audioBlob || selectedFile!;
           const audioB64 = await readFileAsBase64(audioTarget as File);
+          const cleanB64 = audioB64.includes(',') ? audioB64.split(',')[1] : audioB64;
+          const cleanAudioMime = (audioTarget.type || 'audio/webm').split(';')[0].trim() || 'audio/webm';
           const transRes = await fetch('/api/transcribe-audio', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              audioData: audioB64,
-              mimeType: audioTarget.type || 'audio/webm',
+              audioData: cleanB64,
+              mimeType: cleanAudioMime,
             }),
           });
           if (transRes.ok) {
@@ -721,8 +854,12 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       });
 
       clearTimeout(timeoutId);
-      clearInterval(interval);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (percentTimerRef.current) clearInterval(percentTimerRef.current);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      if (tipTimerRef.current) clearInterval(tipTimerRef.current);
       setProgressStage(stages.length - 1);
+      setAnalysisPercent(100);
 
       if (!response.ok) {
         let serverError = 'حدث خطأ في الخادم أثناء تحليل الدرس.';
@@ -755,26 +892,38 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
       setQuizAnswers({});
       setRevealedQuiz({});
 
+      // Brief pause to display 100% complete state smoothly
+      await new Promise((r) => setTimeout(r, 400));
+      setIsAnalyzing(false);
+
       // Scroll to results smoothly
       setTimeout(() => {
         resultsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     } catch (err: any) {
       clearTimeout(timeoutId);
-      clearInterval(interval);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (percentTimerRef.current) clearInterval(percentTimerRef.current);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      if (tipTimerRef.current) clearInterval(tipTimerRef.current);
       console.error('Error analyzing lesson:', err);
 
-      let userMsg = 'تعذر تحليل الدرس حالياً. يرجى التأكد من الصورة والمحاولة ثانية.';
+      let userMsg = sourceType === 'pdf'
+        ? 'تعذر تحليل ملف الـ PDF حالياً. يرجى التأكد من صلاحية الملف والمحاولة ثانية.'
+        : 'تعذر تحليل الدرس حالياً. يرجى التأكد من الصورة والمحاولة ثانية.';
       if (err.name === 'AbortError') {
-        userMsg = 'استغرق تحليل الصورة وقتاً أطول من المتوقع (انتهت المهلة). يرجى الضغط على "إعادة المحاولة" أو رفع صورة أوضح.';
+        userMsg = sourceType === 'pdf'
+          ? 'استغرق تحليل ملف الـ PDF وقتاً أطول من المتوقع (انتهت المهلة). يرجى الضغط على "إعادة المحاولة" أو اختيار صفحات معينة من الملف لسرعة التحليل.'
+          : 'استغرق تحليل المحتوى وقتاً أطول من المتوقع (انتهت المهلة). يرجى الضغط على "إعادة المحاولة" أو رفع صورة أوضح.';
       } else if (!navigator.onLine) {
         userMsg = 'انقطع الاتصال بالإنترنت. يرجى التأكد من اتصالك ثم الضغط على "إعادة المحاولة".';
       } else if (err.message) {
         userMsg = err.message;
       }
       setErrorMsg(userMsg);
-    } finally {
       setIsAnalyzing(false);
+    } finally {
+      abortControllerRef.current = null;
     }
   };
 
@@ -1586,6 +1735,164 @@ ${analysisResult.summaryPoints.join('\n')}
           </div>
         )}
 
+        {/* Active Analysis & Progress Card ("تحليل الملف...") */}
+        {isAnalyzing && (
+          <div className="relative overflow-hidden rounded-3xl border-2 border-blue-500/50 bg-gradient-to-b from-blue-50/90 via-indigo-50/40 to-white dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 p-5 sm:p-7 shadow-xl shadow-blue-500/10 space-y-5 animate-in fade-in duration-300">
+            {/* Top scanning ambient line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-indigo-600 animate-pulse" />
+
+            {/* Header: Title, Active Beacon & Timers */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-blue-100 dark:border-blue-900/60">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/30">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  </div>
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>تحليل الملف قيد المعالجة...</span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                      Gemini متصل
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    النظام يعالج المحتوى الهندسي مباشرة ولم يتوقف
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badges & Timer */}
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <div className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shadow-xs">
+                  <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>المستغرق: {formatElapsedSeconds(analysisElapsedSeconds)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCancelAnalysis}
+                  className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-all cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-900"
+                  title="إلغاء المعالجة"
+                >
+                  إلغاء ✕
+                </button>
+              </div>
+            </div>
+
+            {/* File In-Progress Context Banner */}
+            <div className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-blue-100 dark:border-blue-900/50 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold truncate max-w-md">
+                <span className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+                  {sourceType === 'pdf' ? <FileText className="w-4 h-4" /> : sourceType === 'image' ? <ImageIcon className="w-4 h-4" /> : sourceType === 'audio' ? <Mic className="w-4 h-4" /> : <PenTool className="w-4 h-4" />}
+                </span>
+                <span className="truncate">
+                  {processedImagesList.length > 1
+                    ? `مجموعة صور (${processedImagesList.length} صور مرفوعة للدرس)`
+                    : selectedFile?.name || (sourceType === 'audio' ? 'تسجيل صوتي للمحاضرة' : sourceType === 'text' ? 'نص الدرس المكتوب' : 'ملف الدرس الجامعي')}
+                </span>
+                {selectedFile && (
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">
+                    ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px]">
+                {sourceType === 'pdf' && (
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-200 dark:border-indigo-800">
+                    {pdfMode === 'page' && pdfPageNumber ? `صفحة: ${pdfPageNumber}` : 'كامل الملف'}
+                  </span>
+                )}
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">
+                  {explanationLevel === 'simple' ? 'مبسط جداً' : explanationLevel === 'medium' ? 'متوسط' : explanationLevel === 'advanced' ? 'متقدم' : 'ملخص سريع'}
+                </span>
+              </div>
+            </div>
+
+            {/* High-Tech Animated Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-black">
+                <span className="text-blue-900 dark:text-blue-200 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                  <span>
+                    المرحلة {Math.min(4, Math.max(1, Math.floor((analysisPercent / 100) * 4) + 1))} من 4:
+                  </span>
+                  <span className="text-slate-800 dark:text-slate-200 font-bold">
+                    {sourceType === 'pdf'
+                      ? ['قراءة ملف الـ PDF واستخراج النصوص...', 'فهرسة الصفحات والرموز والمعادلات...', 'التحليل المعمق عبر ذكاء Gemini...', 'صياغة الأقسام الـ 14 والأمثلة المحلولة...'][Math.min(3, Math.floor((analysisPercent / 100) * 4))]
+                      : processedImagesList.length > 1
+                      ? [`قراءة ${processedImagesList.length} صور للدرس...`, 'ربط المسائل والقوانين التسلسلية...', 'تحليل ذكاء Gemini للمحتوى الكامل...', 'تجهيز الشرح والأمثلة والاختبار...'][Math.min(3, Math.floor((analysisPercent / 100) * 4))]
+                      : sourceType === 'image'
+                      ? ['فحص عناصر الصورة والتعرف البصري...', 'استخراج القوانين والمعادلات والدوائر...', 'تفكيك خطوات الحل والشرح الهندسي...', 'تجهيز الشرح والأمثلة المحلولة...'][Math.min(3, Math.floor((analysisPercent / 100) * 4))]
+                      : ['قراءة المحتوى وفحص البيانات...', 'استخراج المفاهيم والقوانين الهندسية...', 'التحليل الذكي وصياغة الشرح...', 'إعداد الأمثلة المحلولة والاختبار التجريبي...'][Math.min(3, Math.floor((analysisPercent / 100) * 4))]}
+                  </span>
+                </span>
+                <span className="text-sm font-black font-mono text-blue-700 dark:text-cyan-400 bg-blue-100/80 dark:bg-blue-900/60 px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                  {Math.round(analysisPercent)}%
+                </span>
+              </div>
+
+              {/* Progress track */}
+              <div className="relative w-full h-4 rounded-full bg-slate-200 dark:bg-slate-800 p-0.5 overflow-hidden shadow-inner border border-slate-300/60 dark:border-slate-700">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 transition-all duration-500 ease-out relative overflow-hidden shadow-sm shadow-blue-500/50"
+                  style={{ width: `${Math.min(100, Math.max(8, analysisPercent))}%` }}
+                >
+                  {/* Scanning Shimmer Light Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-progress-shimmer w-full h-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* 4-Step Pipeline Visual Tracker */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+              {getAnalysisPipelineSteps().map((step, idx) => {
+                const stepThreshold = (idx + 1) * 25;
+                const isStepCompleted = analysisPercent >= stepThreshold;
+                const isStepActive = analysisPercent < stepThreshold && (idx === 0 || analysisPercent >= idx * 25);
+
+                return (
+                  <div
+                    key={idx}
+                    className={`p-2.5 rounded-xl border text-right transition-all ${
+                      isStepCompleted
+                        ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                        : isStepActive
+                        ? 'bg-blue-50/90 dark:bg-blue-950/60 border-blue-400 dark:border-blue-700 text-blue-950 dark:text-blue-100 ring-2 ring-blue-500/20'
+                        : 'bg-white/40 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-[10px] font-black uppercase">خطوة {idx + 1}</span>
+                      {isStepCompleted ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      ) : isStepActive ? (
+                        <RefreshCw className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 animate-spin shrink-0" />
+                      ) : (
+                        <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs font-black truncate">{step.title}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{step.subtitle}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Rotating Reassurance Tip Box (Anti-Freeze Signal) */}
+            <div className="p-3 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5 transition-all">
+              <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
+              <div className="flex-1 font-medium leading-relaxed">
+                <span>{REASSURANCE_TIPS[reassuranceTipIndex]}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Analyze Action Button */}
         <button
           type="button"
@@ -1593,7 +1900,7 @@ ${analysisResult.summaryPoints.join('\n')}
           disabled={isAnalyzing}
           className={`w-full py-4 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-3 transition-all cursor-pointer shadow-lg ${
             isAnalyzing
-              ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed'
+              ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed opacity-90'
               : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-blue-600/20 hover:scale-[1.005]'
           }`}
         >
@@ -1601,59 +1908,24 @@ ${analysisResult.summaryPoints.join('\n')}
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />
               <span>
-                {sourceType === 'image'
-                  ? [
-                      'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
-                      'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
-                      'جاري تحليل الدرس والمسائل خطوة بخطوة...',
-                      'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
-                      'تم تجهيز شرح الصورة بنجاح! 🚀',
-                    ][progressStage] || 'جاري قراءة الصورة وإعداد الشرح...'
-                  : PROGRESS_STAGES[progressStage] || 'جاري التحليل...'}
+                تحليل ومعالجة الملف... ({Math.round(analysisPercent)}%)
               </span>
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5 text-amber-300" />
-              <span>{sourceType === 'image' ? 'اشرح لي الدرس من الصورة 📸' : 'اشرح لي الدرس الآن 🚀'}</span>
+              <span>
+                {sourceType === 'image'
+                  ? 'اشرح لي الدرس من الصورة 📸'
+                  : sourceType === 'pdf'
+                  ? 'اشرح لي ملف الـ PDF الآن 📄'
+                  : sourceType === 'audio'
+                  ? 'اشرح لي التسجيل الصوتي 🎙️'
+                  : 'اشرح لي الدرس الآن 🚀'}
+              </span>
             </>
           )}
         </button>
-
-        {/* Progress Stages Bar during analysis */}
-        {isAnalyzing && (
-          <div className="space-y-2 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 animate-pulse">
-            <div className="flex justify-between text-xs font-bold text-blue-700 dark:text-blue-300">
-              <span>
-                {sourceType === 'image'
-                  ? [
-                      'جاري قراءة الصورة والتعرف على العناصر الهندسية...',
-                      'جاري فحص النصوص والمعادلات والدوائر الكهربائية...',
-                      'جاري تحليل الدرس والمسائل خطوة بخطوة...',
-                      'جاري إعداد الشرح الهندسي لطلاب الميكاترونكس...',
-                      'تم تجهيز شرح الصورة بنجاح! 🚀',
-                    ][progressStage] || 'جاري قراءة الصورة والتحليل...'
-                  : PROGRESS_STAGES[progressStage]}
-              </span>
-              <span>
-                {Math.round(
-                  ((progressStage + 1) / (sourceType === 'image' ? 5 : PROGRESS_STAGES.length)) * 100
-                )}
-                %
-              </span>
-            </div>
-            <div className="w-full h-2 rounded-full bg-blue-200 dark:bg-blue-900 overflow-hidden">
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                style={{
-                  width: `${
-                    ((progressStage + 1) / (sourceType === 'image' ? 5 : PROGRESS_STAGES.length)) * 100
-                  }%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 3. Analysis Results View */}

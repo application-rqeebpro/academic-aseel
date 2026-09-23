@@ -273,7 +273,54 @@ router.post('/auth/register', (req, res) => {
   });
 });
 
-// Helper to accurately calculate subscription remaining days and status
+// Helper to format official activation WhatsApp message
+function formatWhatsAppActivation(
+  studentName: string,
+  phone: string,
+  code: string,
+  plan: 'monthly' | 'yearly',
+  startDateISO: string,
+  expiryDateISO: string,
+  durationDays: number
+) {
+  const cleanPhone = phone.startsWith('967') ? phone : `967${phone.replace(/^0+/, '')}`;
+  const startDateStr = new Date(startDateISO).toLocaleDateString('ar-YE', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const expiryDateStr = new Date(expiryDateISO).toLocaleDateString('ar-YE', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const planTitle = plan === 'yearly' ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+
+  const message = `أهلاً بك يا باشمهندس ${studentName}! 🎓
+تم تفعيل اشتراكك بنجاح في منصة أكاديمية الميكاترونكس اليمنية.
+
+بيانات دخولك الرسمية:
+🔑 كود التفعيل المعتمد: ${code}
+📱 رقم هاتفك المسجل: ${phone}
+⏱️ نوع الاشتراك: ${planTitle}
+📅 تاريخ بدء الاشتراك: ${startDateStr}
+⏳ تاريخ الانتهاء الدقيق: ${expiryDateStr} (${durationDays} يوم)
+
+طريقة الدخول للتطبيق:
+1. افتح المنصة واختر تسجيل الدخول.
+2. أدخل رقم هاتفك مع كود التفعيل أعلاه (أو بكلمة المرور التي أنشأتها).
+3. استمتع بكافة الدروس، محلل القوانين، محاكي Arduino، ومساعد الذكاء الاصطناعي.
+
+نتمنى لك فصلاً دراسياً متميزاً ومليئاً بالتفوق والنجاح! 🚀`;
+
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+  return { message, whatsappUrl, cleanPhone };
+}
+
+// Helper to accurately calculate subscription remaining days, hours, and status
 function getSubscriptionDetails(userId: string) {
   let sub = db.getSubscriptionByUserId(userId);
   if (!sub) {
@@ -295,6 +342,7 @@ function getSubscriptionDetails(userId: string) {
   }
 
   let remainingDays = 0;
+  let remainingHours = 0;
   let isActivated = false;
   let isExpired = false;
 
@@ -302,12 +350,14 @@ function getSubscriptionDetails(userId: string) {
     if (sub.status === 'active') {
       const msLeft = new Date(sub.expiryDate).getTime() - Date.now();
       remainingDays = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-      if (remainingDays <= 0) {
+      remainingHours = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60)));
+      if (msLeft <= 0) {
         sub.status = 'expired';
         db.createOrUpdateSubscription(sub);
         isActivated = false;
         isExpired = true;
         remainingDays = 0;
+        remainingHours = 0;
       } else {
         isActivated = true;
         isExpired = false;
@@ -316,15 +366,17 @@ function getSubscriptionDetails(userId: string) {
       isExpired = true;
       isActivated = false;
       remainingDays = 0;
+      remainingHours = 0;
     } else {
       // pending or suspended
       isActivated = false;
       isExpired = false;
       remainingDays = 0;
+      remainingHours = 0;
     }
   }
 
-  return { sub, remainingDays, isActivated, isExpired };
+  return { sub, remainingDays, remainingHours, isActivated, isExpired };
 }
 
 // Student / User Login (Activation Code or Password)
@@ -347,16 +399,16 @@ router.post('/auth/login', (req, res) => {
     const allCodes = db.getAllActivationCodes();
     const foundCode = allCodes.find((c) => c.code.trim().toUpperCase() === inputCode);
 
-    // Default valid owner codes
-    const isOwnerMasterCode = ['7820', '7829', '7782', '7735', 'MCT-2191', '123456'].includes(inputCode);
-
-    // Also check if user already has an active subscription activated with this code
+    // Also check if user has an active subscription with notes or assigned code
     let userSub = user ? db.getSubscriptionByUserId(user.id) : null;
-    const isUserAssignedCode = userSub && (userSub.notes?.includes(inputCode) || userSub.status === 'active');
+    const isUserAssignedCode = userSub && (
+      (userSub.notes && userSub.notes.toUpperCase().includes(inputCode)) ||
+      (foundCode?.usedByStudents?.some((u) => u.studentId === user?.id))
+    );
 
-    if (!foundCode && !isOwnerMasterCode && !isUserAssignedCode) {
+    if (!foundCode && !isUserAssignedCode) {
       return res.status(400).json({
-        error: 'كود التفعيل غير صحيح أو غير موجود. يرجى التأكد من الكود المعتمد المرسل لك من لوحة الإدارة.',
+        error: 'كود التفعيل غير صحيح أو غير موجود. يرجى التأكد من كود التفعيل المستلم من الإدارة.',
       });
     }
 
@@ -369,7 +421,7 @@ router.post('/auth/login', (req, res) => {
       const userId = `user-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
       user = {
         id: userId,
-        name: `طالب أسبوعي/شهري (${rawPhone.slice(-4)})`,
+        name: `طالب الأكاديمية (${rawPhone.slice(-4)})`,
         phone: cleanPhone || rawPhone,
         university: 'الجامعة الإماراتية الدولية – صنعاء',
         studyLevel: 'السنة الأولى',
@@ -382,24 +434,60 @@ router.post('/auth/login', (req, res) => {
       db.createUser(user);
     }
 
-    // Ensure student has active subscription
-    const durationDays = foundCode ? (foundCode.durationDays || 30) : 30;
+    // Determine duration and plan
+    const codeDurationDays = foundCode ? (foundCode.durationDays || 30) : 30;
+    const codePlan = foundCode?.planType === 'yearly' ? 'yearly' : 'monthly';
     const now = new Date();
-    const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-    const activeSub: DBSubscription = {
-      id: userSub?.id || `sub-${Date.now()}`,
-      userId: user.id,
-      plan: foundCode?.planType === 'yearly' ? 'yearly' : 'monthly',
-      status: 'active',
-      startDate: now.toISOString(),
-      expiryDate: expiryDate.toISOString(),
-      createdAt: userSub?.createdAt || now.toISOString(),
-      activatedAt: now.toISOString(),
-      activationMethod: 'activation_code',
-      notes: `تم تسجيل الدخول والتفعيل عبر كود التفعيل ${inputCode}`,
-    };
-    db.createOrUpdateSubscription(activeSub);
+    let activeSub: DBSubscription;
+    let effectiveRemainingDays = codeDurationDays;
+
+    if (userSub && userSub.status === 'active') {
+      const msLeft = new Date(userSub.expiryDate).getTime() - now.getTime();
+      if (msLeft > 0) {
+        // Subscription is ALREADY active and valid! Preserve original start and expiry dates!
+        activeSub = userSub;
+        effectiveRemainingDays = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+      } else {
+        // Previously active subscription has expired!
+        if (isUserAssignedCode && !foundCode?.isActive) {
+          return res.status(403).json({
+            error: `انتهت صلاحية اشتراكك بتاريخ ${new Date(userSub.expiryDate).toLocaleDateString('ar-YE')}. يرجى تجديد الاشتراك وتفعيل كود جديد.`,
+          });
+        }
+        // If a new valid code is provided, start a fresh subscription period
+        const expiryDate = new Date(now.getTime() + codeDurationDays * 24 * 60 * 60 * 1000);
+        activeSub = {
+          ...userSub,
+          plan: codePlan,
+          status: 'active',
+          startDate: now.toISOString(),
+          expiryDate: expiryDate.toISOString(),
+          activatedAt: now.toISOString(),
+          activationMethod: 'activation_code',
+          notes: `كود التفعيل: ${inputCode} - تم تجديد الاشتراك بنجاح`,
+        };
+        db.createOrUpdateSubscription(activeSub);
+        effectiveRemainingDays = codeDurationDays;
+      }
+    } else {
+      // First-time activation or pending subscription
+      const expiryDate = new Date(now.getTime() + codeDurationDays * 24 * 60 * 60 * 1000);
+      activeSub = {
+        id: userSub?.id || `sub-${Date.now()}`,
+        userId: user.id,
+        plan: codePlan,
+        status: 'active',
+        startDate: now.toISOString(),
+        expiryDate: expiryDate.toISOString(),
+        createdAt: userSub?.createdAt || now.toISOString(),
+        activatedAt: now.toISOString(),
+        activationMethod: 'activation_code',
+        notes: `كود التفعيل: ${inputCode}`,
+      };
+      db.createOrUpdateSubscription(activeSub);
+      effectiveRemainingDays = codeDurationDays;
+    }
 
     if (foundCode) {
       const usedRecords = foundCode.usedByStudents || [];
@@ -438,7 +526,7 @@ router.post('/auth/login', (req, res) => {
       },
       subscription: {
         ...activeSub,
-        remainingDays: durationDays,
+        remainingDays: effectiveRemainingDays,
         isActivated: true,
         isExpired: false,
       },
@@ -455,7 +543,7 @@ router.post('/auth/login', (req, res) => {
         subscriptionStatus: 'active',
         subscriptionStartDate: activeSub.startDate,
         subscriptionEndDate: activeSub.expiryDate,
-        remainingDays: durationDays,
+        remainingDays: effectiveRemainingDays,
         isActivated: true,
         isExpired: false,
         completedLessons: progress.completedLessons || [],
@@ -464,7 +552,7 @@ router.post('/auth/login', (req, res) => {
     });
   }
 
-  // OPTION B: Login via Password (For Admin or Legacy Password users)
+  // OPTION B: Login via Password (For Students with Password or Admin)
   if (!user) {
     return res.status(401).json({
       error: 'لم يتم العثور على حساب مسجل بهذا الرقم. يرجى التأكد من رقم الهاتف أو إدخال كود التفعيل الخاص بك.',
@@ -473,7 +561,7 @@ router.post('/auth/login', (req, res) => {
 
   if (!rawPassword) {
     return res.status(400).json({
-      error: 'يرجى إدخال كود التفعيل لتسجيل الدخول مباشرة، أو أدخل كلمة المرور.',
+      error: 'يرجى إدخال كلمة المرور أو كود التفعيل لتسجيل الدخول.',
     });
   }
 
@@ -501,7 +589,7 @@ router.post('/auth/login', (req, res) => {
 
   if (!isValidPassword) {
     return res.status(401).json({
-      error: 'بيانات الدخول غير صحيحة. يرجى التأكد من رقم الهاتف وكود التفعيل.',
+      error: 'كلمة المرور غير صحيحة. يرجى التأكد من كلمة المرور أو الدخول بكود التفعيل.',
     });
   }
 
@@ -509,7 +597,7 @@ router.post('/auth/login', (req, res) => {
   db.updateUser(user.id, { lastLoginAt: user.lastLoginAt });
 
   const token = generateAuthToken(user);
-  const { sub, remainingDays, isActivated, isExpired } = getSubscriptionDetails(user.id);
+  const { sub, remainingDays, remainingHours, isActivated, isExpired } = getSubscriptionDetails(user.id);
   const progress = db.getStudentProgress(user.id);
 
   const studentObj = {
@@ -526,6 +614,7 @@ router.post('/auth/login', (req, res) => {
     subscriptionStartDate: sub?.startDate,
     subscriptionEndDate: sub?.expiryDate,
     remainingDays,
+    remainingHours,
     isActivated,
     isExpired,
     completedLessons: progress.completedLessons || [],
@@ -546,14 +635,13 @@ router.post('/auth/login', (req, res) => {
       major: user.major,
       role: user.role,
     },
-    subscription: sub
-      ? {
-          ...sub,
-          remainingDays,
-          isActivated,
-          isExpired,
-        }
-      : undefined,
+    subscription: {
+      ...sub,
+      remainingDays,
+      remainingHours,
+      isActivated,
+      isExpired,
+    },
     student: studentObj,
   });
 });
@@ -837,17 +925,22 @@ router.post('/activate-code', requireAuth, (req: AuthenticatedRequest, res) => {
 
 // Submit Subscription Request (WhatsApp Flow)
 router.post('/subscription-request', (req, res) => {
-  const { studentName, phone, university, studyLevel, major, plan, paymentMethod, transactionRef } = req.body;
+  const { studentName, name, phone, university, studyLevel, major, plan, paymentMethod, transactionRef } = req.body;
+  const finalName = (studentName || name || '').toString().trim();
+  const rawPhone = (phone || '').toString().trim();
 
-  if (!studentName || !phone) {
+  if (!finalName || !rawPhone) {
     return res.status(400).json({ error: 'الاسم ورقم الهاتف مطلوبان لإرسال طلب الاشتراك.' });
   }
 
+  const cleanPhone = normalizePhone(rawPhone) || rawPhone;
+  const existingUser = db.findUserByPhone(cleanPhone);
+
   const newRequest: DBSubscriptionRequest = {
     id: `req-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`,
-    userId: req.body.userId || 'guest',
-    studentName: studentName.trim(),
-    phone: phone.trim(),
+    userId: existingUser?.id || req.body.userId || 'guest',
+    studentName: finalName,
+    phone: cleanPhone,
     university: university || 'الجامعة الإماراتية الدولية – صنعاء',
     plan: plan === 'yearly' ? 'yearly' : 'monthly',
     priceUSD: plan === 'yearly' ? 200 : 20,
@@ -1046,16 +1139,34 @@ router.post('/transcribe-audio', async (req: AuthenticatedRequest, res) => {
       return res.status(500).json({ error: 'مفتاح الذكاء الاصطناعي غير متوفر حالياً.' });
     }
 
-    let cleanBase64 = audioData;
-    let detectedMime = mimeType;
-    const match = audioData.match(/^data:([^;]+);base64,(.*)$/s);
-    if (match) {
-      detectedMime = match[1];
-      cleanBase64 = match[2];
-    }
-    cleanBase64 = cleanBase64.trim().replace(/\s+/g, '');
+    let cleanBase64 = '';
+    let detectedMime = (mimeType || 'audio/webm').split(';')[0].trim();
 
-    const actualMime = detectedMime || 'audio/webm';
+    if (typeof audioData === 'string') {
+      const trimmed = audioData.trim();
+      const commaIdx = trimmed.indexOf(',');
+      if (trimmed.startsWith('data:') && commaIdx !== -1) {
+        const meta = trimmed.slice(5, commaIdx);
+        const metaMime = meta.split(';')[0].trim();
+        if (metaMime) detectedMime = metaMime;
+        cleanBase64 = trimmed.slice(commaIdx + 1);
+      } else {
+        cleanBase64 = trimmed;
+      }
+    }
+
+    // Strip any possible residual data URI prefix and all whitespace/newlines
+    cleanBase64 = cleanBase64.replace(/^data:[^,]+,/, '').replace(/\s+/g, '');
+
+    if (!cleanBase64) {
+      return res.status(400).json({ error: 'ملف الصوت غير صالح أو فارغ.' });
+    }
+
+    // Clean MIME type (must be clean like audio/webm, audio/mp3, audio/wav, without browser codecs like ;codecs=opus)
+    let actualMime = (detectedMime || 'audio/webm').split(';')[0].trim().toLowerCase();
+    if (!actualMime || actualMime === 'audio' || actualMime === 'application/octet-stream') {
+      actualMime = 'audio/webm';
+    }
 
     const promptText = `أنت خبير واستشاري تحويل الصوت إلى نص (Speech-to-Text) متخصص في الهندسة والميكاترونكس والفيزياء والرياضيات باللغة العربية.
 قم بتفريغ وتحويل المقطع الصوتي المرفق إلى نص دقيق وواضح جداً باللغة العربية مع المحافظة على كافة المصطلحات الهندسية والرموز والقوانين والأرقام المذكورة.
@@ -1072,9 +1183,14 @@ router.post('/transcribe-audio', async (req: AuthenticatedRequest, res) => {
         { text: promptText },
       ],
       config: {
-        temperature: 0.2,
+        temperature: 0.1,
       },
-      preferredModel: 'gemini-3.8-flash',
+      preferredModel: 'gemini-3.5-transcribe',
+      fallbackModels: [
+        'gemini-3.8-flash',
+        'gemini-3.6-flash',
+        'gemini-flash-latest',
+      ],
     });
 
     const transcribedText = response.text ? response.text.trim() : '';
@@ -1653,20 +1769,15 @@ const handleApproveRequest = (req: any, res: any) => {
   db.createOrUpdateSubscription(sub);
   db.updateRequestStatus(requestId, 'approved');
 
-  const cleanPhone = request.phone.startsWith('967')
-    ? request.phone
-    : `967${request.phone.replace(/^0+/, '')}`;
-
-  const whatsappMessage = `أهلاً بك يا باشمهندس ${user.name}! 🎉
-تم تأكيد اشتراكك في أكاديمية الميكاترونكس بنجاح.
-
-🔑 **كود التفعيل الخاص بك:** ${generatedCode}
-📱 **رقم الهاتف المسجل:** ${user.phone}
-⏱️ **مدة الاشتراك:** ${request.plan === 'yearly' ? 'سنة كاملة (365 يومًا)' : 'شهر (30 يومًا)'}
-
-يمكنك الآن فتح التطبيق وتسجيل الدخول مباشرة بإدخال رقم هاتفك وكود التفعيل أعلاه. نتمنى لك التوفيق والتميز الأكاديمي! 🚀`;
-
-  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+  const { message: whatsappMessage, whatsappUrl } = formatWhatsAppActivation(
+    user.name,
+    user.phone,
+    generatedCode,
+    request.plan,
+    now.toISOString(),
+    expiryDate.toISOString(),
+    durationDays
+  );
 
   res.json({
     success: true,
@@ -1675,6 +1786,9 @@ const handleApproveRequest = (req: any, res: any) => {
     studentName: user.name,
     studentPhone: user.phone,
     plan: request.plan,
+    durationDays,
+    startDate: now.toISOString(),
+    expiryDate: expiryDate.toISOString(),
     whatsappMessage,
     whatsappUrl,
     request,
@@ -1690,26 +1804,38 @@ router.patch('/admin/requests/:requestId/reject', requireAuth, requireAdmin, (re
   const updated = db.updateRequestStatus(requestId, 'rejected');
   res.json({ success: true, request: updated });
 });
+router.post('/admin/requests/:requestId/reject', requireAuth, requireAdmin, (req, res) => {
+  const { requestId } = req.params;
+  const updated = db.updateRequestStatus(requestId, 'rejected');
+  res.json({ success: true, request: updated });
+});
 
 // Admin Students List
 router.get('/admin/students', requireAuth, requireAdmin, (req, res) => {
   const users = db.getAllUsers().filter((u) => u.role === 'student');
   const subs = db.getAllSubscriptions();
+  const allCodes = db.getAllActivationCodes();
 
   const studentsWithSubs = users.map((u) => {
     const s = subs.find((sub) => sub.userId === u.id);
     let remainingDays = 0;
+    let remainingHours = 0;
     let isExpired = false;
     let isActivated = false;
 
     if (s && s.status === 'active') {
       const ms = new Date(s.expiryDate).getTime() - Date.now();
       remainingDays = Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
-      isActivated = remainingDays > 0;
-      isExpired = remainingDays <= 0;
+      remainingHours = Math.max(0, Math.ceil(ms / (1000 * 60 * 60)));
+      isActivated = ms > 0;
+      isExpired = ms <= 0;
     } else if (s && s.status === 'expired') {
       isExpired = true;
     }
+
+    // Find student's assigned code
+    const userCodeObj = allCodes.find((c) => c.usedByStudents?.some((st) => st.studentId === u.id));
+    const extractedCode = userCodeObj?.code || (s?.notes?.match(/كود التفعيل:\s*([A-Za-z0-9-]+)/)?.[1]) || '';
 
     return {
       id: u.id,
@@ -1726,16 +1852,178 @@ router.get('/admin/students', requireAuth, requireAdmin, (req, res) => {
       subscriptionStartDate: s?.startDate,
       subscriptionEndDate: s?.expiryDate,
       remainingDays,
+      remainingHours,
       isActivated,
       isExpired,
+      activationCode: extractedCode,
     };
   });
 
   res.json({ students: studentsWithSubs });
 });
 
+// Admin Activate Student and Generate Real Activation Code + WhatsApp
+const handleActivateStudentWithCode = (req: any, res: any) => {
+  const { studentId } = req.params;
+  const { plan = 'monthly', customDurationDays } = req.body;
+
+  const user = db.findUserById(studentId);
+  if (!user) {
+    return res.status(404).json({ error: 'الطالب غير موجود.' });
+  }
+
+  const durationDays = customDurationDays ? Number(customDurationDays) : (plan === 'yearly' ? 365 : 30);
+  const now = new Date();
+  const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+  // Generate unique actual code
+  const random4Digits = Math.floor(1000 + Math.random() * 9000);
+  const generatedCode = `MCT-${random4Digits}`;
+
+  // Store code in activationCodes
+  const codeRecord: DBActivationCode = {
+    id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
+    code: generatedCode,
+    planType: plan === 'yearly' ? 'yearly' : 'monthly',
+    durationDays,
+    maxUses: 1,
+    timesUsed: 1,
+    isUsed: true,
+    isActive: true,
+    usedByStudents: [
+      {
+        studentId: user.id,
+        studentName: user.name,
+        usedAt: now.toISOString(),
+      },
+    ],
+    createdAt: now.toISOString(),
+    notes: `تم التوليد والتفعيل المباشر للطالب: ${user.name} (${user.phone})`,
+  };
+  db.createActivationCode(codeRecord);
+
+  // Update student subscription
+  const currentSub = db.getSubscriptionByUserId(studentId);
+  const updatedSub: DBSubscription = {
+    id: currentSub?.id || `sub-${Date.now()}`,
+    userId: studentId,
+    plan: plan === 'yearly' ? 'yearly' : 'monthly',
+    status: 'active',
+    startDate: now.toISOString(),
+    expiryDate: expiryDate.toISOString(),
+    createdAt: currentSub?.createdAt || now.toISOString(),
+    activatedAt: now.toISOString(),
+    activationMethod: 'activation_code',
+    notes: `كود التفعيل: ${generatedCode} - تم تفعيل الاشتراك من لوحة الإدارة`,
+  };
+  db.createOrUpdateSubscription(updatedSub);
+
+  // Mark any pending subscription request for this phone as approved
+  const requests = db.getAllRequests();
+  const userReq = requests.find((r) => r.phone === user.phone && r.status === 'pending');
+  if (userReq) {
+    db.updateRequestStatus(userReq.id, 'approved');
+  }
+
+  // Generate WhatsApp message and direct link
+  const { message: whatsappMessage, whatsappUrl } = formatWhatsAppActivation(
+    user.name,
+    user.phone,
+    generatedCode,
+    plan,
+    now.toISOString(),
+    expiryDate.toISOString(),
+    durationDays
+  );
+
+  res.json({
+    success: true,
+    message: `تم تفعيل اشتراك الطالب ${user.name} بنجاح وتوليد كود التفعيل: ${generatedCode}`,
+    activationCode: generatedCode,
+    studentName: user.name,
+    studentPhone: user.phone,
+    plan,
+    durationDays,
+    startDate: now.toISOString(),
+    expiryDate: expiryDate.toISOString(),
+    whatsappMessage,
+    whatsappUrl,
+    subscription: updatedSub,
+  });
+};
+
+router.post('/admin/students/:studentId/activate-with-code', requireAuth, requireAdmin, handleActivateStudentWithCode);
+router.patch('/admin/students/:studentId/activate-with-code', requireAuth, requireAdmin, handleActivateStudentWithCode);
+
+// Admin Resend / Get Code for Student to WhatsApp
+const handleResendStudentCode = (req: any, res: any) => {
+  const { studentId } = req.params;
+  const user = db.findUserById(studentId);
+  if (!user) return res.status(404).json({ error: 'الطالب غير موجود.' });
+
+  const sub = db.getSubscriptionByUserId(studentId);
+  const allCodes = db.getAllActivationCodes();
+  const userCode = allCodes.find((c) => c.usedByStudents?.some((st) => st.studentId === studentId));
+  const codeInNotes = sub?.notes?.match(/كود التفعيل:\s*([A-Za-z0-9-]+)/)?.[1];
+
+  let code = userCode?.code || codeInNotes;
+  let durationDays = sub?.plan === 'yearly' ? 365 : 30;
+  let startDate = sub?.startDate || new Date().toISOString();
+  let expiryDate = sub?.expiryDate || new Date(Date.now() + durationDays * 86400000).toISOString();
+
+  if (!code) {
+    // Generate new code
+    const random4Digits = Math.floor(1000 + Math.random() * 9000);
+    code = `MCT-${random4Digits}`;
+    const codeRecord: DBActivationCode = {
+      id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
+      code,
+      planType: sub?.plan === 'yearly' ? 'yearly' : 'monthly',
+      durationDays,
+      maxUses: 1,
+      timesUsed: 1,
+      isUsed: true,
+      isActive: true,
+      usedByStudents: [{ studentId: user.id, studentName: user.name, usedAt: new Date().toISOString() }],
+      createdAt: new Date().toISOString(),
+      notes: `كود تم توليده لإعادة الإرسال للطالب ${user.name}`,
+    };
+    db.createActivationCode(codeRecord);
+    if (sub) {
+      sub.notes = `كود التفعيل: ${code} - تم تحديث الكود`;
+      db.createOrUpdateSubscription(sub);
+    }
+  }
+
+  const { message: whatsappMessage, whatsappUrl } = formatWhatsAppActivation(
+    user.name,
+    user.phone,
+    code,
+    (sub?.plan as any) || 'monthly',
+    startDate,
+    expiryDate,
+    durationDays
+  );
+
+  res.json({
+    success: true,
+    activationCode: code,
+    studentName: user.name,
+    studentPhone: user.phone,
+    plan: sub?.plan || 'monthly',
+    startDate,
+    expiryDate,
+    durationDays,
+    whatsappMessage,
+    whatsappUrl,
+  });
+};
+
+router.post('/admin/students/:studentId/resend-code', requireAuth, requireAdmin, handleResendStudentCode);
+router.get('/admin/students/:studentId/resend-code', requireAuth, requireAdmin, handleResendStudentCode);
+
 // Admin Update Student Subscription Status
-router.patch('/admin/students/:studentId/status', requireAuth, requireAdmin, (req, res) => {
+const handleUpdateStudentStatus = (req: any, res: any) => {
   const { studentId } = req.params;
   const { status, plan, durationDays } = req.body;
 
@@ -1759,10 +2047,13 @@ router.patch('/admin/students/:studentId/status', requireAuth, requireAdmin, (re
 
   db.createOrUpdateSubscription(updatedSub);
   res.json({ success: true, subscription: updatedSub });
-});
+};
+
+router.patch('/admin/students/:studentId/status', requireAuth, requireAdmin, handleUpdateStudentStatus);
+router.post('/admin/students/:studentId/status', requireAuth, requireAdmin, handleUpdateStudentStatus);
 
 // Admin Extend Subscription by 30 days
-router.patch('/admin/students/:studentId/extend', requireAuth, requireAdmin, (req, res) => {
+const handleExtendStudent = (req: any, res: any) => {
   const { studentId } = req.params;
   const { days = 30 } = req.body;
 
@@ -1788,7 +2079,10 @@ router.patch('/admin/students/:studentId/extend', requireAuth, requireAdmin, (re
 
   db.createOrUpdateSubscription(updatedSub);
   res.json({ success: true, subscription: updatedSub });
-});
+};
+
+router.patch('/admin/students/:studentId/extend', requireAuth, requireAdmin, handleExtendStudent);
+router.post('/admin/students/:studentId/extend', requireAuth, requireAdmin, handleExtendStudent);
 
 // Admin Settings
 router.get('/admin/settings', (req, res) => {

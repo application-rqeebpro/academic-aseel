@@ -1,17 +1,69 @@
 import { GoogleGenAI } from '@google/genai';
 import { ExplainLessonResult, ExplainLevel, ExplainSourceType } from '../src/types';
 
-async function extractTextFromPdfBuffer(pdfBuffer: Buffer): Promise<string> {
+function parsePdfPageRange(rangeStr: string, maxPages: number): Set<number> {
+  const pages = new Set<number>();
+  if (!rangeStr) return pages;
+  const parts = rangeStr.split(/[,،\s]+/);
+  for (const part of parts) {
+    if (part.includes('-')) {
+      const [startStr, endStr] = part.split('-');
+      const start = parseInt(startStr, 10);
+      const end = parseInt(endStr, 10);
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = Math.max(1, start); i <= Math.min(maxPages, end); i++) {
+          pages.add(i);
+        }
+      }
+    } else {
+      const num = parseInt(part, 10);
+      if (!isNaN(num) && num >= 1 && num <= maxPages) {
+        pages.add(num);
+      }
+    }
+  }
+  return pages;
+}
+
+async function extractTextFromPdfBuffer(
+  pdfBuffer: Buffer,
+  pageChoice?: { mode: 'full' | 'pages'; selectedPages?: string }
+): Promise<string> {
   try {
     const { createRequire } = await import('module');
     const req = createRequire(import.meta.url);
-    const pdf = req('pdf-parse');
-    const parsed = await pdf(pdfBuffer);
-    return parsed?.text?.trim() || '';
+    const pdfPkg = req('pdf-parse');
+
+    if (pdfPkg?.PDFParse) {
+      const uint8 = new Uint8Array(pdfBuffer.buffer, pdfBuffer.byteOffset, pdfBuffer.byteLength);
+      const parser = new pdfPkg.PDFParse(uint8);
+      const parsed = await parser.getText();
+
+      if (pageChoice?.mode === 'pages' && pageChoice.selectedPages && Array.isArray(parsed?.pages) && parsed.pages.length > 0) {
+        const selectedPageSet = parsePdfPageRange(pageChoice.selectedPages, parsed.pages.length);
+        const filteredPages = parsed.pages.filter((p: any) => selectedPageSet.has(p.num));
+        if (filteredPages.length > 0) {
+          return filteredPages.map((p: any) => `--- [الصفحة ${p.num} من ${parsed.total || parsed.pages.length}] ---\n${p.text}`).join('\n\n').trim();
+        }
+      }
+
+      if (Array.isArray(parsed?.pages) && parsed.pages.length > 0) {
+        return parsed.pages.map((p: any) => `--- [الصفحة ${p.num} من ${parsed.total || parsed.pages.length}] ---\n${p.text}`).join('\n\n').trim();
+      }
+
+      if (typeof parsed === 'string') return parsed.trim();
+      if (parsed && typeof parsed.text === 'string') return parsed.text.trim();
+    } else if (typeof pdfPkg === 'function') {
+      const parsed = await pdfPkg(pdfBuffer);
+      return parsed?.text?.trim() || '';
+    } else if (typeof pdfPkg?.default === 'function') {
+      const parsed = await pdfPkg.default(pdfBuffer);
+      return parsed?.text?.trim() || '';
+    }
   } catch (e: any) {
     console.warn('[PDF Extract Warning]:', e?.message || e);
-    return '';
   }
+  return '';
 }
 
 // Helper to initialize Gemini safely
@@ -82,6 +134,7 @@ export async function callGeminiWithResilience(
     contents: any;
     config?: any;
     preferredModel?: string;
+    fallbackModels?: string[];
   }
 ): Promise<{ text: string; modelUsed: string }> {
   // Ordered cascade prioritizing high-availability models with quota
@@ -93,9 +146,13 @@ export async function callGeminiWithResilience(
     'gemini-flash-latest',
   ];
 
-  const models = request.preferredModel
-    ? [request.preferredModel, ...defaultCascade]
+  const cascadeToUse = request.fallbackModels && request.fallbackModels.length > 0
+    ? request.fallbackModels
     : defaultCascade;
+
+  const models = request.preferredModel
+    ? [request.preferredModel, ...cascadeToUse]
+    : cascadeToUse;
 
   const uniqueModels = Array.from(new Set(models));
   let lastError: any = null;
@@ -136,14 +193,14 @@ export async function callGeminiWithResilience(
           msg.substring(0, 160)
         );
 
-        // If quota is exhausted on this model, retry won't help immediately, so immediately fall through to the next model
-        if (isQuotaExceeded) {
+        // If quota is exhausted or model is experiencing high demand (503), switch immediately to the next model
+        if (isQuotaExceeded || isTemporaryBusy) {
           break;
         }
 
-        // If temporary 503 spike, wait briefly only on first attempt
-        if (isTemporaryBusy && attempt < maxAttempts) {
-          await new Promise((res) => setTimeout(res, 600));
+        // For other transient errors, retry once
+        if (attempt < maxAttempts) {
+          await new Promise((res) => setTimeout(res, 300));
           continue;
         }
 
@@ -199,17 +256,21 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
       // If multiple images/files are provided
       if (filesData && Array.isArray(filesData) && filesData.length > 0) {
         filesData.forEach((fileItem, idx) => {
-          let cleanBase64 = fileItem.base64;
+          let cleanBase64 = fileItem.base64 || '';
           let detectedMime = fileItem.mimeType;
 
-          const match = cleanBase64.match(/^data:([^;]+);base64,(.*)$/s);
-          if (match) {
-            detectedMime = detectedMime || match[1];
-            cleanBase64 = match[2];
+          if (typeof cleanBase64 === 'string' && cleanBase64.includes(',')) {
+            const commaIdx = cleanBase64.indexOf(',');
+            const meta = cleanBase64.slice(0, commaIdx);
+            if (meta.startsWith('data:')) {
+              const metaMime = meta.slice(5).split(';')[0].trim();
+              if (metaMime) detectedMime = detectedMime || metaMime;
+            }
+            cleanBase64 = cleanBase64.slice(commaIdx + 1);
           }
 
-          cleanBase64 = cleanBase64.trim().replace(/\s+/g, '');
-          let actualMime = detectedMime || 'image/jpeg';
+          cleanBase64 = cleanBase64.replace(/\s+/g, '');
+          let actualMime = (detectedMime || 'image/jpeg').split(';')[0].trim();
           if (actualMime === 'image/jpg') actualMime = 'image/jpeg';
 
           parts.push({
@@ -224,17 +285,21 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
         });
       } else if (fileData) {
         // Single file / image / pdf / video
-        let cleanBase64 = fileData;
+        let cleanBase64 = fileData || '';
         let detectedMime = mimeType;
 
-        const match = fileData.match(/^data:([^;]+);base64,(.*)$/s);
-        if (match) {
-          detectedMime = detectedMime || match[1];
-          cleanBase64 = match[2];
+        if (typeof cleanBase64 === 'string' && cleanBase64.includes(',')) {
+          const commaIdx = cleanBase64.indexOf(',');
+          const meta = cleanBase64.slice(0, commaIdx);
+          if (meta.startsWith('data:')) {
+            const metaMime = meta.slice(5).split(';')[0].trim();
+            if (metaMime) detectedMime = detectedMime || metaMime;
+          }
+          cleanBase64 = cleanBase64.slice(commaIdx + 1);
         }
 
-        cleanBase64 = cleanBase64.trim().replace(/\s+/g, '');
-        let actualMime = detectedMime || (mode === 'pdf' ? 'application/pdf' : mode === 'video' ? 'video/mp4' : 'image/jpeg');
+        cleanBase64 = cleanBase64.replace(/\s+/g, '');
+        let actualMime = (detectedMime || (mode === 'pdf' ? 'application/pdf' : mode === 'video' ? 'video/mp4' : 'image/jpeg')).split(';')[0].trim();
         if (actualMime === 'image/jpg') actualMime = 'image/jpeg';
 
         // Enforce application/pdf for any PDF request or octet-stream containing pdf
@@ -246,7 +311,7 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
           let extractedPdfText = '';
           try {
             const pdfBuffer = Buffer.from(cleanBase64, 'base64');
-            extractedPdfText = await extractTextFromPdfBuffer(pdfBuffer);
+            extractedPdfText = await extractTextFromPdfBuffer(pdfBuffer, pdfPageChoice);
             if (extractedPdfText) {
               console.log(`[PDF Extraction] Successfully extracted ${extractedPdfText.length} characters from PDF file: ${fileName || 'unnamed.pdf'}`);
             }
@@ -256,19 +321,26 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
 
           if (extractedPdfText.length > 0) {
             parts.push({
-              text: `[محتوى ملف الـ PDF المرفوع - اسم الملف: ${fileName || 'ملف الدرس'}]:\n${extractedPdfText.slice(0, 45000)}`
+              text: `[محتوى ملف الـ PDF المرفوع - اسم الملف: ${fileName || 'ملف الدرس'}]:\n${extractedPdfText.slice(0, 50000)}`
             });
           }
 
-          // If base64 size is reasonable (under 18MB) or extracted text is small (scanned PDF), also send inlineData
+          // If extracted text is short (scanned/image PDF without selectable text) or file is small (< 2.5MB),
+          // include inlineData for multimodal inspection. If text was already extracted cleanly from a large PDF,
+          // omitting heavy binary inlineData prevents timeouts while ensuring complete analysis.
           const approxSizeBytes = cleanBase64.length * 0.75;
-          if (approxSizeBytes < 18 * 1024 * 1024 || extractedPdfText.length < 50) {
-            parts.push({
-              inlineData: {
-                mimeType: 'application/pdf',
-                data: cleanBase64,
-              },
-            });
+          const isScannedOrShort = extractedPdfText.length < 200;
+          const isSmallPdf = approxSizeBytes < 2.5 * 1024 * 1024;
+
+          if (isScannedOrShort || isSmallPdf) {
+            if (approxSizeBytes <= 15 * 1024 * 1024) {
+              parts.push({
+                inlineData: {
+                  mimeType: 'application/pdf',
+                  data: cleanBase64,
+                },
+              });
+            }
           }
         } else {
           parts.push({
@@ -576,7 +648,14 @@ ${imageSpecificInstructions}
             responseMimeType: 'application/json',
             temperature: 0.2,
           },
-          preferredModel: isPdfRequest ? 'gemini-3.8-flash' : 'gemini-3.1-flash-lite',
+          preferredModel: 'gemini-3.1-flash-lite',
+          fallbackModels: [
+            'gemini-3.1-flash-lite',
+            'gemini-flash-lite-latest',
+            'gemini-3.8-flash',
+            'gemini-3.6-flash',
+            'gemini-flash-latest',
+          ],
         });
         modelUsed = genResult.modelUsed;
         parsed = safeExtractJson(genResult.text);

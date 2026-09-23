@@ -223,14 +223,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <div className="text-center space-y-2">
           <AcademyLogo variant="icon" size="lg" className="mx-auto" />
           <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-            {view === 'login' && (loginMode === 'code' ? 'تسجيل الدخول بكود التفعيل' : 'تسجيل دخول مسؤول المنصة')}
+            {view === 'login' && (loginMode === 'code' ? 'تسجيل الدخول بكود التفعيل' : 'تسجيل الدخول بكلمة المرور')}
             {view === 'forgot-request' && 'استعادة الحساب'}
             {view === 'forgot-reset' && 'تعيين كلمة مرور جديدة'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             {view === 'login' && (loginMode === 'code'
-              ? 'أدخل رقم هاتفك وكود التفعيل الخاص باشتراكك للدخول المباشر'
-              : 'أدخل رقم الهاتف وكلمة المرور لإدارة المنصة')}
+              ? 'أدخل رقم هاتفك وكود التفعيل المستلم عبر واتساب للدخول المباشر'
+              : 'أدخل رقم هاتفك وكلمة المرور التي أنشأتها عند التسجيل')}
             {view === 'forgot-request' && 'أدخل رقم هاتفك المسجل وسنرسل لك رمز استعادة الحساب'}
             {view === 'forgot-reset' && 'أدخل رمز التحقق وكلمة المرور الجديدة لإكمال الاستعادة'}
           </p>
@@ -252,7 +252,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               }`}
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>دخول الطالب بكود التفعيل</span>
+              <span>الدخول بكود التفعيل</span>
             </button>
             <button
               type="button"
@@ -267,7 +267,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               }`}
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>دخول كلمة المرور / المسؤول</span>
+              <span>الدخول بكلمة المرور</span>
             </button>
           </div>
         )}
@@ -324,13 +324,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     type="text"
                     value={codeInputValue}
                     onChange={(e) => setCodeInputValue(e.target.value.toUpperCase())}
-                    placeholder="مثال: MCT-7829 أو كود الإدارة"
+                    placeholder="أدخل كود التفعيل"
                     dir="ltr"
                     className="w-full pl-4 pr-10 py-3 rounded-xl bg-blue-50/50 dark:bg-slate-800/80 border-2 border-blue-200 dark:border-blue-900 text-slate-900 dark:text-white font-mono font-bold placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-center tracking-widest uppercase"
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 text-right pt-0.5">
-                  أدخل كود التفعيل المعتمد المكتوب في إشعار الاشتراك لتسجيل دخولك وتفعيل الحساب فورًا.
+                  أدخل كود التفعيل المعتمد المرسل لك عبر واتساب لتسجيل دخولك وتفعيل الحساب مباشرة.
                 </p>
               </div>
             )}

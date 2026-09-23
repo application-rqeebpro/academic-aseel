@@ -45,6 +45,7 @@ export interface StudentProfile {
   subscriptionStartDate?: string;
   subscriptionEndDate?: string;
   remainingDays: number;
+  remainingHours?: number;
   isActivated: boolean;
   isExpired: boolean;
   completedLessons: string[];

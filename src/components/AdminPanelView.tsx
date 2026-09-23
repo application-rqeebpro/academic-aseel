@@ -28,7 +28,8 @@ import {
   UserX,
   CreditCard,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap
 } from 'lucide-react';
 
 interface AdminPanelViewProps {
@@ -94,9 +95,17 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     studentName: string;
     studentPhone: string;
     plan: string;
+    durationDays?: number;
+    startDate?: string;
+    expiryDate?: string;
     whatsappUrl: string;
     whatsappMessage: string;
   } | null>(null);
+
+  // Quick 1-Click Activation States
+  const [activatingStudentId, setActivatingStudentId] = useState<string | null>(null);
+  const [quickStudentId, setQuickStudentId] = useState<string>('');
+  const [quickPlan, setQuickPlan] = useState<'monthly' | 'yearly'>('monthly');
 
   // Students State
   const [students, setStudents] = useState<any[]>([]);
@@ -350,6 +359,109 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     }
   };
 
+  const getDirectWhatsAppUrl = (st: any) => {
+    const cleanPhone = st.phone.startsWith('967')
+      ? st.phone
+      : `967${st.phone.replace(/^0+/, '')}`;
+    const planTitle = st.subscriptionPlan === 'yearly' ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+    const expiryStr = st.subscriptionEndDate
+      ? new Date(st.subscriptionEndDate).toLocaleDateString('ar-YE', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : 'شهر كامل';
+
+    const message = `أهلاً بك يا باشمهندس ${st.name}! 🎓
+تم تفعيل اشتراكك بنجاح في منصة أكاديمية الميكاترونكس اليمنية.
+
+بيانات دخولك الرسمية:
+🔑 كود التفعيل المعتمد: ${st.activationCode || 'MCT-ACTIVE'}
+📱 رقم هاتفك المسجل: ${st.phone}
+⏱️ نوع الاشتراك: ${planTitle}
+⏳ تاريخ الانتهاء الدقيق: ${expiryStr}
+
+طريقة الدخول للتطبيق:
+1. افتح المنصة من هاتفك أو حاسوبك.
+2. أدخل رقم هاتفك وكود التفعيل المعتمد أعلاه للدخول الفوري.
+
+بالتوفيق والنجاح الدائم! 🚀`;
+
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
+
+  const handleActivateStudentWithCode = async (studentId: string, plan: 'monthly' | 'yearly' = 'monthly') => {
+    setActivatingStudentId(studentId);
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}/activate-with-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setApprovalModalData({
+          activationCode: data.activationCode,
+          studentName: data.studentName,
+          studentPhone: data.studentPhone,
+          plan: data.plan,
+          durationDays: data.durationDays,
+          startDate: data.startDate,
+          expiryDate: data.expiryDate,
+          whatsappUrl: data.whatsappUrl,
+          whatsappMessage: data.whatsappMessage,
+        });
+        loadStudents();
+        loadRequests();
+        loadStats();
+        loadCodes();
+      } else {
+        alert(data.error || 'فشل تفعيل الاشتراك وتوليد الكود.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء الاتصال بالخادم.');
+    } finally {
+      setActivatingStudentId(null);
+    }
+  };
+
+  const handleResendStudentCode = async (studentId: string) => {
+    setActivatingStudentId(studentId);
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}/resend-code`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setApprovalModalData({
+          activationCode: data.activationCode,
+          studentName: data.studentName,
+          studentPhone: data.studentPhone,
+          plan: data.plan,
+          durationDays: data.durationDays,
+          startDate: data.startDate,
+          expiryDate: data.expiryDate,
+          whatsappUrl: data.whatsappUrl,
+          whatsappMessage: data.whatsappMessage,
+        });
+      } else {
+        alert(data.error || 'فشل جلب بيانات كود التفعيل.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء الاتصال بالخادم.');
+    } finally {
+      setActivatingStudentId(null);
+    }
+  };
+
   const handleApproveRequest = async (requestId: string) => {
     try {
       const res = await fetch(`/api/admin/requests/${requestId}/approve`, {
@@ -363,6 +475,9 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           studentName: data.studentName,
           studentPhone: data.studentPhone,
           plan: data.plan,
+          durationDays: data.durationDays,
+          startDate: data.startDate,
+          expiryDate: data.expiryDate,
           whatsappUrl: data.whatsappUrl,
           whatsappMessage: data.whatsappMessage,
         });
@@ -820,49 +935,70 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {requests.map((req) => (
-                        <div
-                          key={req.id}
-                          className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 dark:text-white text-sm">{req.name}</span>
-                              <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                                {req.phone}
-                              </span>
-                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                                req.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                              }`}>
-                                {req.status === 'pending' ? 'بانتظار التأكيد' : 'تم التفعيل'}
-                              </span>
-                            </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {req.university} • {req.studyLevel} • الخطة: <strong>{req.plan === 'yearly' ? 'سنوي' : 'شهري'}</strong> • {new Date(req.createdAt).toLocaleString('ar-YE')}
-                            </div>
-                          </div>
+                      {requests.map((req) => {
+                        const studentDisplayName = req.studentName || req.name || 'طالب';
+                        const cleanPhone = req.phone.startsWith('967')
+                          ? req.phone
+                          : `967${req.phone.replace(/^0+/, '')}`;
 
-                          <div className="flex items-center gap-2">
-                            {req.status === 'pending' && (
-                              <>
-                                <button
-                                  onClick={() => handleApproveRequest(req.id)}
-                                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>تأكيد الدفع وتفعيل</span>
-                                </button>
-                                <button
-                                  onClick={() => handleRejectRequest(req.id)}
-                                  className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-rose-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
-                                >
-                                  رفض
-                                </button>
-                              </>
-                            )}
+                        return (
+                          <div
+                            key={req.id}
+                            className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 dark:text-white text-sm">
+                                  {studentDisplayName}
+                                </span>
+                                <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300" dir="ltr">
+                                  {req.phone}
+                                </span>
+                                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                                  req.status === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                }`}>
+                                  {req.status === 'pending' ? 'بانتظار التأكيد' : 'تم التفعيل'}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {req.university} • {req.studyLevel} • الخطة: <strong>{req.plan === 'yearly' ? 'سنوي (365 يوم)' : 'شهري (30 يوم)'}</strong> • {new Date(req.createdAt).toLocaleString('ar-YE')}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {/* Quick WhatsApp Chat */}
+                              <a
+                                href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(`أهلاً بك يا باشمهندس ${studentDisplayName}، بخصوص طلب اشتراكك في أكاديمية الميكاترونكس...`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-all"
+                                title="مراسلة الطالب عبر واتساب"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                <span>مراسلة</span>
+                              </a>
+
+                              {req.status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveRequest(req.id)}
+                                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Zap className="w-3.5 h-3.5" />
+                                    <span>تأكيد وتوليد كود وإرسال</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectRequest(req.id)}
+                                    className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-rose-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                                  >
+                                    رفض
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -870,14 +1006,18 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
               {/* TAB 3: STUDENTS & SUBSCRIPTIONS */}
               {activeTab === 'students' && (
-                <div className="space-y-4">
+                <div className="space-y-5">
+                  {/* Top Bar with Title & Search */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                        الطلاب والاشتراكات
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>الطلاب والاشتراكات</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          {students.length} طالب
+                        </span>
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        متابعة حالات الحسابات، تمديد الفترات، وتفعيل أو تعليق الوصول
+                        متابعة دقيقة للاشتراكات وتواريخ الانتهاء، وتفعيل فوري بنقرة واحدة مع رابط مباشر للواتساب
                       </p>
                     </div>
 
@@ -893,6 +1033,128 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                     </div>
                   </div>
 
+                  {/* One-Click Instant Activation Interface */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-blue-950/40 border border-emerald-500/30 dark:border-emerald-600/30 space-y-3.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 shrink-0">
+                          <Zap className="w-5 h-5 fill-current" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>واجهة التفعيل الفوري بنقرة واحدة</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 font-bold font-mono">
+                              1-Click Activation
+                            </span>
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300">
+                            تفعيل اشتراك الطالب فوراً: يقوم النظام تلقائياً بتوليد كود تفعيل فريد، وتخزينه مع تاريخ انتهاء دقيق، ثم إظهار رابط الواتساب المباشر للإرسال.
+                          </p>
+                        </div>
+                      </div>
+
+                      {students.some((s) => s.subscriptionStatus !== 'active' || s.isExpired) && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-xs font-bold self-start sm:self-auto shrink-0">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>{students.filter((s) => s.subscriptionStatus !== 'active' || s.isExpired).length} بحاجة لتفعيل</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end pt-1">
+                      {/* Student Picker */}
+                      <div className="sm:col-span-5">
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                          اختر الطالب المراد تفعيله:
+                        </label>
+                        <select
+                          value={quickStudentId}
+                          onChange={(e) => setQuickStudentId(e.target.value)}
+                          className="w-full text-xs p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500"
+                        >
+                          <option value="">-- اضغط لاختيار طالب من القائمة --</option>
+                          {/* Unactivated / Expired First */}
+                          {students.filter((s) => s.subscriptionStatus !== 'active' || s.isExpired).length > 0 && (
+                            <optgroup label="⚠️ طلاب بحاجة لتفعيل أو تجديد">
+                              {students
+                                .filter((s) => s.subscriptionStatus !== 'active' || s.isExpired)
+                                .map((st) => (
+                                  <option key={st.id} value={st.id}>
+                                    {st.name} ({st.phone}) - {st.subscriptionStatus === 'pending' ? 'بانتظار التأكيد' : 'منتهي الصلاحية'}
+                                  </option>
+                                ))}
+                            </optgroup>
+                          )}
+                          {/* All other students */}
+                          <optgroup label="جميع الطلاب المسجلين">
+                            {students.map((st) => (
+                              <option key={st.id} value={st.id}>
+                                {st.name} ({st.phone}) - {st.subscriptionStatus === 'active' ? 'نشط ومفعل' : 'غير مفعل'}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </select>
+                      </div>
+
+                      {/* Plan Toggle */}
+                      <div className="sm:col-span-3">
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                          المدة والصلاحية:
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <button
+                            type="button"
+                            onClick={() => setQuickPlan('monthly')}
+                            className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                              quickPlan === 'monthly'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                            }`}
+                          >
+                            شهري (30 يوم)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setQuickPlan('yearly')}
+                            className={`py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                              quickPlan === 'yearly'
+                                ? 'bg-blue-600 text-white shadow-xs'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                            }`}
+                          >
+                            سنوي (365 يوم)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 1-Click Trigger Button */}
+                      <div className="sm:col-span-4">
+                        <button
+                          type="button"
+                          disabled={!quickStudentId || activatingStudentId === quickStudentId}
+                          onClick={() => {
+                            if (quickStudentId) {
+                              handleActivateStudentWithCode(quickStudentId, quickPlan);
+                            }
+                          }}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                        >
+                          {activatingStudentId === quickStudentId ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>جارٍ التوليد والتفعيل...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-4 h-4 fill-current" />
+                              <span>⚡ تفعيل فوري وتوليد كود ورابط واتساب</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {filteredStudents.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                       لا يوجد طلاب مطابقون للبحث
@@ -903,67 +1165,164 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                         <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                           <tr>
                             <th className="p-3">الطالب</th>
-                            <th className="p-3">الجامعة والمستوى</th>
-                            <th className="p-3">الخطة</th>
-                            <th className="p-3">الحالة</th>
-                            <th className="p-3">المدة المتبقية</th>
-                            <th className="p-3 text-center">إجراءات الإدارة</th>
+                            <th className="p-3">الجامعة والتخصص</th>
+                            <th className="p-3">كود التفعيل الفعلي</th>
+                            <th className="p-3">الخطة والصلاحية</th>
+                            <th className="p-3">تاريخ الانتهاء الدقيق</th>
+                            <th className="p-3">المتبقي</th>
+                            <th className="p-3 text-center">التفعيل السريع وإجراءات الواتساب</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                           {filteredStudents.map((st) => (
                             <tr key={st.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                              {/* Student name & phone */}
                               <td className="p-3">
                                 <div className="font-bold text-slate-900 dark:text-white">{st.name}</div>
                                 <div className="text-[11px] text-slate-400 font-mono" dir="ltr">{st.phone}</div>
                               </td>
+
+                              {/* University & Major */}
                               <td className="p-3">
                                 <div>{st.university}</div>
                                 <div className="text-[11px] text-slate-400">{st.studyLevel} • {st.major}</div>
                               </td>
-                              <td className="p-3">
-                                <span className="font-semibold">
-                                  {st.subscriptionPlan === 'yearly' ? 'سنوي (365 يوم)' : 'شهري (30 يوم)'}
-                                </span>
+
+                              {/* Actual Activation Code */}
+                              <td className="p-3 font-mono">
+                                {st.activationCode ? (
+                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-bold">
+                                    <span>{st.activationCode}</span>
+                                    <button
+                                      onClick={() => copyToClipboard(st.activationCode!)}
+                                      className="p-1 hover:text-blue-900 cursor-pointer"
+                                      title="نسخ الكود"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px] italic">لم يُولد كود بعد</span>
+                                )}
                               </td>
+
+                              {/* Plan & Status */}
                               <td className="p-3">
+                                <div className="font-semibold mb-1">
+                                  {st.subscriptionPlan === 'yearly' ? 'سنوي (365 يوم)' : 'شهري (30 يوم)'}
+                                </div>
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  st.subscriptionStatus === 'active'
+                                  st.subscriptionStatus === 'active' && !st.isExpired
                                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                                     : st.subscriptionStatus === 'pending'
                                     ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                                     : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                                 }`}>
-                                  {st.subscriptionStatus === 'active' ? 'نشط ومفعل' : st.subscriptionStatus === 'pending' ? 'بانتظار التفعيل' : 'منتهي / معلق'}
+                                  {st.subscriptionStatus === 'active' && !st.isExpired
+                                    ? 'نشط ومفعل'
+                                    : st.subscriptionStatus === 'pending'
+                                    ? 'بانتظار التفعيل'
+                                    : 'منتهي / معلق'}
                                 </span>
                               </td>
-                              <td className="p-3 font-bold font-mono">
-                                {st.remainingDays} يوم
+
+                              {/* Exact Expiry Date */}
+                              <td className="p-3 text-[11px] text-slate-600 dark:text-slate-300">
+                                {st.subscriptionEndDate ? (
+                                  <div>
+                                    <div className="font-bold">{new Date(st.subscriptionEndDate).toLocaleDateString('ar-YE', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                                    <div className="text-[10px] text-slate-400 font-mono">{new Date(st.subscriptionEndDate).toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' })}</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
                               </td>
+
+                              {/* Remaining Time */}
+                              <td className="p-3 font-bold font-mono">
+                                {st.subscriptionStatus === 'active' && !st.isExpired ? (
+                                  <span className="text-emerald-600 dark:text-emerald-400">
+                                    {st.remainingDays > 0 ? `${st.remainingDays} يوم` : `${st.remainingHours || 0} ساعة`}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">منتهي</span>
+                                )}
+                              </td>
+
+                              {/* Admin Actions */}
                               <td className="p-3 text-center">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  {st.subscriptionStatus !== 'active' ? (
-                                    <button
-                                      onClick={() => handleStudentStatusChange(st.id, 'active')}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 cursor-pointer"
-                                    >
-                                      تفعيل
-                                    </button>
+                                <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                  {/* 1-Click Instant Activation for Pending / Expired */}
+                                  {st.subscriptionStatus !== 'active' || st.isExpired ? (
+                                    <>
+                                      <button
+                                        onClick={() => handleActivateStudentWithCode(st.id, 'monthly')}
+                                        disabled={activatingStudentId === st.id}
+                                        className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs disabled:opacity-50 cursor-pointer transition-all"
+                                        title="تفعيل فوري بنقرة واحدة (شهري 30 يوماً) وتوليد كود وإرسال لواتساب"
+                                      >
+                                        {activatingStudentId === st.id ? (
+                                          <RefreshCw className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                          <Zap className="w-3 h-3 fill-current" />
+                                        )}
+                                        <span>تفعيل بنقرة واحدة (30 يوم)</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleActivateStudentWithCode(st.id, 'yearly')}
+                                        disabled={activatingStudentId === st.id}
+                                        className="px-2 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shadow-xs disabled:opacity-50 cursor-pointer transition-all"
+                                        title="تفعيل فوري بنقرة واحدة (سنوي 365 يوماً)"
+                                      >
+                                        سنوي
+                                      </button>
+                                    </>
                                   ) : (
-                                    <button
-                                      onClick={() => handleStudentStatusChange(st.id, 'suspended')}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold text-[11px] hover:bg-amber-700 cursor-pointer"
-                                    >
-                                      تعليق
-                                    </button>
+                                    <>
+                                      {/* Direct WhatsApp Instant Link */}
+                                      <a
+                                        href={getDirectWhatsAppUrl(st)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer transition-all"
+                                        title="فتح واتساب مباشرة وإرسال رسالة التفعيل المعتمدة"
+                                      >
+                                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                                        <span>واتساب مباشر</span>
+                                      </a>
+
+                                      {/* One-Click Renew / Generate Fresh Code */}
+                                      <button
+                                        onClick={() => handleActivateStudentWithCode(st.id, st.subscriptionPlan || 'monthly')}
+                                        disabled={activatingStudentId === st.id}
+                                        className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-800 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all"
+                                        title="تجديد وتوليد كود جديد بنقرة واحدة"
+                                      >
+                                        <RefreshCw className={`w-3 h-3 ${activatingStudentId === st.id ? 'animate-spin' : ''}`} />
+                                        <span>تجديد بكود جديد</span>
+                                      </button>
+
+                                      <button
+                                        onClick={() => handleStudentStatusChange(st.id, 'suspended')}
+                                        className="px-2 py-1 rounded-lg bg-amber-600 text-white font-bold text-[11px] hover:bg-amber-700 cursor-pointer"
+                                        title="تعليق الحساب مؤقتًا"
+                                      >
+                                        تعليق
+                                      </button>
+                                    </>
                                   )}
+
+                                  {/* Extend 30 days */}
                                   <button
                                     onClick={() => handleExtendStudent(st.id, 30)}
-                                    className="px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[11px] hover:bg-blue-200 cursor-pointer"
+                                    className="px-2 py-1 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[11px] hover:bg-blue-200 cursor-pointer"
                                     title="تمديد 30 يوم إضافية"
                                   >
                                     +30 يوم
                                   </button>
+
+                                  {/* Delete */}
                                   <button
                                     onClick={() => handleDeleteStudent(st.id, st.name)}
                                     className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
@@ -1525,28 +1884,28 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           </div>
         )}
 
-        {/* Request Approval Success Modal */}
+        {/* Request Approval / Instant Activation Success Modal */}
         {approvalModalData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-emerald-500/30 shadow-2xl space-y-6 text-center">
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-emerald-500/30 shadow-2xl space-y-5 text-center">
               
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
                 <CheckCircle2 className="w-9 h-9" />
               </div>
 
               <div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                  تم تأكيد الاشتراك وتفعيل الحساب! 🎉
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                  تم تفعيل الاشتراك وتوليد الكود بنجاح! ⚡🎉
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  تم إنشاء حساب الطالب وتوليد كود التفعيل المعتمد بنجاح.
+                  تم حفظ الاشتراك في قاعدة البيانات مع تاريخ انتهاء دقيق، وتجهيز رسالة الواتساب الرسمية.
                 </p>
               </div>
 
               {/* Generated Code Display Card */}
-              <div className="p-5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border-2 border-emerald-200 dark:border-emerald-800 space-y-2">
+              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border-2 border-emerald-300 dark:border-emerald-800 space-y-2">
                 <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">
-                  كود التفعيل الخاص بالطالب ({approvalModalData.studentName}):
+                  كود التفعيل الفريد للطالب ({approvalModalData.studentName}):
                 </span>
                 <div className="flex items-center justify-center gap-3">
                   <span className="text-3xl font-black text-emerald-700 dark:text-emerald-300 tracking-widest font-mono">
@@ -1554,22 +1913,72 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                   </span>
                   <button
                     onClick={() => copyToClipboard(approvalModalData.activationCode)}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 shadow-xs cursor-pointer transition-all"
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 shadow-xs cursor-pointer transition-all"
                     title="نسخ كود التفعيل"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  رقم الهاتف: <strong>{approvalModalData.studentPhone}</strong> • نوع الاشتراك: <strong>{approvalModalData.plan === 'yearly' ? 'سنوي' : 'شهري'}</strong>
+              </div>
+
+              {/* Subscription Details with Exact Expiry */}
+              <div className="grid grid-cols-2 gap-2 text-right p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-xs">
+                <div>
+                  <span className="text-[11px] text-slate-400 block font-medium">نوع وخطة الاشتراك:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {approvalModalData.plan === 'yearly' ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)'}
+                  </span>
                 </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block font-medium">رقم هاتف الطالب:</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200" dir="ltr">
+                    {approvalModalData.studentPhone}
+                  </span>
+                </div>
+                {approvalModalData.startDate && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 block font-medium">تاريخ بدء الاشتراك:</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      {new Date(approvalModalData.startDate).toLocaleDateString('ar-YE', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                )}
+                {approvalModalData.expiryDate && (
+                  <div>
+                    <span className="text-[11px] text-slate-400 block font-medium">تاريخ الانتهاء الدقيق:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {new Date(approvalModalData.expiryDate).toLocaleDateString('ar-YE', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      <span className="text-[10px] font-mono text-slate-400">
+                        ({new Date(approvalModalData.expiryDate).toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' })})
+                      </span>
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Message Preview */}
-              <div className="text-right space-y-1">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                  الرسالة الجاهزة للإرسال عبر واتساب:
-                </span>
+              <div className="text-right space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(approvalModalData.whatsappMessage)}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>نسخ نص الرسالة</span>
+                  </button>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    الرسالة المجهزة للإرسال المباشر للواتساب:
+                  </span>
+                </div>
                 <textarea
                   readOnly
                   rows={4}
@@ -1579,15 +1988,15 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-2.5 pt-2">
+              <div className="space-y-2.5 pt-1">
                 <a
                   href={approvalModalData.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm sm:text-base shadow-xl shadow-emerald-600/30 transition-all cursor-pointer ring-4 ring-emerald-500/20"
                 >
                   <MessageCircle className="w-5 h-5 fill-current" />
-                  <span>إرسال الكود للعميل عبر واتساب 📲</span>
+                  <span>📲 إرسال الكود للعميل عبر واتساب (رابط مباشر)</span>
                 </a>
 
                 <button
