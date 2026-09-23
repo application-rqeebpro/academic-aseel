@@ -29,7 +29,11 @@ import {
   CreditCard,
   Eye,
   EyeOff,
-  Zap
+  Zap,
+  Download,
+  Filter,
+  Phone,
+  User
 } from 'lucide-react';
 
 interface AdminPanelViewProps {
@@ -77,8 +81,41 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     pendingRequests: 0,
   });
 
-  // Codes State
+  // Codes State & Statistics (Requirements 6, 7, 8, 9, 10)
   const [codes, setCodes] = useState<ActivationCode[]>([]);
+  const [codeStats, setCodeStats] = useState({
+    totalCodes: 0,
+    monthlyCodes: 0,
+    yearlyCodes: 0,
+    usedCodes: 0,
+    unusedCodes: 0,
+    activeSubscriptions: 0,
+    expiredSubscriptions: 0,
+    suspendedCodes: 0,
+  });
+  const [codeSearchQuery, setCodeSearchQuery] = useState('');
+  const [codeFilterType, setCodeFilterType] = useState<'all' | 'monthly' | 'yearly'>('all');
+  const [codeFilterStatus, setCodeFilterStatus] = useState<'all' | 'unused' | 'used' | 'suspended' | 'expired'>('all');
+
+  // Manual Activation Modal State (Requirement 7)
+  const [isManualActivateOpen, setIsManualActivateOpen] = useState(false);
+  const [manualCodeInput, setManualCodeInput] = useState('');
+  const [manualStudentPhone, setManualStudentPhone] = useState('');
+  const [manualStudentName, setManualStudentName] = useState('');
+  const [manualPlanType, setManualPlanType] = useState<'monthly' | 'yearly'>('monthly');
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualError, setManualError] = useState('');
+
+  // Batch Generation Modal State (Requirement 9)
+  const [isBatchGenerateOpen, setIsBatchGenerateOpen] = useState(false);
+  const [batchPlanType, setBatchPlanType] = useState<'monthly' | 'yearly'>('monthly');
+  const [batchCount, setBatchCount] = useState<number>(50);
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  // Export Menu State (Requirement 10)
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [statusUpdatingCode, setStatusUpdatingCode] = useState<string | null>(null);
+
   const [newCodeCustom, setNewCodeCustom] = useState('');
   const [newPlanType, setNewPlanType] = useState<'monthly' | 'yearly'>('monthly');
   const [newDurationDays, setNewDurationDays] = useState(30);
@@ -167,10 +204,13 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
   const loadCodes = async () => {
     try {
-      const res = await fetch('/api/admin/codes', { headers: getAuthHeader() });
+      const res = await fetch('/api/admin/subscription-codes', { headers: getAuthHeader() });
       if (res.ok) {
         const data = await res.json();
         setCodes(data.codes || []);
+        if (data.stats) {
+          setCodeStats(data.stats);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -297,6 +337,210 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     } finally {
       setCodeLoading(false);
     }
+  };
+
+  // Manual Activation Handler (Requirement 7)
+  const handleManualActivate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setManualError('');
+    setManualLoading(true);
+    try {
+      const res = await fetch('/api/admin/subscription-codes/manual-activate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          code: manualCodeInput.trim() || undefined,
+          phone: manualStudentPhone.trim(),
+          studentName: manualStudentName.trim(),
+          type: manualPlanType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل التفعيل اليدوي للكود.');
+
+      setIsManualActivateOpen(false);
+      setManualCodeInput('');
+      setManualStudentPhone('');
+      setManualStudentName('');
+
+      const cleanPhone = data.student.phone.startsWith('967')
+        ? data.student.phone
+        : `967${data.student.phone.replace(/^0+/, '')}`;
+
+      const planTitle = data.subscription.plan === 'yearly' ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+      const expiryFormatted = new Date(data.subscription.expiryDate).toLocaleDateString('ar-YE', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const message = `أهلاً بك يا باشمهندس ${data.student.name}! 🎓
+تم تفعيل اشتراكك بنجاح في منصة أكاديمية الميكاترونكس اليمنية.
+
+بيانات دخولك الرسمية:
+🔑 كود التفعيل المعتمد: ${data.code.code}
+📱 رقم هاتفك المسجل: ${data.student.phone}
+⏱️ نوع الاشتراك: ${planTitle}
+⏳ تاريخ الانتهاء: ${expiryFormatted}
+
+طريقة الدخول:
+ادخل إلى المنصة برقم هاتفك وكلمة المرور، أو استخدم كود التفعيل للدخول المباشر.
+
+بالتوفيق والنجاح الدائم! 🚀`;
+
+      setApprovalModalData({
+        activationCode: data.code.code,
+        studentName: data.student.name,
+        studentPhone: data.student.phone,
+        plan: data.subscription.plan,
+        durationDays: data.code.durationDays,
+        startDate: data.subscription.startDate,
+        expiryDate: data.subscription.expiryDate,
+        whatsappUrl: `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`,
+        whatsappMessage: message,
+      });
+
+      loadCodes();
+      loadStudents();
+      loadStats();
+    } catch (err: any) {
+      setManualError(err.message || 'حدث خطأ أثناء التفعيل.');
+    } finally {
+      setManualLoading(false);
+    }
+  };
+
+  // Batch Generation Handler (Requirement 9)
+  const handleBatchCreateCodes = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBatchLoading(true);
+    try {
+      const res = await fetch('/api/admin/subscription-codes/batch-create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          type: batchPlanType,
+          count: batchCount,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل توليد الأكواد.');
+
+      setIsBatchGenerateOpen(false);
+      setCodeSuccessMsg(data.message || `تم توليد ${batchCount} كود جديد بنجاح!`);
+      loadCodes();
+      loadStats();
+    } catch (err: any) {
+      alert(err.message || 'فشل توليد الأكواد.');
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  // Update Code Status Handler (Requirement 8)
+  const handleUpdateCodeStatus = async (
+    codeIdentifier: string,
+    newStatus: 'unused' | 'used' | 'suspended' | 'expired'
+  ) => {
+    setStatusUpdatingCode(codeIdentifier);
+    try {
+      const res = await fetch(`/api/admin/subscription-codes/${encodeURIComponent(codeIdentifier)}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'فشل تحديث حالة الكود.');
+
+      loadCodes();
+      loadStudents();
+      loadStats();
+    } catch (err: any) {
+      alert(err.message || 'فشل تحديث حالة الكود.');
+    } finally {
+      setStatusUpdatingCode(null);
+    }
+  };
+
+  // Export Codes Handler (Requirement 10)
+  const handleExportCodes = (exportOption: 'all' | 'unused' | 'used' | 'monthly' | 'yearly') => {
+    let listToExport = codes;
+    if (exportOption === 'unused') {
+      listToExport = codes.filter((c) => (c.status || (c.isUsed ? 'used' : 'unused')) === 'unused');
+    } else if (exportOption === 'used') {
+      listToExport = codes.filter((c) => (c.status || (c.isUsed ? 'used' : 'unused')) === 'used');
+    } else if (exportOption === 'monthly') {
+      listToExport = codes.filter((c) => c.type === 'monthly' || c.code.toUpperCase().startsWith('AS-'));
+    } else if (exportOption === 'yearly') {
+      listToExport = codes.filter((c) => c.type === 'yearly' || c.code.toUpperCase().startsWith('AB-'));
+    }
+
+    const headers = [
+      'الكود',
+      'نوع الاشتراك',
+      'السعر (دولار)',
+      'الحالة',
+      'رقم الهاتف',
+      'اسم الطالب',
+      'تاريخ التفعيل',
+      'تاريخ الانتهاء',
+      'تاريخ الإنشاء',
+    ];
+
+    const rows = listToExport.map((c) => {
+      const isYearly = c.type === 'yearly' || c.code.startsWith('AB-');
+      const planStr = isYearly ? 'سنوي (سنة كاملة)' : 'شهري (30 يوم)';
+      const priceStr = isYearly ? '200$' : '20$';
+      const statusMap: Record<string, string> = {
+        unused: 'غير مستخدم',
+        used: 'مستخدم',
+        suspended: 'موقوف',
+        expired: 'منتهي',
+      };
+      const rawStatus = c.status || (c.isActive === false ? 'suspended' : c.isUsed ? 'used' : 'unused');
+      const statusStr = statusMap[rawStatus] || rawStatus;
+      const phoneStr = c.phone || (c.usedByStudents?.[0]?.phone) || '';
+      const nameStr = c.studentName || c.usedByName || (c.usedByStudents?.[0]?.studentName) || '';
+      const actStr = c.activatedAt ? new Date(c.activatedAt).toLocaleDateString('ar-YE') : '';
+      const expStr = c.expiresAt ? new Date(c.expiresAt).toLocaleDateString('ar-YE') : '';
+      const creatStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ar-YE') : '';
+
+      return [
+        c.code,
+        planStr,
+        priceStr,
+        statusStr,
+        phoneStr,
+        nameStr,
+        actStr,
+        expStr,
+        creatStr,
+      ].map((val) => `"${String(val).replace(/"/g, '""')}"`).join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `اكواد_اشتراك_اكاديمية_الميكاترونكس_${exportOption}_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setIsExportMenuOpen(false);
   };
 
   const handleToggleCode = async (code: string) => {

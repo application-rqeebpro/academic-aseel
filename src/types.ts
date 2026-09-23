@@ -52,11 +52,23 @@ export interface StudentProfile {
   quizScores: Record<string, number>; // lessonId -> percentage score
 }
 
+export type CodeStatus = 'unused' | 'used' | 'suspended' | 'expired';
+
 export interface ActivationCode {
   id?: string;
   code: string;
+  type?: 'monthly' | 'yearly';
   planType: 'monthly' | 'yearly' | 'custom';
+  status?: CodeStatus;
   durationDays: number;
+  priceUSD?: number;
+  phone?: string;
+  studentName?: string;
+  studentId?: string;
+  activatedAt?: string;
+  expiresAt?: string;
+  createdAt: string;
+  activatedBy?: 'student' | 'admin' | 'manual';
   maxUses?: number;
   timesUsed?: number;
   usedCount?: number;
@@ -67,11 +79,10 @@ export interface ActivationCode {
   usedByStudents?: Array<{
     studentId: string;
     studentName: string;
+    phone?: string;
     usedAt: string;
   }>;
   usedAt?: string;
-  expiresAt?: string;
-  createdAt: string;
   notes?: string;
 }
 

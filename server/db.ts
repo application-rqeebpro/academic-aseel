@@ -3,6 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import bundledDbSeed from '../data/mechatronics_db.json';
+import { MONTHLY_CODES_SEED, YEARLY_CODES_SEED } from './seedCodes';
 
 export interface DBUser {
   id: string;
@@ -18,24 +19,40 @@ export interface DBUser {
   lastLoginAt?: string;
 }
 
+export type CodeStatus = 'unused' | 'used' | 'suspended' | 'expired';
+
 export interface DBSubscription {
   id: string;
   userId: string;
+  studentId?: string;
+  phone?: string;
+  code?: string;
+  type?: 'monthly' | 'yearly';
   plan: 'monthly' | 'yearly';
   status: 'pending' | 'active' | 'expired' | 'suspended';
   startDate: string;
   expiryDate: string;
   createdAt: string;
   activatedAt?: string;
-  activationMethod?: 'admin_direct' | 'activation_code' | 'whatsapp';
+  activationMethod?: 'admin_direct' | 'activation_code' | 'whatsapp' | 'manual';
   notes?: string;
 }
 
 export interface DBActivationCode {
   id: string;
   code: string;
+  type: 'monthly' | 'yearly';
   planType: 'monthly' | 'yearly' | 'custom';
+  status: CodeStatus;
   durationDays: number;
+  priceUSD: number;
+  phone?: string;
+  studentName?: string;
+  studentId?: string;
+  activatedAt?: string;
+  expiresAt?: string;
+  createdAt: string;
+  activatedBy?: 'student' | 'admin' | 'manual';
   maxUses: number;
   timesUsed: number;
   isUsed: boolean;
@@ -43,10 +60,9 @@ export interface DBActivationCode {
   usedByStudents: Array<{
     studentId: string;
     studentName: string;
+    phone?: string;
     usedAt: string;
   }>;
-  expiresAt?: string;
-  createdAt: string;
   notes?: string;
 }
 
@@ -232,6 +248,126 @@ function getDefaultDB(): DBSchema {
   };
 }
 
+function ensureReadyCodesSeeded(data: DBSchema): boolean {
+  if (!data.activationCodes) {
+    data.activationCodes = [];
+  }
+
+  let modified = false;
+  const existingMap = new Map<string, DBActivationCode>();
+  for (const c of data.activationCodes) {
+    if (c.code) {
+      existingMap.set(c.code.trim().toUpperCase(), c);
+    }
+  }
+
+  // 1. Seed Monthly Codes (AS-)
+  for (const code of MONTHLY_CODES_SEED) {
+    const key = code.trim().toUpperCase();
+    if (!existingMap.has(key)) {
+      const newRecord: DBActivationCode = {
+        id: `code-${code.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        code,
+        type: 'monthly',
+        planType: 'monthly',
+        status: 'unused',
+        durationDays: 30,
+        priceUSD: 20,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: '2026-09-23T00:00:00.000Z',
+        notes: 'كود اشتراك شهري معتمد (30 يومًا)',
+      };
+      data.activationCodes.push(newRecord);
+      existingMap.set(key, newRecord);
+      modified = true;
+    }
+  }
+
+  // 2. Seed Yearly Codes (AB-)
+  for (const code of YEARLY_CODES_SEED) {
+    const key = code.trim().toUpperCase();
+    if (!existingMap.has(key)) {
+      const newRecord: DBActivationCode = {
+        id: `code-${code.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        code,
+        type: 'yearly',
+        planType: 'yearly',
+        status: 'unused',
+        durationDays: 365,
+        priceUSD: 200,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: '2026-09-23T00:00:00.000Z',
+        notes: 'كود اشتراك سنوي معتمد (سنة كاملة)',
+      };
+      data.activationCodes.push(newRecord);
+      existingMap.set(key, newRecord);
+      modified = true;
+    }
+  }
+
+  // 3. Normalize all codes
+  const now = new Date();
+  for (const c of data.activationCodes) {
+    if (!c.type) {
+      if (c.code.toUpperCase().startsWith('AS-')) c.type = 'monthly';
+      else if (c.code.toUpperCase().startsWith('AB-')) c.type = 'yearly';
+      else c.type = c.planType === 'yearly' ? 'yearly' : 'monthly';
+      modified = true;
+    }
+    if (!c.planType) {
+      c.planType = c.type;
+      modified = true;
+    }
+    if (!c.priceUSD) {
+      c.priceUSD = c.type === 'yearly' ? 200 : 20;
+      modified = true;
+    }
+    if (!c.durationDays) {
+      c.durationDays = c.type === 'yearly' ? 365 : 30;
+      modified = true;
+    }
+    if (c.maxUses === undefined) {
+      c.maxUses = 1;
+      modified = true;
+    }
+    if (!c.status) {
+      if (c.isActive === false) {
+        c.status = 'suspended';
+      } else if (c.expiresAt && new Date(c.expiresAt) < now) {
+        c.status = 'expired';
+      } else if (c.isUsed || (c.timesUsed && c.timesUsed > 0) || (c.usedByStudents && c.usedByStudents.length > 0)) {
+        c.status = 'used';
+      } else {
+        c.status = 'unused';
+      }
+      modified = true;
+    }
+    if (c.status === 'used' && !c.isUsed) {
+      c.isUsed = true;
+      modified = true;
+    }
+    if (c.status === 'unused' && c.isUsed) {
+      c.isUsed = false;
+      c.timesUsed = 0;
+      modified = true;
+    }
+    if (c.status === 'suspended' && c.isActive) {
+      c.isActive = false;
+      modified = true;
+    }
+  }
+
+  return modified;
+}
+
 let cachedDB: DBSchema | null = null;
 
 export function getDB(): DBSchema {
@@ -243,7 +379,11 @@ export function getDB(): DBSchema {
     try {
       const raw = fs.readFileSync(DB_FILE, 'utf-8');
       cachedDB = JSON.parse(raw);
-      return cachedDB!;
+      if (cachedDB) {
+        const changed = ensureReadyCodesSeeded(cachedDB);
+        if (changed) saveDB(cachedDB);
+        return cachedDB;
+      }
     } catch (e) {
       console.error('Error reading DB file, initializing default:', e);
     }
@@ -251,11 +391,13 @@ export function getDB(): DBSchema {
 
   if (bundledDbSeed && typeof bundledDbSeed === 'object') {
     cachedDB = JSON.parse(JSON.stringify(bundledDbSeed));
+    ensureReadyCodesSeeded(cachedDB!);
     saveDB(cachedDB!);
     return cachedDB!;
   }
 
   cachedDB = getDefaultDB();
+  ensureReadyCodesSeeded(cachedDB);
   saveDB(cachedDB);
   return cachedDB;
 }
@@ -461,8 +603,14 @@ export const db = {
 
   // Activation Codes
   findActivationCode(code: string): DBActivationCode | undefined {
+    if (!code) return undefined;
     const clean = code.trim().toUpperCase();
     return getDB().activationCodes.find((c) => c.code.trim().toUpperCase() === clean);
+  },
+  findActivationCodeByPhone(phone: string): DBActivationCode | undefined {
+    const clean = normalizePhone(phone);
+    if (!clean) return undefined;
+    return getDB().activationCodes.find((c) => c.phone && normalizePhone(c.phone) === clean);
   },
   getAllActivationCodes(): DBActivationCode[] {
     return getDB().activationCodes;
@@ -472,6 +620,12 @@ export const db = {
     data.activationCodes.unshift(codeRecord);
     saveDB(data);
     return codeRecord;
+  },
+  batchCreateActivationCodes(newCodes: DBActivationCode[]): DBActivationCode[] {
+    const data = getDB();
+    data.activationCodes.unshift(...newCodes);
+    saveDB(data);
+    return newCodes;
   },
   updateActivationCode(code: string, updates: Partial<DBActivationCode>): DBActivationCode | null {
     const data = getDB();
@@ -489,6 +643,12 @@ export const db = {
     data.activationCodes = data.activationCodes.filter((c) => c.code.trim().toUpperCase() !== clean);
     saveDB(data);
     return data.activationCodes.length !== initialLen;
+  },
+  getSubscriptionByPhone(phone: string): DBSubscription | undefined {
+    const clean = normalizePhone(phone);
+    if (!clean) return undefined;
+    const user = db.findUserByPhone(clean);
+    return getDB().subscriptions.find((s) => (user && s.userId === user.id) || (s.phone && normalizePhone(s.phone) === clean));
   },
 
   // Subscription Requests (WhatsApp)
