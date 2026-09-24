@@ -286,6 +286,7 @@ export interface ProblemSubPart {
   unit?: string; // وحدة القياس
   finalAnswer: string; // الناتج النهائي للفقرة
   whyThisResult?: string; // التفسير الهندسي لنتيجة الفقرة
+  finalAnalysis?: string; // التحليل الهندسي والفيزيائي النهائي المتعمق
   isMcq?: boolean; // هل الفقرة سؤال اختيارات من متعدد؟
   mcqOptions?: string[]; // الخيارات المتاحة (أ، ب، ج، د)
   selectedOption?: string; // الإجابة والاختيار الصحيح
@@ -302,6 +303,7 @@ export interface ExplainSolvedExample {
   unit?: string;
   finalAnswer: string;
   whyThisResult?: string;
+  finalAnalysis?: string; // التحليل الهندسي والفيزيائي النهائي المتعمق
   isGenerated: boolean;
   note?: string;
   isMultipleParts?: boolean; // هل المسألة مقسمة إلى فقرات (أ، ب، ج...)؟

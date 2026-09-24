@@ -10,8 +10,8 @@
       "createdAt": "2026-09-15T18:56:53.699Z",
       "studyLevel": "السنة الأولى",
       "university": "أكاديمية الميكاترونكس اليمنية",
-      "lastLoginAt": "2026-09-24T19:03:41.943Z",
-      "passwordHash": "$2b$10$0RuS02D4wdLFHJazXtdA5OcXY7yl2AWuCHsuYlvIXNuSYu8jn1T1y"
+      "lastLoginAt": "2026-09-24T20:39:37.933Z",
+      "passwordHash": "$2b$10$IbI/MXrFtrkuagIZ7kyH8ORMkhW7MU4/JPVVneiS6mFjsihLIGi5C"
     },
     {
       "id": "user-1789594875928-4b554003",
@@ -124,26 +124,51 @@
     {
       "id": "user-1790276599800-af549e2a",
       "name": "طالب اختبار نيون السحابي",
-      "phone": "770099885",
-      "university": "الجامعة الإماراتية الدولية",
-      "studyLevel": "السنة الأولى",
-      "major": "هندسة الميكاترونكس",
-      "passwordHash": "$2b$10$fEWbtZJblOEcdPfdUVoPh.HBCg1GG7eyNP2K65aiFqfDRKMVgBjhG",
       "role": "student",
+      "major": "هندسة الميكاترونكس",
+      "phone": "770099885",
       "createdAt": "2026-09-24T19:03:19.914Z",
-      "lastLoginAt": "2026-09-24T19:03:20.636Z"
+      "studyLevel": "السنة الأولى",
+      "university": "الجامعة الإماراتية الدولية",
+      "lastLoginAt": "2026-09-24T19:03:20.636Z",
+      "passwordHash": "$2b$10$fEWbtZJblOEcdPfdUVoPh.HBCg1GG7eyNP2K65aiFqfDRKMVgBjhG"
     },
     {
       "id": "user-1790276622676-8115aacf",
       "name": "طالب اختبار نيون السحابي",
-      "phone": "770099889",
-      "university": "الجامعة الإماراتية الدولية",
-      "studyLevel": "السنة الأولى",
-      "major": "هندسة الميكاترونكس",
-      "passwordHash": "$2b$10$owISAs5wcwNO2Tplq9tVl.5zezyQmVNMLXgcC/.MHw9AJ1GwHOXQe",
       "role": "student",
+      "major": "هندسة الميكاترونكس",
+      "phone": "770099889",
       "createdAt": "2026-09-24T19:03:42.799Z",
-      "lastLoginAt": "2026-09-24T19:03:43.631Z"
+      "studyLevel": "السنة الأولى",
+      "university": "الجامعة الإماراتية الدولية",
+      "lastLoginAt": "2026-09-24T19:03:43.631Z",
+      "passwordHash": "$2b$10$owISAs5wcwNO2Tplq9tVl.5zezyQmVNMLXgcC/.MHw9AJ1GwHOXQe"
+    },
+    {
+      "id": "user-1790281025211-9c81b556",
+      "name": "اصيل عبدالله صالح عبلان",
+      "role": "student",
+      "email": "aylabnl.70ad@gmail.com",
+      "major": "هندسة الميكاترونكس",
+      "phone": "782060070",
+      "createdAt": "2026-09-24T20:17:05.305Z",
+      "studyLevel": "السنة الأولى",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "lastLoginAt": "2026-09-24T20:17:05.305Z",
+      "passwordHash": "$2b$10$FydGftB9rkgsDwP6T8QU8.zz/Cy7/Xq7XU.FoxtjEY.ZnP3TpIimy"
+    },
+    {
+      "id": "user-1790282377962-e0fc1c",
+      "name": "abdulrqeebfarag",
+      "role": "student",
+      "major": "هندسة الميكاترونكس",
+      "phone": "782916997",
+      "createdAt": "2026-09-24T20:39:37.961Z",
+      "studyLevel": "السنة الأولى",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "lastLoginAt": "2026-09-24T20:39:37.961Z",
+      "passwordHash": "$2b$10$jSERSqJPc6pIocTzxyaUzuEQHmd9jrawr5GH62AMIrCsvtenSbrtW"
     }
   ],
   "settings": {
@@ -280,35 +305,67 @@
     },
     {
       "id": "sub-1790276599916",
-      "userId": "user-1790276599800-af549e2a",
-      "studentId": "user-1790276599800-af549e2a",
-      "phone": "770099885",
       "code": "AS-5344",
-      "type": "monthly",
       "plan": "monthly",
+      "type": "monthly",
+      "notes": "تم التفعيل عبر الكود المعتمد AS-5344",
+      "phone": "770099885",
       "status": "active",
-      "startDate": "2026-09-24T19:03:20.636Z",
-      "expiryDate": "2026-10-24T19:03:20.636Z",
+      "userId": "user-1790276599800-af549e2a",
       "createdAt": "2026-09-24T19:03:19.916Z",
+      "startDate": "2026-09-24T19:03:20.636Z",
+      "studentId": "user-1790276599800-af549e2a",
+      "expiryDate": "2026-10-24T19:03:20.636Z",
       "activatedAt": "2026-09-24T19:03:20.636Z",
-      "activationMethod": "activation_code",
-      "notes": "تم التفعيل عبر الكود المعتمد AS-5344"
+      "activationMethod": "activation_code"
     },
     {
       "id": "sub-1790276622802",
-      "userId": "user-1790276622676-8115aacf",
-      "studentId": "user-1790276622676-8115aacf",
-      "phone": "770099889",
       "code": "AS-4547",
-      "type": "monthly",
       "plan": "monthly",
+      "type": "monthly",
+      "notes": "تم التفعيل عبر الكود المعتمد AS-4547",
+      "phone": "770099889",
       "status": "active",
-      "startDate": "2026-09-24T19:03:43.631Z",
-      "expiryDate": "2026-10-24T19:03:43.631Z",
+      "userId": "user-1790276622676-8115aacf",
       "createdAt": "2026-09-24T19:03:42.802Z",
+      "startDate": "2026-09-24T19:03:43.631Z",
+      "studentId": "user-1790276622676-8115aacf",
+      "expiryDate": "2026-10-24T19:03:43.631Z",
       "activatedAt": "2026-09-24T19:03:43.631Z",
-      "activationMethod": "activation_code",
-      "notes": "تم التفعيل عبر الكود المعتمد AS-4547"
+      "activationMethod": "activation_code"
+    },
+    {
+      "id": "sub-1790281025306",
+      "code": "AS-1058",
+      "plan": "monthly",
+      "type": "monthly",
+      "notes": "تم التفعيل أثناء التسجيل عبر الكود AS-1058",
+      "phone": "782060070",
+      "status": "active",
+      "userId": "user-1790281025211-9c81b556",
+      "createdAt": "2026-09-24T20:17:05.305Z",
+      "startDate": "2026-09-24T20:17:05.305Z",
+      "studentId": "user-1790281025211-9c81b556",
+      "expiryDate": "2026-10-24T20:17:05.305Z",
+      "activatedAt": "2026-09-24T20:17:05.305Z",
+      "activationMethod": "activation_code"
+    },
+    {
+      "id": "sub-1790282378074",
+      "code": "MCT-30D1",
+      "plan": "monthly",
+      "type": "monthly",
+      "notes": "تم التفعيل اليدوي من لوحة التحكم بواسطة المالك (كود: MCT-30D1)",
+      "phone": "782916997",
+      "status": "active",
+      "userId": "user-1790282377962-e0fc1c",
+      "createdAt": "2026-09-24T20:39:37.961Z",
+      "startDate": "2026-09-24T20:39:37.961Z",
+      "studentId": "user-1790282377962-e0fc1c",
+      "expiryDate": "2026-10-24T20:39:37.961Z",
+      "activatedAt": "2026-09-24T20:39:37.961Z",
+      "activationMethod": "manual"
     }
   ],
   "studentLessons": [],
@@ -496,32 +553,58 @@
       "code": "MCT-30D1",
       "type": "monthly",
       "notes": "كود تجربة شهري (30 يوم)",
-      "isUsed": false,
-      "status": "unused",
-      "maxUses": 100,
+      "phone": "782916997",
+      "isUsed": true,
+      "status": "used",
+      "maxUses": 1,
       "isActive": true,
       "planType": "monthly",
       "priceUSD": 20,
       "createdAt": "2026-09-15T19:00:00.000Z",
-      "timesUsed": 0,
+      "expiresAt": "2026-10-24T20:39:37.961Z",
+      "studentId": "user-1790282377962-e0fc1c",
+      "timesUsed": 1,
+      "activatedAt": "2026-09-24T20:39:37.961Z",
+      "activatedBy": "admin",
+      "studentName": "abdulrqeebfarag",
       "durationDays": 30,
-      "usedByStudents": []
+      "usedByStudents": [
+        {
+          "phone": "782916997",
+          "usedAt": "2026-09-24T20:39:37.961Z",
+          "studentId": "user-1790282377962-e0fc1c",
+          "studentName": "abdulrqeebfarag"
+        }
+      ]
     },
     {
       "id": "code-as-1058",
       "code": "AS-1058",
       "type": "monthly",
       "notes": "كود اشتراك شهري معتمد (30 يومًا)",
-      "isUsed": false,
-      "status": "unused",
+      "phone": "782060070",
+      "isUsed": true,
+      "status": "used",
       "maxUses": 1,
       "isActive": true,
       "planType": "monthly",
       "priceUSD": 20,
       "createdAt": "2026-09-23T00:00:00.000Z",
-      "timesUsed": 0,
+      "expiresAt": "2026-10-24T20:17:05.305Z",
+      "studentId": "user-1790281025211-9c81b556",
+      "timesUsed": 1,
+      "activatedAt": "2026-09-24T20:17:05.305Z",
+      "activatedBy": "student",
+      "studentName": "اصيل عبدالله صالح عبلان",
       "durationDays": 30,
-      "usedByStudents": []
+      "usedByStudents": [
+        {
+          "phone": "782060070",
+          "usedAt": "2026-09-24T20:17:05.305Z",
+          "studentId": "user-1790281025211-9c81b556",
+          "studentName": "اصيل عبدالله صالح عبلان"
+        }
+      ]
     },
     {
       "id": "code-as-2374",
@@ -3677,6 +3760,15 @@
     }
   ],
   "studentProgress": {
+    "guest": {
+      "studentId": "guest",
+      "updatedAt": "2026-09-24T20:17:01.793Z",
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "completedLessons": [],
+      "simulatorSettings": {}
+    },
     "student-1789495512896": {
       "studentId": "student-1789495512896",
       "updatedAt": "2026-09-22T17:19:40.970Z",
@@ -3760,25 +3852,46 @@
     },
     "user-1790276599800-af549e2a": {
       "studentId": "user-1790276599800-af549e2a",
-      "completedLessons": [],
+      "updatedAt": "2026-09-24T19:03:20.627Z",
       "quizScores": {},
       "lessonNotes": {},
       "savedProjects": [],
-      "simulatorSettings": {},
-      "updatedAt": "2026-09-24T19:03:20.627Z"
+      "completedLessons": [],
+      "simulatorSettings": {}
     },
     "user-1790276622676-8115aacf": {
       "studentId": "user-1790276622676-8115aacf",
-      "completedLessons": [],
+      "updatedAt": "2026-09-24T19:03:43.624Z",
       "quizScores": {},
       "lessonNotes": {},
       "savedProjects": [],
-      "simulatorSettings": {},
-      "updatedAt": "2026-09-24T19:03:43.624Z"
+      "completedLessons": [],
+      "simulatorSettings": {}
+    },
+    "user-1790281025211-9c81b556": {
+      "studentId": "user-1790281025211-9c81b556",
+      "updatedAt": "2026-09-24T20:17:37.596Z",
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "completedLessons": [],
+      "simulatorSettings": {}
     }
   },
   "passwordResetTokens": [],
   "subscriptionRequests": [
+    {
+      "id": "req-1790281032222-7b422a",
+      "plan": "monthly",
+      "notes": "هندسة الميكاترونكس - السنة الأولى - طريقة الدفع: كريمي",
+      "phone": "782060070",
+      "status": "pending",
+      "userId": "user-1790281025211-9c81b556",
+      "priceUSD": 20,
+      "createdAt": "2026-09-24T20:17:12.222Z",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studentName": "اصيل عبدالله صالح عبلان"
+    },
     {
       "id": "req-1790107742297-d331b4",
       "plan": "yearly",

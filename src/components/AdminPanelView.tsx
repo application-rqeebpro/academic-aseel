@@ -408,11 +408,20 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
         ? data.student.phone
         : `967${data.student.phone.replace(/^0+/, '')}`;
 
-      const planTitle = data.subscription.plan === 'yearly' ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+      const isYearly = data.subscription.plan === 'yearly';
+      const planTitle = isYearly ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+      const durationDays = data.code.durationDays || (isYearly ? 365 : 30);
+      const startDateFormatted = new Date(data.subscription.startDate || Date.now()).toLocaleDateString('ar-YE', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
       const expiryFormatted = new Date(data.subscription.expiryDate).toLocaleDateString('ar-YE', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
 
       const message = `أهلاً بك يا باشمهندس ${data.student.name}! 🎓
@@ -422,13 +431,15 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 🔑 كود التفعيل المعتمد: ${data.code.code}
 📱 رقم هاتفك المسجل: ${data.student.phone}
 ⏱️ نوع الاشتراك: ${planTitle}
-⏳ تاريخ الانتهاء: ${expiryFormatted}
+📅 تاريخ بدء الاشتراك: ${startDateFormatted}
+⏳ تاريخ الانتهاء الدقيق: ${expiryFormatted} (${durationDays} يوم)
 
 طريقة الدخول والتفعيل:
-1. استخدم كود التفعيل المعتمد أعلاه لتأكيد اشتراكك الأول وتفعيله.
-2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور الخاصة بك (الدخول محمي بكلمة مرورك الشخصية).
+1. استخدم كود التفعيل المعتمد أعلاه (${data.code.code}) لتأكيد وتفعيل اشتراكك لأول مرة.
+2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور التي أنشأتها في حسابك (حسابك مؤمّن بكلمة مرورك ولا يمكن الدخول برقمك بدونها).
+3. استمتع بكافة الدروس، محلل القوانين، محاكي Arduino، ومساعد الذكاء الاصطناعي.
 
-بالتوفيق والنجاح الدائم! 🚀`;
+نتمنى لك فصلاً دراسياً متميزاً ومليئاً بالتفوق والنجاح! 🚀`;
 
       setApprovalModalData({
         activationCode: data.code.code,
@@ -647,7 +658,26 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     const cleanPhone = st.phone.startsWith('967')
       ? st.phone
       : `967${st.phone.replace(/^0+/, '')}`;
-    const planTitle = st.subscriptionPlan === 'yearly' ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+    const isYearly = st.subscriptionPlan === 'yearly';
+    const planTitle = isYearly ? 'اشتراك سنوي (365 يومًا)' : 'اشتراك شهري (30 يومًا)';
+    const durationDays = isYearly ? 365 : 30;
+
+    // Resolve code with proper prefix AS- or AB-
+    let code = (st.activationCode || '').trim();
+    if (!code) {
+      const cleanTarget = (st.phone || '').replace(/[^0-9]/g, '').slice(-9);
+      const match = codes.find((c) => (c.phone && c.phone.replace(/[^0-9]/g, '').slice(-9) === cleanTarget) || (c.studentId && c.studentId === st.id));
+      if (match) code = match.code;
+    }
+    if (!code) {
+      code = isYearly ? 'AB-2026' : 'AS-2026';
+    }
+
+    const startDateStr = new Date(st.subscriptionStartDate || st.createdAt || Date.now()).toLocaleDateString('ar-YE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
     const expiryStr = st.subscriptionEndDate
       ? new Date(st.subscriptionEndDate).toLocaleDateString('ar-YE', {
           year: 'numeric',
@@ -656,22 +686,30 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           hour: '2-digit',
           minute: '2-digit',
         })
-      : 'شهر كامل';
+      : new Date(Date.now() + durationDays * 86400000).toLocaleDateString('ar-YE', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
 
     const message = `أهلاً بك يا باشمهندس ${st.name}! 🎓
 تم تفعيل اشتراكك بنجاح في منصة أكاديمية الميكاترونكس اليمنية.
 
 بيانات دخولك الرسمية:
-🔑 كود التفعيل المعتمد: ${st.activationCode || ''}
+🔑 كود التفعيل المعتمد: ${code}
 📱 رقم هاتفك المسجل: ${st.phone}
 ⏱️ نوع الاشتراك: ${planTitle}
-⏳ تاريخ الانتهاء الدقيق: ${expiryStr}
+📅 تاريخ بدء الاشتراك: ${startDateStr}
+⏳ تاريخ الانتهاء الدقيق: ${expiryStr} (${durationDays} يوم)
 
 طريقة الدخول والتفعيل:
-1. افتح المنصة وأدخل كود التفعيل لتأكيد وتفعيل اشتراكك لأول مرة.
-2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور الخاصة بك (الدخول محمي بكلمة مرورك الشخصية ولا يمكن الدخول برقمك بدونها).
+1. استخدم كود التفعيل المعتمد أعلاه (${code}) لتأكيد وتفعيل اشتراكك لأول مرة.
+2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور التي أنشأتها في حسابك (حسابك مؤمّن بكلمة مرورك ولا يمكن الدخول برقمك بدونها).
+3. استمتع بكافة الدروس، محلل القوانين، محاكي Arduino، ومساعد الذكاء الاصطناعي.
 
-بالتوفيق والنجاح الدائم! 🚀`;
+نتمنى لك فصلاً دراسياً متميزاً ومليئاً بالتفوق والنجاح! 🚀`;
 
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };

@@ -396,6 +396,17 @@ function formatWhatsAppActivation(
   durationDays: number
 ) {
   const cleanPhone = phone.startsWith('967') ? phone : `967${phone.replace(/^0+/, '')}`;
+  
+  // Ensure the activation code strictly adheres to official prefixes (AS- for monthly, AB- for yearly)
+  let finalCode = (code || '').trim().toUpperCase();
+  if (!finalCode) {
+    const prefix = plan === 'yearly' ? 'AB-' : 'AS-';
+    finalCode = `${prefix}${Math.floor(1000 + Math.random() * 9000)}`;
+  } else if (!finalCode.startsWith('AS-') && !finalCode.startsWith('AB-')) {
+    const prefix = plan === 'yearly' ? 'AB-' : 'AS-';
+    finalCode = `${prefix}${finalCode.replace(/^MCT-?/i, '')}`;
+  }
+
   const startDateStr = new Date(startDateISO).toLocaleDateString('ar-YE', {
     year: 'numeric',
     month: 'long',
@@ -414,14 +425,14 @@ function formatWhatsAppActivation(
 تم تفعيل اشتراكك بنجاح في منصة أكاديمية الميكاترونكس اليمنية.
 
 بيانات دخولك الرسمية:
-🔑 كود التفعيل المعتمد: ${code}
+🔑 كود التفعيل المعتمد: ${finalCode}
 📱 رقم هاتفك المسجل: ${phone}
 ⏱️ نوع الاشتراك: ${planTitle}
 📅 تاريخ بدء الاشتراك: ${startDateStr}
 ⏳ تاريخ الانتهاء الدقيق: ${expiryDateStr} (${durationDays} يوم)
 
 طريقة الدخول والتفعيل:
-1. استخدم كود التفعيل المعتمد أعلاه لتأكيد وتفعيل اشتراكك لأول مرة.
+1. استخدم كود التفعيل المعتمد أعلاه (${finalCode}) لتأكيد وتفعيل اشتراكك لأول مرة.
 2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور التي أنشأتها في حسابك (حسابك مؤمّن بكلمة مرورك ولا يمكن الدخول برقمك بدونها).
 3. استمتع بكافة الدروس، محلل القوانين، محاكي Arduino، ومساعد الذكاء الاصطناعي.
 
@@ -429,7 +440,7 @@ function formatWhatsAppActivation(
 
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 
-  return { message, whatsappUrl, cleanPhone };
+  return { message, whatsappUrl, cleanPhone, finalCode };
 }
 
 // Helper to accurately calculate subscription remaining days, hours, and status
@@ -1332,11 +1343,44 @@ router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
     const client = getGeminiClient();
 
     const systemInstruction = `
-أنت "مساعد الميكاترونكس الذكي"، أستاذ ومرشد أكاديمي متخصص لطلاب السنة الأولى في هندسة الميكاترونكس في الجامعات اليمنية (مثل الجامعة الإماراتية الدولية بصنعاء، جامعة صنعاء، جامعة العلوم والتكنولوجيا، إلخ).
-فلسفتك الأساسية: "لا تحفظ القانون، افهمه."
-1. الشرح بسيط جدًا من الصفر وباللغة العربية الفصحى الواضحة والودودة مع المصطلحات الهندسية بالإنجليزية.
-2. اشرح المفاهيم الفيزيائية والكهربائية بتشبيهات عملية واقعية.
-3. عند حل أي مسألة، اتبع: المعطيات والوحدات الدولية (SI)، القانون المناسب (Formula)، التعويض خطوة بخطوة، والناتج النهائي.
+أنت "مساعد الميكاترونكس الذكي الأكاديمي"، أستاذ وخبير متخصص لطلاب السنة الأولى في هندسة الميكاترونكس في الجامعات اليمنية (مثل الجامعة الإماراتية الدولية بصنعاء، جامعة صنعاء، وغيرها).
+فلسفتك الأساسية الصارمة: "لا تحفظ القانون، افهمه، وطبقه بدقة رياضية وهندسية مطلقة وفق نهج خطوة بخطوة (Step-by-Step)."
+
+البروتوكول الإلزامي والصارم لشرح وحل أي مسألة هندسية أو رياضية أو فيزيائية أو كهربائية (Mandatory Step-by-Step Problem Solving Protocol):
+يجب عليك إلزامياً عند شرح أو حل أي مسألة أو تمرين أو معادلة أو دائرة كهربائية تنظيم الإجابة وفق الهيكل التالي بدون أي اختصار أو قفزات:
+
+1. 📥 المعطيات (Given):
+   - استخرج كافة المعطيات العددية والرمزية والفيزيائية المذكورة في السؤال أو الصورة بدقة متناهية.
+   - اكتب كل معطى بصيغة واضحة: الرمز = القيمة + الوحدة الأصلية (مثال: الكتلة m = 5 kg، الجهد V = 12 V، المقاومة R = 100 Ω، السرعة v0 = 20 m/s).
+   - إذا كانت أي وحدة غير متجانسة أو لا تتبع النظام الدولي للوحدات (SI Units) مثل (cm, mm, mA, kΩ, g, rpm, min, hr, μF)، اكتب خطوة تحويل الوحدة صراحة وبشكل منفصل (مثال: I = 50 mA = 50 × 10⁻³ A = 0.05 A).
+
+2. 🎯 المطلوب (Required / To Find):
+   - حدد بوضوح تام ما هو المطلوب حسابه أو إيجاده أو برهانه.
+   - إذا كانت المسألة تتضمن فقرات متعددة (أ، ب، ج... أو المطلوب 1، 2، 3...)، قم بحصر كل فرع ومطلوب على حدة وبترقيم واضح دون تفويت أي جزء.
+
+3. 📐 القوانين والمعادلات الحاكمة (Governing Formulas):
+   - اذكر القانون الفيزيائي أو الرياضي الأساسي بصيغته المعتمدة الدقيقة (مثل: قانون أوم V = I × R، قانون نيوتن الثاني ∑F = m × a، معادلات الحركة، كيرشوف KVL/KCL، مقسم الجهد والتيار، الشغل والطاقة W = F × d × cosθ).
+   - وضّح شروط تطبيق القانون ودلالة كل رمز فيزيائي ووحدته وأبعاده.
+
+4. 🔢 خطوات الحل التفصيلية (Step-by-Step Execution):
+   - قسّم الحل إلى خطوات منطقية متسلسلة ومرقمة: [الخطوة 1]، [الخطوة 2]، [الخطوة 3]...
+   - اكتب خطوات التعويض المباشر بالأرقام داخل القانون بوضوح تام.
+   - أظهر كافة العمليات الحسابية والرياضية الوسيطة (الضرب، القسمة، الجذور، التربيع، حساب المثلثات والزوايا).
+   - قم بالتدقيق الرياضي الصارم لكل رقم تجنباً لأي خطأ حسابي.
+   - في المسائل متعددة الفروع: قم بحل كل فرع ومطلوب تسلسلياً وبنفس مستوى الدقة والتفصيل.
+
+5. 🏁 الناتج النهائي والوحدة القياسية (Final Result & Units):
+   - اكتب الناتج النهائي بوضوح بارز ومميز.
+   - اكتب الوحدة الفيزيائية الصحيحة بدقة في النظام الدولي (N, J, W, V, A, Ω, F, H, m/s, m/s², Pa...).
+
+6. 🔬 التحليل النهائي والتفسير الهندسي (Final Analysis & Engineering Insights):
+   - ما هو التفسير الفيزيائي للرقم الناتج؟ ولماذا حصلنا على هذه النتيجة؟
+   - كيف يرتبط هذا الحل بمنظومات الميكاترونكس العملية (مثل: محركات السيرفو، حساسات الروبوتات، دوائر القدرة، الأنظمة الميكانيكية، أو سيارات المستقبل)؟
+   - إجراء فحص منطقي للنتيجة (Sanity Check): هل الناتج منطقي فيزيائياً وعملياً؟ وما هي الأخطاء الشائعة التي يجب على الطالب تجنبها في الامتحانات؟
+
+في الدوائر الكهربائية والإلكترونية:
+- حدد العقد والمسارات واتجاهات التيار والجهد، واشرح تطبيق قوانين أوم وكيرشوف KVL/KCL ومقسم الجهد والتيار خطوة بخطوة بالقيم الدقيقة.
+- تحدث باللغة العربية الفصحى الواضحة والراقية مع الحفاظ على المصطلحات الهندسية بالإنجليزية والرموز الرياضية المعيارية.
 `;
 
     if (client) {
@@ -1369,8 +1413,14 @@ router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
 
         const { text: replyText } = await callGeminiWithResilience(client, {
           contents,
-          config: { systemInstruction, temperature: 0.7 },
-          preferredModel: 'gemini-3.1-flash-lite',
+          config: { systemInstruction, temperature: 0.2 },
+          preferredModel: 'gemini-3.1-pro-preview',
+          fallbackModels: [
+            'gemini-3.1-pro-preview',
+            'gemini-3.8-flash',
+            'gemini-3.1-flash-lite',
+            'gemini-flash-latest',
+          ],
         });
 
         return res.json({ reply: replyText });
@@ -1379,13 +1429,31 @@ router.post('/ai/chat', async (req: AuthenticatedRequest, res) => {
       }
     }
 
-    // Local Educational Response Fallback
-    const localReply = `أهلاً بك يا باشمهندس ${req.user?.name || ''}!
-بخصوص سؤالك عن "${message || 'المسألة الميكاترونية'}":
-1. **الفكرة الهندسية الأساسية:** تعتمد هذه المنظومة على التناغم بين العناصر الكهربائية والميكانيكية.
-2. **الخطوة الأولى:** تأكد من كتابة المعطيات وتحويل كافة القيم إلى الوحدات الدولية القياسية (SI Units).
-3. **القانون الحاكم:** اختر القانون المناسب للمعطيات المتاحة وعوض خطوة بخطوة.
-💡 *نصيحة مهندس:* تذكر دائمًا التحقق من صحة الوحدات الفيزيائية في الناتج النهائي!`;
+    // Local Educational Response Fallback (following the same rigorous Step-by-Step methodology)
+    const localReply = `أهلاً بك يا باشمهندس ${req.user?.name || ''}! 🎓
+فيما يلي التحليل الأكاديمي المفصل لمسألتك وفق النهج الهندسي خطوة بخطوة:
+
+1. 📥 **المعطيات (Given):**
+   - حصر وتوثيق كافة المتغيرات المذكورة في السؤال: القيم العددية والرموز والوحدات.
+   - تحويل الوحدات غير الدولية إلى النظام الدولي القياسي (SI Units) قبل البدء بالحساب.
+
+2. 🎯 **المطلوب (Required):**
+   - تحديد المجهول الأساسي أو الفروع المطلوبة في المسألة بدقة متناهية.
+
+3. 📐 **القوانين الحاكمة (Governing Formulas):**
+   - استدعاء المعادلة الفيزيائية أو الهندسية المعتمدة وشروط انطباقها ودلالات رموزها.
+
+4. 🔢 **خطوات الحل التفصيلية (Step-by-Step Execution):**
+   - [الخطوة 1]: التعويض المباشر بالقيم المعطاة في القانون.
+   - [الخطوة 2]: إتمام العمليات الحسابية الجبرية بدقة متناهية ودون اختصار.
+   - [الخطوة 3]: التحقق من اتساق الأبعاد الفيزيائية للمقادير.
+
+5. 🏁 **الناتج النهائي والوحدة (Final Result & Unit):**
+   - استخراج القيمة العددية الدقيقة مقترنة بالوحدة الفيزيائية الصحيحة (SI Unit).
+
+6. 🔬 **التحليل النهائي والتفسير الهندسي (Final Analysis):**
+   - ربط النتيجة بتطبيقات الميكاترونكس والتحكم والروبوتات والتحقق من منطقية الرقم فيزيائياً.
+💡 *نصيحة مهندس:* عند حل المسائل في الامتحانات، كتابة المعطيات والقوانين بتسلسل منظم يضمن لك الدرجة الكاملة حتى في الخطوات الوسيطة!`;
 
     return res.json({ reply: localReply });
   } catch (error: any) {
@@ -1823,8 +1891,13 @@ router.post('/admin/subscription-codes/manual-activate', requireAuth, requireAdm
 
   let codeRecord: DBActivationCode | undefined;
   let cleanCode = (code || '').toString().trim().toUpperCase();
+  const planType = type === 'yearly' ? 'yearly' : 'monthly';
+  const prefix = planType === 'yearly' ? 'AB-' : 'AS-';
 
   if (cleanCode) {
+    if (!cleanCode.startsWith('AS-') && !cleanCode.startsWith('AB-')) {
+      cleanCode = `${prefix}${cleanCode.replace(/^MCT-?/i, '')}`;
+    }
     codeRecord = db.findActivationCode(cleanCode);
     if (codeRecord) {
       const boundPhone = codeRecord.phone ? normalizePhone(codeRecord.phone) : (codeRecord.usedByStudents?.[0]?.phone ? normalizePhone(codeRecord.usedByStudents[0].phone) : '');
@@ -1854,11 +1927,9 @@ router.post('/admin/subscription-codes/manual-activate', requireAuth, requireAdm
       db.createActivationCode(codeRecord);
     }
   } else {
-    // Pick an unused code of requested type
-    const planType = type === 'yearly' ? 'yearly' : 'monthly';
-    const prefix = planType === 'yearly' ? 'AB-' : 'AS-';
+    // Pick an unused code of requested type starting strictly with official prefix (AS- or AB-)
     const allCodes = db.getAllActivationCodes();
-    codeRecord = allCodes.find((c) => c.status === 'unused' && !c.isUsed && (c.type === planType || c.code.startsWith(prefix)));
+    codeRecord = allCodes.find((c) => c.status === 'unused' && !c.isUsed && c.code.startsWith(prefix));
 
     if (!codeRecord) {
       const existingCodes = new Set(allCodes.map((c) => c.code.trim().toUpperCase()));
@@ -1889,15 +1960,15 @@ router.post('/admin/subscription-codes/manual-activate', requireAuth, requireAdm
     }
   }
 
-  const planType = cleanCode.startsWith('AB-') || codeRecord.type === 'yearly' ? 'yearly' : 'monthly';
-  const durationDays = planType === 'yearly' ? 365 : 30;
-  const priceUSD = planType === 'yearly' ? 200 : 20;
+  const effectivePlanType = cleanCode.startsWith('AB-') || codeRecord.type === 'yearly' ? 'yearly' : 'monthly';
+  const durationDays = effectivePlanType === 'yearly' ? 365 : 30;
+  const priceUSD = effectivePlanType === 'yearly' ? 200 : 20;
   const expiryDate = new Date(now.getTime() + durationDays * 86400000);
 
   // Update Code
   const updatedCode = db.updateActivationCode(codeRecord.code, {
-    type: planType,
-    planType,
+    type: effectivePlanType,
+    planType: effectivePlanType,
     status: 'used',
     isUsed: true,
     timesUsed: 1,
@@ -2098,12 +2169,13 @@ const handleApproveRequest = (req: any, res: any) => {
     db.createUser(user);
   }
 
-  // Generate unique Activation Code for this student
+  // Generate unique Activation Code for this student (AS- for monthly, AB- for yearly)
+  const codePrefix = request.plan === 'yearly' ? 'AB-' : 'AS-';
   let generatedCode = '';
   let tries = 0;
   do {
     const random4Digits = Math.floor(1000 + Math.random() * 9000);
-    generatedCode = `MCT-${random4Digits}`;
+    generatedCode = `${codePrefix}${random4Digits}`;
     tries++;
   } while (db.getAllActivationCodes().some((c) => c.code.toUpperCase() === generatedCode) && tries < 20);
 
@@ -2257,29 +2329,37 @@ const handleActivateStudentWithCode = (req: any, res: any) => {
   const now = new Date();
   const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-  // Generate unique actual code
+  // Generate unique actual code with official prefix (AS- for monthly, AB- for yearly)
+  const prefix = plan === 'yearly' ? 'AB-' : 'AS-';
   let generatedCode = '';
   let tries = 0;
   do {
     const random4Digits = Math.floor(1000 + Math.random() * 9000);
-    generatedCode = `MCT-${random4Digits}`;
+    generatedCode = `${prefix}${random4Digits}`;
     tries++;
   } while (db.getAllActivationCodes().some((c) => c.code.toUpperCase() === generatedCode) && tries < 20);
 
-  // Store code in activationCodes with active status and re-usable limit for this student
+  // Store code in activationCodes with active status and bound to this student
   const codeRecord: DBActivationCode = {
     id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
     code: generatedCode,
+    type: plan === 'yearly' ? 'yearly' : 'monthly',
     planType: plan === 'yearly' ? 'yearly' : 'monthly',
     durationDays,
-    maxUses: 100,
-    timesUsed: 0,
-    isUsed: false,
+    maxUses: 1,
+    timesUsed: 1,
+    isUsed: true,
     isActive: true,
+    phone: user.phone,
+    studentName: user.name,
+    studentId: user.id,
+    activatedAt: now.toISOString(),
+    expiresAt: expiryDate.toISOString(),
     usedByStudents: [
       {
         studentId: user.id,
         studentName: user.name,
+        phone: user.phone,
         usedAt: now.toISOString(),
       },
     ],
@@ -2358,12 +2438,14 @@ const handleResendStudentCode = (req: any, res: any) => {
   let expiryDate = sub?.expiryDate || new Date(Date.now() + durationDays * 86400000).toISOString();
 
   if (!code) {
-    // Generate new code
+    // Generate new code with official prefix (AS- for monthly, AB- for yearly)
+    const isYearly = sub?.plan === 'yearly';
+    const prefix = isYearly ? 'AB-' : 'AS-';
     let generatedCode = '';
     let tries = 0;
     do {
       const random4Digits = Math.floor(1000 + Math.random() * 9000);
-      generatedCode = `MCT-${random4Digits}`;
+      generatedCode = `${prefix}${random4Digits}`;
       tries++;
     } while (db.getAllActivationCodes().some((c) => c.code.toUpperCase() === generatedCode) && tries < 20);
     code = generatedCode;
@@ -2371,13 +2453,19 @@ const handleResendStudentCode = (req: any, res: any) => {
     const codeRecord: DBActivationCode = {
       id: `code-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
       code,
-      planType: sub?.plan === 'yearly' ? 'yearly' : 'monthly',
+      type: isYearly ? 'yearly' : 'monthly',
+      planType: isYearly ? 'yearly' : 'monthly',
       durationDays,
-      maxUses: 100,
-      timesUsed: 0,
-      isUsed: false,
+      maxUses: 1,
+      timesUsed: 1,
+      isUsed: true,
       isActive: true,
-      usedByStudents: [{ studentId: user.id, studentName: user.name, usedAt: new Date().toISOString() }],
+      phone: user.phone,
+      studentName: user.name,
+      studentId: user.id,
+      activatedAt: new Date().toISOString(),
+      expiresAt: expiryDate,
+      usedByStudents: [{ studentId: user.id, studentName: user.name, phone: user.phone, usedAt: new Date().toISOString() }],
       createdAt: new Date().toISOString(),
       notes: `كود تم توليده لإعادة الإرسال للطالب ${user.name}`,
     };

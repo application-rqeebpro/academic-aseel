@@ -562,9 +562,8 @@ export async function syncRelationalTables(data: DBSchema): Promise<void> {
       await neonPool.query(
         `INSERT INTO mct_users (id, name, phone, email, password_hash, university, study_level, major, role, created_at, last_login_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         ON CONFLICT (id) DO UPDATE SET
+         ON CONFLICT (phone) DO UPDATE SET
            name = EXCLUDED.name,
-           phone = EXCLUDED.phone,
            email = EXCLUDED.email,
            password_hash = EXCLUDED.password_hash,
            university = EXCLUDED.university,

@@ -662,9 +662,9 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
                               </div>
                             )}
 
-                            {sub.whyThisResult && (
+                            {(sub.finalAnalysis || sub.whyThisResult) && (
                               <p className="text-[11px] text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                                💡 <strong>الشرح الهندسية للنتيجة:</strong> {sub.whyThisResult}
+                                🔬 <strong>التحليل النهائي للفقرة:</strong> {sub.finalAnalysis || sub.whyThisResult}
                               </p>
                             )}
                           </div>
@@ -743,10 +743,17 @@ export const ExplainFourteenSections: React.FC<ExplainFourteenSectionsProps> = (
                     </div>
                   )}
 
-                  {/* Why this result makes sense */}
-                  {example.whyThisResult && (
-                    <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
-                      💡 <strong>لماذا وصلنا لهذه النتيجة؟</strong> {example.whyThisResult}
+                  {/* Final Engineering Analysis */}
+                  {(example.finalAnalysis || example.whyThisResult) && (
+                    <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300 space-y-1.5">
+                      <div>
+                        🔬 <strong>التحليل النهائي والتفسير الهندسي:</strong> {example.finalAnalysis || example.whyThisResult}
+                      </div>
+                      {example.finalAnalysis && example.whyThisResult && example.finalAnalysis !== example.whyThisResult && (
+                        <div className="text-[11px] text-blue-800 dark:text-blue-400">
+                          💡 <em>دلالة النتيجة:</em> {example.whyThisResult}
+                        </div>
+                      )}
                     </div>
                   )}
 
