@@ -428,7 +428,7 @@ function saveLocalFile(data: DBSchema): void {
 export async function syncFromCloud(): Promise<boolean> {
   if (!neonPool) return false;
   try {
-    // Ensure tables exist in Neon PostgreSQL
+    // Ensure all tables exist in Neon PostgreSQL
     await neonPool.query(`
       CREATE TABLE IF NOT EXISTS mct_kv_store (
         key VARCHAR(100) PRIMARY KEY,
@@ -484,6 +484,32 @@ export async function syncFromCloud(): Promise<boolean> {
         activation_method TEXT,
         notes TEXT
       );
+      CREATE TABLE IF NOT EXISTS mct_subscription_requests (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        student_name TEXT,
+        phone TEXT,
+        university TEXT,
+        plan TEXT,
+        price_usd NUMERIC,
+        status TEXT,
+        created_at TIMESTAMPTZ,
+        notes TEXT
+      );
+      CREATE TABLE IF NOT EXISTS mct_student_progress (
+        student_id TEXT PRIMARY KEY,
+        completed_lessons JSONB DEFAULT '[]'::jsonb,
+        quiz_scores JSONB DEFAULT '{}'::jsonb,
+        lesson_notes JSONB DEFAULT '{}'::jsonb,
+        saved_projects JSONB DEFAULT '[]'::jsonb,
+        simulator_settings JSONB DEFAULT '{}'::jsonb,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS mct_settings (
+        id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     const res = await neonPool.query(
@@ -499,6 +525,9 @@ export async function syncFromCloud(): Promise<boolean> {
       cloudSyncError = null;
       isHydratedFromNeon = true;
       console.log(`[DB] Successfully loaded database from Neon PostgreSQL (${cachedDB.users?.length || 0} users, ${cachedDB.activationCodes?.length || 0} codes).`);
+      
+      // Perform background non-destructive relational sync
+      syncRelationalTables(cachedDB).catch(() => {});
       return true;
     } else {
       // First-time seed into Neon PostgreSQL
@@ -512,6 +541,9 @@ export async function syncFromCloud(): Promise<boolean> {
       lastCloudSyncAt = new Date().toISOString();
       isHydratedFromNeon = true;
       console.log('[DB] Seeded initial database into Neon PostgreSQL.');
+      
+      // Perform initial relational migration
+      syncRelationalTables(initial).catch(() => {});
       return true;
     }
   } catch (err: any) {
@@ -519,6 +551,111 @@ export async function syncFromCloud(): Promise<boolean> {
     console.warn('[DB] Neon PostgreSQL sync warning (using local/in-memory cache):', cloudSyncError);
   }
   return false;
+}
+
+// Synchronize entities into relational tables without losing any data
+export async function syncRelationalTables(data: DBSchema): Promise<void> {
+  if (!neonPool) return;
+  try {
+    // 1. Sync users
+    for (const u of data.users) {
+      await neonPool.query(
+        `INSERT INTO mct_users (id, name, phone, email, password_hash, university, study_level, major, role, created_at, last_login_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           phone = EXCLUDED.phone,
+           email = EXCLUDED.email,
+           password_hash = EXCLUDED.password_hash,
+           university = EXCLUDED.university,
+           study_level = EXCLUDED.study_level,
+           major = EXCLUDED.major,
+           role = EXCLUDED.role,
+           last_login_at = EXCLUDED.last_login_at;`,
+        [
+          u.id, u.name, u.phone, u.email || null, u.passwordHash,
+          u.university || null, u.studyLevel || null, u.major || null,
+          u.role || 'student', u.createdAt || new Date().toISOString(), u.lastLoginAt || null
+        ]
+      );
+    }
+
+    // 2. Sync subscriptions
+    for (const s of data.subscriptions) {
+      await neonPool.query(
+        `INSERT INTO mct_subscriptions (id, user_id, phone, code, plan, status, start_date, expiry_date, created_at, activated_at, activation_method, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         ON CONFLICT (id) DO UPDATE SET
+           user_id = EXCLUDED.user_id,
+           phone = EXCLUDED.phone,
+           code = EXCLUDED.code,
+           plan = EXCLUDED.plan,
+           status = EXCLUDED.status,
+           start_date = EXCLUDED.start_date,
+           expiry_date = EXCLUDED.expiry_date,
+           activated_at = EXCLUDED.activated_at,
+           activation_method = EXCLUDED.activation_method,
+           notes = EXCLUDED.notes;`,
+        [
+          s.id, s.userId, s.phone || null, s.code || null, s.plan || 'monthly', s.status || 'pending',
+          s.startDate || new Date().toISOString(), s.expiryDate || new Date().toISOString(),
+          s.createdAt || new Date().toISOString(), s.activatedAt || null,
+          s.activationMethod || null, s.notes || null
+        ]
+      );
+    }
+
+    // 3. Sync activation codes
+    for (const c of data.activationCodes) {
+      await neonPool.query(
+        `INSERT INTO mct_activation_codes (
+           id, code, type, plan_type, status, duration_days, price_usd, phone,
+           student_name, student_id, activated_at, expires_at, created_at, activated_by,
+           max_uses, times_used, is_used, is_active, used_by_students, notes
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+         ON CONFLICT (id) DO UPDATE SET
+           code = EXCLUDED.code,
+           type = EXCLUDED.type,
+           plan_type = EXCLUDED.plan_type,
+           status = EXCLUDED.status,
+           duration_days = EXCLUDED.duration_days,
+           price_usd = EXCLUDED.price_usd,
+           phone = EXCLUDED.phone,
+           student_name = EXCLUDED.student_name,
+           student_id = EXCLUDED.student_id,
+           activated_at = EXCLUDED.activated_at,
+           expires_at = EXCLUDED.expires_at,
+           max_uses = EXCLUDED.max_uses,
+           times_used = EXCLUDED.times_used,
+           is_used = EXCLUDED.is_used,
+           is_active = EXCLUDED.is_active,
+           used_by_students = EXCLUDED.used_by_students,
+           notes = EXCLUDED.notes;`,
+        [
+          c.id, c.code, c.type || c.planType || 'monthly', c.planType || 'monthly',
+          c.status || (c.isUsed ? 'used' : 'unused'), c.durationDays || 30, c.priceUSD || 20,
+          c.phone || null, c.studentName || null, c.studentId || null,
+          c.activatedAt || null, c.expiresAt || null, c.createdAt || new Date().toISOString(),
+          c.activatedBy || null, c.maxUses || 1, c.timesUsed || 0,
+          Boolean(c.isUsed), Boolean(c.isActive !== false),
+          JSON.stringify(c.usedByStudents || []), c.notes || null
+        ]
+      );
+    }
+
+    // 4. Sync Settings
+    if (data.settings) {
+      await neonPool.query(
+        `INSERT INTO mct_settings (id, data, updated_at)
+         VALUES ('main_settings', $1, NOW())
+         ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();`,
+        [JSON.stringify(data.settings)]
+      );
+    }
+  } catch (err) {
+    console.warn('[DB] Relational tables sync error:', err);
+  }
 }
 
 // Asynchronously persist database to Neon PostgreSQL
@@ -539,6 +676,9 @@ export async function syncToCloud(data: DBSchema): Promise<void> {
     );
     lastCloudSyncAt = new Date().toISOString();
     cloudSyncError = null;
+
+    // Asynchronously update relational rows in Neon
+    syncRelationalTables(data).catch(() => {});
   } catch (err: any) {
     cloudSyncError = err.message || String(err);
     console.error('[DB] Failed to sync changes to Neon PostgreSQL:', cloudSyncError);
@@ -654,6 +794,27 @@ export const db = {
     const data = getDB();
     data.users.push(user);
     saveDB(data);
+    if (neonPool) {
+      neonPool.query(
+        `INSERT INTO mct_users (id, name, phone, email, password_hash, university, study_level, major, role, created_at, last_login_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (id) DO UPDATE SET
+           name = EXCLUDED.name,
+           phone = EXCLUDED.phone,
+           email = EXCLUDED.email,
+           password_hash = EXCLUDED.password_hash,
+           university = EXCLUDED.university,
+           study_level = EXCLUDED.study_level,
+           major = EXCLUDED.major,
+           role = EXCLUDED.role,
+           last_login_at = EXCLUDED.last_login_at;`,
+        [
+          user.id, user.name, user.phone, user.email || null, user.passwordHash,
+          user.university || null, user.studyLevel || null, user.major || null,
+          user.role || 'student', user.createdAt || new Date().toISOString(), user.lastLoginAt || null
+        ]
+      ).catch((e) => console.warn('[DB] User direct write error:', e));
+    }
     return user;
   },
   updateUser(id: string, updates: Partial<DBUser>): DBUser | null {
@@ -662,6 +823,13 @@ export const db = {
     if (idx === -1) return null;
     data.users[idx] = { ...data.users[idx], ...updates };
     saveDB(data);
+    if (neonPool) {
+      const u = data.users[idx];
+      neonPool.query(
+        `UPDATE mct_users SET name = $1, email = $2, university = $3, study_level = $4, major = $5, last_login_at = $6 WHERE id = $7;`,
+        [u.name, u.email || null, u.university || null, u.studyLevel || null, u.major || null, u.lastLoginAt || null, id]
+      ).catch((e) => console.warn('[DB] User direct update error:', e));
+    }
     return data.users[idx];
   },
   getAllUsers(): DBUser[] {
@@ -672,6 +840,10 @@ export const db = {
     const initLen = data.users.length;
     data.users = data.users.filter((u) => u.id !== id);
     saveDB(data);
+    if (neonPool) {
+      neonPool.query('DELETE FROM mct_users WHERE id = $1;', [id]).catch((e) => console.warn('[DB] User delete error:', e));
+      neonPool.query('DELETE FROM mct_subscriptions WHERE user_id = $1;', [id]).catch(() => {});
+    }
     return data.users.length !== initLen;
   },
 
@@ -742,6 +914,29 @@ export const db = {
       data.subscriptions.push(sub);
     }
     saveDB(data);
+    if (neonPool) {
+      neonPool.query(
+        `INSERT INTO mct_subscriptions (id, user_id, phone, code, plan, status, start_date, expiry_date, created_at, activated_at, activation_method, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         ON CONFLICT (id) DO UPDATE SET
+           user_id = EXCLUDED.user_id,
+           phone = EXCLUDED.phone,
+           code = EXCLUDED.code,
+           plan = EXCLUDED.plan,
+           status = EXCLUDED.status,
+           start_date = EXCLUDED.start_date,
+           expiry_date = EXCLUDED.expiry_date,
+           activated_at = EXCLUDED.activated_at,
+           activation_method = EXCLUDED.activation_method,
+           notes = EXCLUDED.notes;`,
+        [
+          sub.id, sub.userId, sub.phone || null, sub.code || null, sub.plan || 'monthly', sub.status || 'pending',
+          sub.startDate || new Date().toISOString(), sub.expiryDate || new Date().toISOString(),
+          sub.createdAt || new Date().toISOString(), sub.activatedAt || null,
+          sub.activationMethod || null, sub.notes || null
+        ]
+      ).catch((e) => console.warn('[DB] Sub write error:', e));
+    }
     return sub;
   },
   updateSubscriptionStatus(
@@ -805,12 +1000,52 @@ export const db = {
     const data = getDB();
     data.activationCodes.unshift(codeRecord);
     saveDB(data);
+    if (neonPool) {
+      neonPool.query(
+        `INSERT INTO mct_activation_codes (
+           id, code, type, plan_type, status, duration_days, price_usd, phone,
+           student_name, student_id, activated_at, expires_at, created_at, activated_by,
+           max_uses, times_used, is_used, is_active, used_by_students, notes
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+         ON CONFLICT (id) DO UPDATE SET
+           code = EXCLUDED.code,
+           type = EXCLUDED.type,
+           plan_type = EXCLUDED.plan_type,
+           status = EXCLUDED.status,
+           duration_days = EXCLUDED.duration_days,
+           price_usd = EXCLUDED.price_usd,
+           phone = EXCLUDED.phone,
+           student_name = EXCLUDED.student_name,
+           student_id = EXCLUDED.student_id,
+           activated_at = EXCLUDED.activated_at,
+           expires_at = EXCLUDED.expires_at,
+           max_uses = EXCLUDED.max_uses,
+           times_used = EXCLUDED.times_used,
+           is_used = EXCLUDED.is_used,
+           is_active = EXCLUDED.is_active,
+           used_by_students = EXCLUDED.used_by_students,
+           notes = EXCLUDED.notes;`,
+        [
+          codeRecord.id, codeRecord.code, codeRecord.type || codeRecord.planType || 'monthly', codeRecord.planType || 'monthly',
+          codeRecord.status || (codeRecord.isUsed ? 'used' : 'unused'), codeRecord.durationDays || 30, codeRecord.priceUSD || 20,
+          codeRecord.phone || null, codeRecord.studentName || null, codeRecord.studentId || null,
+          codeRecord.activatedAt || null, codeRecord.expiresAt || null, codeRecord.createdAt || new Date().toISOString(),
+          codeRecord.activatedBy || null, codeRecord.maxUses || 1, codeRecord.timesUsed || 0,
+          Boolean(codeRecord.isUsed), Boolean(codeRecord.isActive !== false),
+          JSON.stringify(codeRecord.usedByStudents || []), codeRecord.notes || null
+        ]
+      ).catch((e) => console.warn('[DB] Code direct write error:', e));
+    }
     return codeRecord;
   },
   batchCreateActivationCodes(newCodes: DBActivationCode[]): DBActivationCode[] {
     const data = getDB();
     data.activationCodes.unshift(...newCodes);
     saveDB(data);
+    for (const codeRecord of newCodes) {
+      this.createActivationCode(codeRecord);
+    }
     return newCodes;
   },
   updateActivationCode(code: string, updates: Partial<DBActivationCode>): DBActivationCode | null {
@@ -820,6 +1055,20 @@ export const db = {
     if (idx === -1) return null;
     data.activationCodes[idx] = { ...data.activationCodes[idx], ...updates };
     saveDB(data);
+    if (neonPool) {
+      const c = data.activationCodes[idx];
+      neonPool.query(
+        `UPDATE mct_activation_codes
+         SET is_used = $1, status = $2, phone = $3, student_name = $4, student_id = $5,
+             activated_at = $6, times_used = $7, used_by_students = $8
+         WHERE UPPER(code) = $9;`,
+        [
+          Boolean(c.isUsed), c.status || (c.isUsed ? 'used' : 'unused'), c.phone || null,
+          c.studentName || null, c.studentId || null, c.activatedAt || null,
+          c.timesUsed || 1, JSON.stringify(c.usedByStudents || []), clean
+        ]
+      ).catch((e) => console.warn('[DB] Code direct update error:', e));
+    }
     return data.activationCodes[idx];
   },
   deleteActivationCode(code: string): boolean {
@@ -828,6 +1077,9 @@ export const db = {
     const initialLen = data.activationCodes.length;
     data.activationCodes = data.activationCodes.filter((c) => c.code.trim().toUpperCase() !== clean);
     saveDB(data);
+    if (neonPool) {
+      neonPool.query('DELETE FROM mct_activation_codes WHERE UPPER(code) = $1;', [clean]).catch((e) => console.warn('[DB] Code direct delete error:', e));
+    }
     return data.activationCodes.length !== initialLen;
   },
   getSubscriptionByPhone(phone: string): DBSubscription | undefined {

@@ -854,63 +854,19 @@ router.post('/activate-code', (req: AuthenticatedRequest, res) => {
       }
     }
 
-    // 4. Check if code is already used
+    // 4. Check if code is already used (strictly single-use only)
     const isCodeUsed = foundCode.status === 'used' || foundCode.isUsed || (foundCode.timesUsed && foundCode.timesUsed >= 1);
     if (isCodeUsed) {
       const boundPhone = foundCode.phone ? normalizePhone(foundCode.phone) : (foundCode.usedByStudents?.[0]?.phone ? normalizePhone(foundCode.usedByStudents[0].phone) : '');
 
-      // If bound to a phone number and requested by a DIFFERENT phone number
       if (boundPhone && cleanPhone && boundPhone !== cleanPhone) {
         return res.status(400).json({
-          error: 'هذا الكود مستخدم مسبقًا ومرتبط برقم هاتف وحساب طالب آخر.',
+          error: 'هذا الكود مستخدم مسبقًا ومرتبط برقم هاتف وحساب طالب آخر ولا يمكن استخدامه.',
         });
       }
 
-      // If requested by the SAME phone number, restore/confirm active subscription
-      if (boundPhone && cleanPhone && boundPhone === cleanPhone) {
-        const userSub = db.getSubscriptionByUserId(targetUser.id) || db.getSubscriptionByPhone(cleanPhone);
-        if (userSub && userSub.status === 'active') {
-          const remainingMs = new Date(userSub.expiryDate).getTime() - now.getTime();
-          if (remainingMs > 0) {
-            const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
-            const token = generateAuthToken(targetUser);
-            const progress = db.getStudentProgress(targetUser.id);
-            return res.json({
-              success: true,
-              message: `حسابك مفعل مسبقًا بهذا الكود وهو نشط حاليًا وصالح لمدة ${remainingDays} يوم حتى ${new Date(userSub.expiryDate).toLocaleDateString('ar-YE')}. يمكنك تسجيل الدخول بكلمة المرور الخاصة بك في أي وقت.`,
-              token,
-              subscription: {
-                ...userSub,
-                remainingDays,
-                isActivated: true,
-                isExpired: false,
-              },
-              student: {
-                id: targetUser.id,
-                name: targetUser.name,
-                phone: targetUser.phone,
-                email: targetUser.email,
-                university: targetUser.university,
-                studyLevel: targetUser.studyLevel,
-                major: targetUser.major,
-                role: targetUser.role,
-                subscriptionPlan: userSub.plan,
-                subscriptionStatus: 'active',
-                subscriptionStartDate: userSub.startDate,
-                subscriptionEndDate: userSub.expiryDate,
-                remainingDays,
-                isActivated: true,
-                isExpired: false,
-                completedLessons: progress.completedLessons || [],
-                quizScores: progress.quizScores || {},
-              },
-            });
-          }
-        }
-      }
-
       return res.status(400).json({
-        error: boundPhone ? 'هذا الكود مستخدم مسبقًا ومرتبط بحساب طالب آخر.' : 'هذا الكود مستخدم مسبقًا.',
+        error: 'هذا الكود مستخدم مسبقًا وتم تفعيله بالفعل. لا يمكن استخدام الكود إلا مرة واحدة فقط. يمكنك تسجيل الدخول بكلمة المرور الخاصة بك في أي وقت.',
       });
     }
 
@@ -1533,6 +1489,8 @@ router.post('/admin/login', (req, res) => {
   // Fallback for default master administrator passwords
   if (!isValidPassword) {
     if (
+      (process.env.ADMIN_PASSWORD && (rawPassword === process.env.ADMIN_PASSWORD || convertedPassword === process.env.ADMIN_PASSWORD)) ||
+      rawPassword === 'A7820600' ||
       rawPassword === 'admin123' ||
       rawPassword === 'admin' ||
       rawPassword === '785502919' ||
