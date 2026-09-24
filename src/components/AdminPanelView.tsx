@@ -118,6 +118,43 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
   const [newCodeCustom, setNewCodeCustom] = useState('');
   const [newPlanType, setNewPlanType] = useState<'monthly' | 'yearly'>('monthly');
+
+  // Cloud Database Status State
+  const [dbInfo, setDbInfo] = useState<any>(null);
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+
+  const loadDbInfo = async () => {
+    try {
+      const res = await fetch('/api/db/status');
+      if (res.ok) {
+        const data = await res.json();
+        setDbInfo(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSyncCloudDb = async () => {
+    setIsSyncingDb(true);
+    try {
+      const res = await fetch('/api/db/sync', {
+        method: 'POST',
+        headers: getAuthHeader(),
+      });
+      const data = await res.json();
+      if (data.status) {
+        setDbInfo(data.status);
+      }
+      loadStats();
+      loadStudents();
+      loadCodes();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncingDb(false);
+    }
+  };
   const [newDurationDays, setNewDurationDays] = useState(30);
   const [newMaxUses, setNewMaxUses] = useState(1);
   const [newExpiryDate, setNewExpiryDate] = useState('');
@@ -262,6 +299,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
       loadStudents();
       loadSubjects();
       loadSettings();
+      loadDbInfo();
     }
   }, [isOpen, isAuthenticated]);
 
@@ -386,8 +424,9 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 ⏱️ نوع الاشتراك: ${planTitle}
 ⏳ تاريخ الانتهاء: ${expiryFormatted}
 
-طريقة الدخول:
-ادخل إلى المنصة برقم هاتفك وكلمة المرور، أو استخدم كود التفعيل للدخول المباشر.
+طريقة الدخول والتفعيل:
+1. استخدم كود التفعيل المعتمد أعلاه لتأكيد اشتراكك الأول وتفعيله.
+2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور الخاصة بك (الدخول محمي بكلمة مرورك الشخصية).
 
 بالتوفيق والنجاح الدائم! 🚀`;
 
@@ -629,8 +668,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 ⏳ تاريخ الانتهاء الدقيق: ${expiryStr}
 
 طريقة الدخول والتفعيل:
-1. افتح المنصة وأدخل كود التفعيل لتفعيل اشتراكك وبدء التصفح فوراً.
-2. كما يمكنك الدخول لاحقاً بكود التفعيل أو بكلمة المرور التي أنشأتها.
+1. افتح المنصة وأدخل كود التفعيل لتأكيد وتفعيل اشتراكك لأول مرة.
+2. سجّل الدخول دائماً برقم هاتفك وكلمة المرور الخاصة بك (الدخول محمي بكلمة مرورك الشخصية ولا يمكن الدخول برقمك بدونها).
 
 بالتوفيق والنجاح الدائم! 🚀`;
 
@@ -2002,6 +2041,64 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                       </button>
                     </div>
                   </form>
+
+                  {/* Database Engine & Cloud Persistence Status */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${dbInfo?.isCloudActive ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                          محرك قاعدة البيانات والتخزين الدائم
+                        </h4>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                        dbInfo?.isCloudActive
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                      }`}>
+                        {dbInfo?.cloudProviderName || 'قاعدة البيانات الدائمة'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      النظام مهيأ للربط الدائم مع <strong>Neon PostgreSQL</strong> عبر <strong>DATABASE_URL</strong> عند رفع المشروع إلى Vercel مع تخزين بيانات الطلاب وكلمات المرور والأكواد بأمان تام.
+                    </p>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60">
+                        <span className="text-[10px] text-slate-400 block">إجمالي الطلاب</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{dbInfo?.totalUsers ?? stats.totalUsers}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60">
+                        <span className="text-[10px] text-slate-400 block">أكواد التفعيل</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{dbInfo?.totalCodes ?? codes.length}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60">
+                        <span className="text-[10px] text-slate-400 block">الاشتراكات النشطة</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{stats.activeSubscriptions}</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/60">
+                        <span className="text-[10px] text-slate-400 block">حالة التخزين</span>
+                        <span className="font-bold text-xs text-blue-600 dark:text-blue-400">
+                          {dbInfo?.isCloudActive ? 'متصل سحابياً' : 'جاهز ونشط'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {dbInfo?.isCloudActive && (
+                      <div className="pt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleSyncCloudDb}
+                          disabled={isSyncingDb}
+                          className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${isSyncingDb ? 'animate-spin' : ''}`} />
+                          <span>{isSyncingDb ? 'جاري المزامنة...' : 'مزامنة فورية مع السحابة'}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Change Admin Password Section */}
                   <div className="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">

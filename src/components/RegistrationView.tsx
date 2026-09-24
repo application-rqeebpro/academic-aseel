@@ -10,7 +10,9 @@ import {
   Lock, 
   Mail, 
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import { StudyLevel } from '../types';
 
@@ -61,6 +63,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [activationCode, setActivationCode] = useState('');
   const [selectedUni, setSelectedUni] = useState<UniversityOption>('الجامعة الإماراتية الدولية – صنعاء');
   const [customUni, setCustomUni] = useState('');
   const [studyLevel, setStudyLevel] = useState<StudyLevel>('السنة الأولى');
@@ -78,12 +81,12 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
     }
 
     if (!phone.trim()) {
-      setError('يرجى إدخال رقم الهاتف للتواصل وتفعيل الاشتراك.');
+      setError('يرجى إدخال رقم الهاتف للتواصل وتأكيد الحساب.');
       return;
     }
 
     if (!password || password.length < 4) {
-      setError('يرجى إدخال كلمة مرور مكونة من 4 أحرف أو أرقام على الأقل لتسجيل الدخول.');
+      setError('يرجى إدخال كلمة مرور مكونة من 4 خانات على الأقل لحماية حسابك واستخدامها لتسجيل الدخول لاحقًا.');
       return;
     }
 
@@ -103,23 +106,24 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
           university: finalUniversity,
           studyLevel,
           major: major.trim() || 'هندسة الميكاترونكس',
+          activationCode: activationCode.trim() || undefined,
           plan: 'monthly',
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        // If already registered, still proceed or warn
-        if (data.error && data.error.includes('مستخدم مسبقًا')) {
-          setError(data.error);
-          setLoading(false);
-          return;
-        }
-        throw new Error(data.error || 'حدث خطأ أثناء تسجيل الحساب');
+        setError(data.error || 'حدث خطأ أثناء تسجيل الحساب');
+        setLoading(false);
+        return;
       }
 
       if (data.token) {
         localStorage.setItem('mct_auth_token', data.token);
+      }
+
+      if (data.student) {
+        localStorage.setItem('mct_student', JSON.stringify(data.student));
       }
 
       onProceedToPlans({
@@ -132,16 +136,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
         major: major.trim() || 'هندسة الميكاترونكس',
       });
     } catch (err: any) {
-      // If server unreachable, proceed locally so student flow isn't blocked
-      onProceedToPlans({
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || undefined,
-        password: password,
-        university: finalUniversity,
-        studyLevel,
-        major: major.trim() || 'هندسة الميكاترونكس',
-      });
+      setError(err.message || 'تعذر الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
     } finally {
       setLoading(false);
     }
@@ -228,12 +223,33 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
               />
               <Lock className="w-4 h-4 text-slate-400 absolute right-3.5 top-3" />
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              احفظ كلمة المرور لاستخدامها عند تسجيل الدخول في أي وقت
+            <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-1">
+              ⚠️ مهم جداً: احفظ كلمة المرور جيداً! ستسجل الدخول بها دائماً ولن يتمكن أحد من الدخول برقمك بدونها.
             </p>
           </div>
 
-          {/* 4. البريد الإلكتروني (إن أمكن) */}
+          {/* 4. كود التفعيل (اختياري) */}
+          <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/50 space-y-1.5">
+            <label className="block text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
+              كود التفعيل <span className="text-xs text-amber-700/80 dark:text-amber-400/80 font-normal">(اختياري – إن كان لديك كود مسبقاً لتأكيد الاشتراك فوراً)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={activationCode}
+                onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
+                placeholder="مثال: AS-XXXX أو AB-XXXX"
+                className="w-full px-4 py-2.5 pr-10 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-slate-900 dark:text-white placeholder-slate-400 text-sm font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-amber-500 text-center tracking-wider"
+                dir="ltr"
+              />
+              <KeyRound className="w-4 h-4 text-amber-600 absolute right-3.5 top-3" />
+            </div>
+            <p className="text-[10px] text-amber-800/80 dark:text-amber-300/80">
+              كود التفعيل يُستخدم لتأكيد وتفعيل الاشتراك لأول مرة فقط، وستسجل الدخول دائماً بكلمة المرور الخاصة بك.
+            </p>
+          </div>
+
+          {/* 5. البريد الإلكتروني (إن أمكن) */}
           <div>
             <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               البريد الإلكتروني <span className="text-xs text-slate-400 font-normal">(اختياري)</span>
@@ -251,7 +267,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
             </div>
           </div>
 
-          {/* 5. اسم الجامعة */}
+          {/* 6. اسم الجامعة */}
           <div>
             <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               اسم الجامعة <span className="text-rose-500">*</span>

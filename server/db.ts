@@ -2,8 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import pg from 'pg';
 import bundledDbSeed from '../data/mechatronics_db.json';
 import { MONTHLY_CODES_SEED, YEARLY_CODES_SEED } from './seedCodes';
+
+const { Pool } = pg;
 
 export interface DBUser {
   id: string;
@@ -41,11 +44,11 @@ export interface DBSubscription {
 export interface DBActivationCode {
   id: string;
   code: string;
-  type: 'monthly' | 'yearly';
+  type?: 'monthly' | 'yearly';
   planType: 'monthly' | 'yearly' | 'custom';
-  status: CodeStatus;
+  status?: CodeStatus;
   durationDays: number;
-  priceUSD: number;
+  priceUSD?: number;
   phone?: string;
   studentName?: string;
   studentId?: string;
@@ -368,7 +371,194 @@ function ensureReadyCodesSeeded(data: DBSchema): boolean {
   return modified;
 }
 
+const DB_STORE_KEY = 'mct_academy_database';
+
+// Cloud Provider Setup - Neon PostgreSQL via DATABASE_URL
+let neonPool: InstanceType<typeof Pool> | null = null;
+let cloudProvider: 'neon-postgres' | 'local-file' = 'local-file';
+let lastCloudSyncAt: string | null = null;
+let cloudSyncError: string | null = null;
+let isSyncingToCloud = false;
+let pendingCloudSave = false;
+let isHydratedFromNeon = false;
+
+// Neon PostgreSQL connection using DATABASE_URL (or POSTGRES_URL)
+const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+if (dbUrl) {
+  try {
+    neonPool = new Pool({
+      connectionString: dbUrl,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+    cloudProvider = 'neon-postgres';
+    console.log('[DB] Neon PostgreSQL configured as primary cloud database (DATABASE_URL).');
+  } catch (err) {
+    console.warn('[DB] Failed to initialize Neon PostgreSQL pool:', err);
+  }
+} else if (process.env.NODE_ENV === 'production') {
+  console.warn('[DB ALERT] DATABASE_URL is not set! Please configure DATABASE_URL in Vercel Environment Variables for permanent Neon PostgreSQL storage.');
+}
+
 let cachedDB: DBSchema | null = null;
+
+// Write local JSON file backup (only in development or fallback)
+function saveLocalFile(data: DBSchema): void {
+  // In production with Neon, do not write to transient filesystem
+  if (process.env.NODE_ENV === 'production' && neonPool) {
+    return;
+  }
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    const tempFile = `${DB_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tempFile, DB_FILE);
+  } catch (err) {
+    // Gracefully handle read-only environments
+  }
+}
+
+// Hydrate DB from Neon PostgreSQL
+export async function syncFromCloud(): Promise<boolean> {
+  if (!neonPool) return false;
+  try {
+    // Ensure tables exist in Neon PostgreSQL
+    await neonPool.query(`
+      CREATE TABLE IF NOT EXISTS mct_kv_store (
+        key VARCHAR(100) PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS mct_users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
+        email TEXT,
+        password_hash TEXT NOT NULL,
+        university TEXT,
+        study_level TEXT,
+        major TEXT,
+        role TEXT NOT NULL DEFAULT 'student',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_login_at TIMESTAMPTZ
+      );
+      CREATE TABLE IF NOT EXISTS mct_activation_codes (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        type TEXT,
+        plan_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'unused',
+        duration_days INT NOT NULL DEFAULT 30,
+        price_usd NUMERIC NOT NULL DEFAULT 20,
+        phone TEXT,
+        student_name TEXT,
+        student_id TEXT,
+        activated_at TIMESTAMPTZ,
+        expires_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        activated_by TEXT,
+        max_uses INT NOT NULL DEFAULT 1,
+        times_used INT NOT NULL DEFAULT 0,
+        is_used BOOLEAN NOT NULL DEFAULT false,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        used_by_students JSONB DEFAULT '[]'::jsonb,
+        notes TEXT
+      );
+      CREATE TABLE IF NOT EXISTS mct_subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        phone TEXT,
+        code TEXT,
+        plan TEXT NOT NULL,
+        status TEXT NOT NULL,
+        start_date TIMESTAMPTZ NOT NULL,
+        expiry_date TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        activated_at TIMESTAMPTZ,
+        activation_method TEXT,
+        notes TEXT
+      );
+    `);
+
+    const res = await neonPool.query(
+      'SELECT data FROM mct_kv_store WHERE key = $1 LIMIT 1',
+      [DB_STORE_KEY]
+    );
+
+    if (res.rows && res.rows.length > 0 && res.rows[0].data) {
+      cachedDB = res.rows[0].data as DBSchema;
+      ensureReadyCodesSeeded(cachedDB);
+      saveLocalFile(cachedDB);
+      lastCloudSyncAt = new Date().toISOString();
+      cloudSyncError = null;
+      isHydratedFromNeon = true;
+      console.log(`[DB] Successfully loaded database from Neon PostgreSQL (${cachedDB.users?.length || 0} users, ${cachedDB.activationCodes?.length || 0} codes).`);
+      return true;
+    } else {
+      // First-time seed into Neon PostgreSQL
+      const initial = getDB();
+      await neonPool.query(
+        `INSERT INTO mct_kv_store (key, data, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+        [DB_STORE_KEY, JSON.stringify(initial)]
+      );
+      lastCloudSyncAt = new Date().toISOString();
+      isHydratedFromNeon = true;
+      console.log('[DB] Seeded initial database into Neon PostgreSQL.');
+      return true;
+    }
+  } catch (err: any) {
+    cloudSyncError = err.message || String(err);
+    console.warn('[DB] Neon PostgreSQL sync warning (using local/in-memory cache):', cloudSyncError);
+  }
+  return false;
+}
+
+// Asynchronously persist database to Neon PostgreSQL
+export async function syncToCloud(data: DBSchema): Promise<void> {
+  if (!neonPool) return;
+  if (isSyncingToCloud) {
+    pendingCloudSave = true;
+    return;
+  }
+
+  isSyncingToCloud = true;
+  try {
+    await neonPool.query(
+      `INSERT INTO mct_kv_store (key, data, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+      [DB_STORE_KEY, JSON.stringify(data)]
+    );
+    lastCloudSyncAt = new Date().toISOString();
+    cloudSyncError = null;
+  } catch (err: any) {
+    cloudSyncError = err.message || String(err);
+    console.error('[DB] Failed to sync changes to Neon PostgreSQL:', cloudSyncError);
+  } finally {
+    isSyncingToCloud = false;
+    if (pendingCloudSave) {
+      pendingCloudSave = false;
+      if (cachedDB) {
+        syncToCloud(cachedDB).catch(() => {});
+      }
+    }
+  }
+}
+
+// Initial background sync from Neon if configured
+if (neonPool) {
+  syncFromCloud().catch((e) => {
+    console.warn('[DB] Initial background cloud load failed, using local seed:', e);
+  });
+}
 
 export function getDB(): DBSchema {
   if (cachedDB) {
@@ -404,15 +594,11 @@ export function getDB(): DBSchema {
 
 export function saveDB(data: DBSchema): void {
   cachedDB = data;
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    const tempFile = `${DB_FILE}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf-8');
-    fs.renameSync(tempFile, DB_FILE);
-  } catch (err) {
-    console.error('Failed to write DB file:', err);
+  saveLocalFile(data);
+  if (neonPool) {
+    syncToCloud(data).catch((err) => {
+      console.warn('[DB] Background Neon PostgreSQL save warning:', err);
+    });
   }
 }
 
@@ -743,4 +929,28 @@ export const db = {
     saveDB(data);
     return data.settings;
   },
+
+  // Storage and Cloud DB Status (Neon PostgreSQL)
+  getStorageStatus() {
+    const current = getDB();
+    return {
+      provider: cloudProvider,
+      isCloudActive: Boolean(neonPool),
+      cloudProviderName: cloudProvider === 'neon-postgres' ? 'Neon PostgreSQL (Cloud Database)' : 'Local Storage (Dev Fallback)',
+      lastCloudSyncAt,
+      cloudSyncError,
+      totalUsers: current.users.length,
+      totalSubscriptions: current.subscriptions.length,
+      totalCodes: current.activationCodes.length,
+      totalRequests: current.subscriptionRequests.length,
+    };
+  },
+  isCloudConfigured() {
+    return Boolean(neonPool);
+  },
+  isHydrated() {
+    return isHydratedFromNeon;
+  },
+  syncFromCloud,
+  syncToCloud,
 };

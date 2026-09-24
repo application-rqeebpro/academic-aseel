@@ -8,36 +8,60 @@ import {
   Loader2, 
   MessageCircle,
   Phone,
-  Sparkles
+  Lock,
+  Eye,
+  EyeOff,
+  Sparkles,
+  UserPlus
 } from 'lucide-react';
 
 interface ActivationCodeViewProps {
   onActivationSuccess: (activatedStudent: StudentProfile) => void;
   onBack?: () => void;
+  onOpenRegister?: () => void;
   whatsappNumber?: string;
 }
 
 export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
   onActivationSuccess,
   onBack,
+  onOpenRegister,
   whatsappNumber = '785502919',
 }) => {
   const [code, setCode] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [showPhoneField, setShowPhoneField] = useState(false);
+  const [requireRegister, setRequireRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const isLoggedIn = !!localStorage.getItem('mct_auth_token');
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
+    setRequireRegister(false);
 
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) {
       setError('يرجى إدخال كود التفعيل.');
       return;
+    }
+
+    if (!isLoggedIn) {
+      if (!phone.trim()) {
+        setError('يرجى إدخال رقم هاتفك المسجل لربط كود التفعيل بحسابك.');
+        setShowPhoneField(true);
+        return;
+      }
+      if (!password) {
+        setError('يرجى إدخال كلمة المرور الخاصة بحسابك لتأكيد التفعيل.');
+        return;
+      }
     }
 
     setLoading(true);
@@ -56,6 +80,7 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
         body: JSON.stringify({ 
           code: cleanCode,
           phone: phone.trim() || undefined,
+          password: password || undefined,
         }),
       });
 
@@ -65,10 +90,13 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
         if (data.requirePhone) {
           setShowPhoneField(true);
         }
+        if (data.requireRegister) {
+          setRequireRegister(true);
+        }
         throw new Error(data.error || 'كود التفعيل غير صحيح.');
       }
 
-      setSuccessMsg(data.message || 'تم تفعيل الاشتراك بنجاح!');
+      setSuccessMsg(data.message || 'تم تأكيد وتفعيل الاشتراك بنجاح!');
 
       // Save returned token to authenticate user immediately
       if (data.token) {
@@ -104,7 +132,7 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
 
       setTimeout(() => {
         onActivationSuccess(activatedStudent);
-      }, 1000);
+      }, 1200);
 
     } catch (err: any) {
       setError(err.message || 'كود التفعيل غير صحيح.');
@@ -115,7 +143,7 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
 
   const handleContactSupport = () => {
     const cleanNumber = whatsappNumber.startsWith('967') ? whatsappNumber : `967${whatsappNumber.replace(/^0+/, '')}`;
-    const msg = `السلام عليكم إدارة أكاديمية الميكاترونكس، قمت بتحويل الرسوم وأريد الحصول على كود التفعيل أو تفعيل حسابي.`;
+    const msg = `السلام عليكم إدارة أكاديمية الميكاترونكس، قمت بتحويل الرسوم وأريد الحصول على كود التفعيل لتأكيد اشتراكي.`;
     window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -129,11 +157,22 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
             <KeyRound className="w-7 h-7" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            تفعيل الاشتراك
+            تأكيد وتفعيل الاشتراك
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-            أدخل كود التفعيل المستلم من الإدارة عبر واتساب لتفعيل اشتراكك وبدء التصفح مباشرة
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            كود التفعيل مخصص لتأكيد اشتراكك للمرة الأولى. بعد التأكيد، يمكنك دائماً تسجيل الدخول برقم هاتفك وكلمة المرور الخاصة بك.
           </p>
+        </div>
+
+        {/* Informative Guidance Card */}
+        <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-slate-800/60 border border-blue-200/80 dark:border-blue-900/50 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200">
+          <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-bold block">ملاحظة أمنية هامة:</span>
+            <p className="text-slate-600 dark:text-slate-300 leading-normal">
+              يُستخدم كود التفعيل مرة واحدة فقط لربط الاشتراك بحسابك. في الزيارات القادمة، ستسجل الدخول فقط برقم هاتفك وكلمة المرور دون الحاجة لإدخال الكود مجدداً.
+            </p>
+          </div>
         </div>
 
         {/* Success Alert */}
@@ -146,9 +185,23 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
 
         {/* Error Alert */}
         {error && (
-          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-sm flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
-            <div className="font-bold">{error}</div>
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-sm space-y-2">
+            <div className="flex items-center gap-2 font-bold">
+              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span>{error}</span>
+            </div>
+            {requireRegister && onOpenRegister && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={onOpenRegister}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 mx-auto transition-all cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>إنشاء حساب طالب جديد الآن</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -157,7 +210,7 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
           {/* Activation Code Input */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
-              كود التفعيل (رمز الاشتراك المعتمد) <span className="text-rose-500">*</span>
+              كود التفعيل المستلم من الإدارة <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <input
@@ -167,38 +220,72 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
                   setCode(e.target.value.toUpperCase());
                   setError('');
                 }}
-                placeholder="أدخل كود التفعيل"
+                placeholder="مثال: AS-XXXX أو AB-XXXX"
                 dir="ltr"
                 autoFocus
                 className="w-full text-center tracking-widest text-lg sm:text-xl font-mono font-black py-4 px-4 rounded-2xl bg-blue-50/50 dark:bg-slate-800/80 border-2 border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all uppercase"
               />
             </div>
             <p className="text-[11px] text-slate-400 text-right">
-              يتم التحقق من صحة الكود وتفعيل الحساب مباشرة على خادم الأكاديمية.
+              أدخل كود التفعيل المستلم عبر الواتساب لتأكيد الاشتراك وتفعيله.
             </p>
           </div>
 
-          {/* Optional Phone Input or if requested */}
-          {(showPhoneField || !localStorage.getItem('mct_auth_token')) && (
-            <div className="space-y-1.5 pt-1">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
-                رقم الهاتف المسجل <span className="text-[10px] text-slate-400 font-normal">(لتأكيد الربط بحسابك)</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Phone className="w-4 h-4" />
+          {/* Phone and Password Inputs when not logged in */}
+          {(!isLoggedIn || showPhoneField) && (
+            <div className="space-y-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
+                  رقم الهاتف المسجل لحسابك <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="أدخل رقم هاتفك المسجل"
+                    dir="ltr"
+                    className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
+                  />
                 </div>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    setError('');
-                  }}
-                  placeholder="أدخل رقم الهاتف المسجل"
-                  dir="ltr"
-                  className="w-full pl-4 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-right"
-                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 text-right">
+                  كلمة المرور الخاصة بحسابك <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="كلمة المرور التي أنشأتها عند التسجيل"
+                    dir="ltr"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition-all text-sm text-left"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 text-right">
+                  مطلوبة للتحقق من ملكيتك للحساب قبل ربط كود التفعيل به.
+                </p>
               </div>
             </div>
           )}
@@ -211,12 +298,12 @@ export const ActivationCodeView: React.FC<ActivationCodeViewProps> = ({
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>جاري التحقق وتفعيل الحساب...</span>
+                <span>جاري التحقق وتأكيد الاشتراك...</span>
               </>
             ) : (
               <>
                 <ShieldCheck className="w-5 h-5" />
-                <span>تفعيل الاشتراك والتصفح الآن</span>
+                <span>تأكيد وتفعيل الاشتراك الآن</span>
               </>
             )}
           </button>

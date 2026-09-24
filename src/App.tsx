@@ -23,6 +23,7 @@ import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
 import { StudentProfileModal } from './components/StudentProfileModal';
 import { ExamModal } from './components/ExamModal';
+import { Loader2 } from 'lucide-react';
 
 export default function App() {
   // Theme state
@@ -31,19 +32,14 @@ export default function App() {
     return saved ? JSON.parse(saved) : false;
   });
 
-  // Student State
-  const [student, setStudent] = useState<StudentProfile | null>(() => {
-    const saved = localStorage.getItem('mct_student');
-    return saved ? JSON.parse(saved) : null;
+  // Student State - Verified by backend, never blindly trusted from local storage
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [isVerifyingSession, setIsVerifyingSession] = useState<boolean>(() => {
+    return Boolean(localStorage.getItem('mct_auth_token'));
   });
 
   // Onboarding / Active flow step: 'welcome' | 'registration' | 'plans' | 'payment' | 'code' | 'dashboard'
-  const [onboardingStep, setOnboardingStep] = useState<string>(() => {
-    const savedToken = localStorage.getItem('mct_auth_token');
-    const savedStudent = localStorage.getItem('mct_student');
-    if (savedToken || savedStudent) return 'dashboard';
-    return 'welcome';
-  });
+  const [onboardingStep, setOnboardingStep] = useState<string>('welcome');
 
   // Temporary staging data for registration
   const [regData, setRegData] = useState<{
@@ -139,11 +135,14 @@ export default function App() {
     return () => window.removeEventListener('hashchange', checkAdminHash);
   }, []);
 
-  // Validate authenticated session on mount
+  // Validate authenticated session on mount (Backend is the authoritative source of truth)
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('mct_auth_token');
-      if (!token) return;
+      if (!token) {
+        setIsVerifyingSession(false);
+        return;
+      }
 
       try {
         const res = await fetch('/api/auth/me', {
@@ -155,9 +154,12 @@ export default function App() {
           if (data.student) {
             setStudent(data.student);
             setOnboardingStep('dashboard');
+          } else {
+            setStudent(null);
+            setOnboardingStep('welcome');
           }
-        } else if (res.status === 401) {
-          // Token expired or invalid
+        } else {
+          // Token expired, invalid, or unauthorized
           localStorage.removeItem('mct_auth_token');
           localStorage.removeItem('mct_student');
           setStudent(null);
@@ -165,6 +167,8 @@ export default function App() {
         }
       } catch (e) {
         console.warn('Auth check skipped (offline or network error)', e);
+      } finally {
+        setIsVerifyingSession(false);
       }
     };
 
@@ -365,10 +369,15 @@ export default function App() {
       {/* Main Container Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* ========================================================= */}
-        {/* VISITOR & ONBOARDING VIEWS (When not logged in or in onboarding) */}
-        {/* ========================================================= */}
-        {!student && (
+        {/* Session Verification Loader */}
+        {isVerifyingSession ? (
+          <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4 text-center">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
+              جاري التحقق من الحساب والاشتراك من الخادم...
+            </p>
+          </div>
+        ) : !student ? (
           <div>
             {onboardingStep === 'welcome' && (
               <WelcomeView
@@ -413,16 +422,12 @@ export default function App() {
               <ActivationCodeView
                 onActivationSuccess={handleActivationSuccess}
                 onBack={() => setOnboardingStep('welcome')}
+                onOpenRegister={handleStartRegistration}
                 whatsappNumber={whatsappNumber}
               />
             )}
           </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* LOGGED IN STUDENT PORTAL (Dashboard & Features) */}
-        {/* ========================================================= */}
-        {student && (
+        ) : student ? (
           <div>
             {/* Direct Activation Code Entry Screen (if requested by student) */}
             {onboardingStep === 'code' ? (
@@ -563,7 +568,7 @@ export default function App() {
             )}
 
           </div>
-        )}
+        ) : null}
 
       </main>
 

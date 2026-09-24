@@ -2694,6 +2694,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import pg from "pg";
 
 // data/mechatronics_db.json
 var mechatronics_db_default = {
@@ -2746,6 +2747,54 @@ var mechatronics_db_default = {
       role: "student",
       createdAt: "2026-09-22T20:09:50.597Z",
       lastLoginAt: "2026-09-22T20:09:52.445Z"
+    },
+    {
+      id: "user-1790177590221-afc1dd",
+      name: "\u0637\u0627\u0644\u0628 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629",
+      phone: "770000001",
+      university: "\u0627\u0644\u062C\u0627\u0645\u0639\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A\u064A\u0629 \u0627\u0644\u062F\u0648\u0644\u064A\u0629 \u2013 \u0635\u0646\u0639\u0627\u0621",
+      studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+      major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
+      passwordHash: "$2b$10$2WLzAytSvT5RhaGjgKjhD.jUq6xzrpf1YJ0UfrPllvRuRkUAYarCu",
+      role: "student",
+      createdAt: "2026-09-23T15:33:10.346Z",
+      lastLoginAt: "2026-09-23T15:33:13.687Z"
+    },
+    {
+      id: "user-1790273802282-5b56562c",
+      name: "\u0645 / \u0623\u062D\u0645\u062F \u0627\u0644\u0645\u0647\u0646\u062F\u0633",
+      phone: "779988112",
+      university: "\u062C\u0627\u0645\u0639\u0629 \u0635\u0646\u0639\u0627\u0621",
+      studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+      major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
+      passwordHash: "$2b$10$3OaPpNuDXRWP4tm2Sk3U4.lgGsYMBNNQMzEuPQkv5lCpL4cOLPsyO",
+      role: "student",
+      createdAt: "2026-09-24T18:16:42.420Z",
+      lastLoginAt: "2026-09-24T18:16:52.601Z"
+    },
+    {
+      id: "user-1790273927456-0b244e44",
+      name: "\u0645\u0647\u0646\u062F\u0633 \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644 \u062A\u062C\u0631\u064A\u0628\u064A",
+      phone: "779911223",
+      university: "\u0627\u0644\u062C\u0627\u0645\u0639\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A\u064A\u0629 \u0627\u0644\u062F\u0648\u0644\u064A\u0629 \u2013 \u0635\u0646\u0639\u0627\u0621",
+      studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+      major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
+      passwordHash: "$2b$10$AANVgJticY.LQUFMlf2SaOOM8PhTYm0tB5zauqwgrSgjcaLXHLDgO",
+      role: "student",
+      createdAt: "2026-09-24T18:18:47.567Z",
+      lastLoginAt: "2026-09-24T18:19:02.560Z"
+    },
+    {
+      id: "user-1790273950914-483e29e0",
+      name: "\u0637\u0627\u0644\u0628 \u0622\u062E\u0631",
+      phone: "778899001",
+      university: "\u0627\u0644\u062C\u0627\u0645\u0639\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A\u064A\u0629 \u0627\u0644\u062F\u0648\u0644\u064A\u0629 \u2013 \u0635\u0646\u0639\u0627\u0621",
+      studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+      major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
+      passwordHash: "$2b$10$IEMyzW6Ru9dtFqUyzx9j7.QVgXUp17Q8KJwDWo8hSEJzqJPmM/SNu",
+      role: "student",
+      createdAt: "2026-09-24T18:19:11.037Z",
+      lastLoginAt: "2026-09-24T18:19:11.037Z"
     }
   ],
   subscriptions: [
@@ -2784,6 +2833,61 @@ var mechatronics_db_default = {
       activatedAt: "2026-09-22T20:09:52.445Z",
       activationMethod: "activation_code",
       notes: "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0648\u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0639\u0628\u0631 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 MCT-3666"
+    },
+    {
+      id: "sub-1790177590347",
+      userId: "user-1790177590221-afc1dd",
+      plan: "yearly",
+      status: "active",
+      startDate: "2026-09-23T15:33:10.347Z",
+      expiryDate: "2027-09-23T15:33:10.347Z",
+      createdAt: "2026-09-23T15:33:10.347Z",
+      activatedAt: "2026-09-23T15:33:10.347Z",
+      activationMethod: "activation_code",
+      notes: "\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0645\u0639\u062A\u0645\u062F MCT-2191"
+    },
+    {
+      id: "sub-1790273802422",
+      userId: "user-1790273802282-5b56562c",
+      studentId: "user-1790273802282-5b56562c",
+      phone: "779988112",
+      code: "7782",
+      type: "yearly",
+      plan: "yearly",
+      status: "active",
+      startDate: "2026-09-24T18:16:52.352Z",
+      expiryDate: "2027-09-24T18:16:52.352Z",
+      createdAt: "2026-09-24T18:16:42.422Z",
+      activatedAt: "2026-09-24T18:16:52.352Z",
+      activationMethod: "activation_code",
+      notes: "\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0645\u0639\u062A\u0645\u062F 7782"
+    },
+    {
+      id: "sub-1790273927569",
+      userId: "user-1790273927456-0b244e44",
+      studentId: "user-1790273927456-0b244e44",
+      phone: "779911223",
+      code: "7829",
+      type: "yearly",
+      plan: "yearly",
+      status: "active",
+      startDate: "2026-09-24T18:19:02.317Z",
+      expiryDate: "2027-09-24T18:19:02.317Z",
+      createdAt: "2026-09-24T18:18:47.568Z",
+      activatedAt: "2026-09-24T18:19:02.317Z",
+      activationMethod: "activation_code",
+      notes: "\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0645\u0639\u062A\u0645\u062F 7829"
+    },
+    {
+      id: "sub-1790273951039",
+      userId: "user-1790273950914-483e29e0",
+      plan: "monthly",
+      status: "pending",
+      startDate: "2026-09-24T18:19:11.039Z",
+      expiryDate: "2026-09-24T18:19:11.039Z",
+      createdAt: "2026-09-24T18:19:11.039Z",
+      activationMethod: "whatsapp",
+      notes: "\u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u062C\u062F\u064A\u062F \u0641\u064A \u0627\u0646\u062A\u0638\u0627\u0631 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639 \u0648\u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644"
     }
   ],
   activationCodes: [
@@ -2794,7 +2898,7 @@ var mechatronics_db_default = {
       durationDays: 30,
       maxUses: 100,
       timesUsed: 0,
-      isUsed: false,
+      isUsed: true,
       isActive: true,
       usedByStudents: [
         {
@@ -2804,7 +2908,10 @@ var mechatronics_db_default = {
         }
       ],
       createdAt: "2026-09-23T14:16:38.599Z",
-      notes: "\u062A\u0645 \u0627\u0644\u062A\u0648\u0644\u064A\u062F \u0648\u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0628\u0627\u0634\u0631 \u0644\u0644\u0637\u0627\u0644\u0628: Test Student (777123456)"
+      notes: "\u062A\u0645 \u0627\u0644\u062A\u0648\u0644\u064A\u062F \u0648\u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0628\u0627\u0634\u0631 \u0644\u0644\u0637\u0627\u0644\u0628: Test Student (777123456)",
+      type: "monthly",
+      priceUSD: 20,
+      status: "used"
     },
     {
       id: "code-1790107790598-253e",
@@ -2813,7 +2920,7 @@ var mechatronics_db_default = {
       durationDays: 365,
       maxUses: 100,
       timesUsed: 1,
-      isUsed: false,
+      isUsed: true,
       isActive: true,
       usedByStudents: [
         {
@@ -2823,7 +2930,10 @@ var mechatronics_db_default = {
         }
       ],
       createdAt: "2026-09-22T20:09:50.598Z",
-      notes: "\u062A\u0645 \u0627\u0644\u062A\u0648\u0644\u064A\u062F \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A \u0644\u0637\u0644\u0628 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u0645\u0642\u0628\u0648\u0644 \u0628\u0631\u0642\u0645: req-1790107742297-d331b4"
+      notes: "\u062A\u0645 \u0627\u0644\u062A\u0648\u0644\u064A\u062F \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A \u0644\u0637\u0644\u0628 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u0645\u0642\u0628\u0648\u0644 \u0628\u0631\u0642\u0645: req-1790107742297-d331b4",
+      type: "yearly",
+      priceUSD: 200,
+      status: "used"
     },
     {
       id: "code-7820",
@@ -2832,7 +2942,7 @@ var mechatronics_db_default = {
       durationDays: 365,
       maxUses: 100,
       timesUsed: 0,
-      isUsed: false,
+      isUsed: true,
       isActive: true,
       usedByStudents: [
         {
@@ -2842,33 +2952,68 @@ var mechatronics_db_default = {
         }
       ],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629"
+      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629",
+      type: "yearly",
+      priceUSD: 200,
+      status: "used"
     },
     {
       id: "code-7829",
       code: "7829",
       planType: "yearly",
       durationDays: 365,
-      maxUses: 100,
-      timesUsed: 0,
-      isUsed: false,
+      maxUses: 1,
+      timesUsed: 1,
+      isUsed: true,
       isActive: true,
-      usedByStudents: [],
+      usedByStudents: [
+        {
+          studentId: "user-1790273927456-0b244e44",
+          studentName: "\u0645\u0647\u0646\u062F\u0633 \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644 \u062A\u062C\u0631\u064A\u0628\u064A",
+          phone: "779911223",
+          usedAt: "2026-09-24T18:19:02.317Z"
+        }
+      ],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629"
+      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629",
+      type: "yearly",
+      priceUSD: 200,
+      status: "used",
+      phone: "779911223",
+      studentName: "\u0645\u0647\u0646\u062F\u0633 \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644 \u062A\u062C\u0631\u064A\u0628\u064A",
+      studentId: "user-1790273927456-0b244e44",
+      activatedAt: "2026-09-24T18:19:02.317Z",
+      expiresAt: "2027-09-24T18:19:02.317Z",
+      activatedBy: "student"
     },
     {
       id: "code-7782",
       code: "7782",
       planType: "yearly",
       durationDays: 365,
-      maxUses: 100,
-      timesUsed: 0,
-      isUsed: false,
+      maxUses: 1,
+      timesUsed: 1,
+      isUsed: true,
       isActive: true,
-      usedByStudents: [],
+      usedByStudents: [
+        {
+          studentId: "user-1790273802282-5b56562c",
+          studentName: "\u0645 / \u0623\u062D\u0645\u062F \u0627\u0644\u0645\u0647\u0646\u062F\u0633",
+          phone: "779988112",
+          usedAt: "2026-09-24T18:16:52.352Z"
+        }
+      ],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629"
+      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629",
+      type: "yearly",
+      priceUSD: 200,
+      status: "used",
+      phone: "779988112",
+      studentName: "\u0645 / \u0623\u062D\u0645\u062F \u0627\u0644\u0645\u0647\u0646\u062F\u0633",
+      studentId: "user-1790273802282-5b56562c",
+      activatedAt: "2026-09-24T18:16:52.352Z",
+      expiresAt: "2027-09-24T18:16:52.352Z",
+      activatedBy: "student"
     },
     {
       id: "code-7735",
@@ -2881,7 +3026,10 @@ var mechatronics_db_default = {
       isActive: true,
       usedByStudents: [],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629"
+      notes: "\u0643\u0648\u062F \u0623\u0643\u0627\u062F\u064A\u0645\u064A \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F \u0645\u0646 \u0645\u0627\u0644\u0643 \u0627\u0644\u0645\u0646\u0635\u0629",
+      type: "yearly",
+      priceUSD: 200,
+      status: "unused"
     },
     {
       id: "code-mct-2191",
@@ -2890,11 +3038,20 @@ var mechatronics_db_default = {
       durationDays: 365,
       maxUses: 100,
       timesUsed: 0,
-      isUsed: false,
+      isUsed: true,
       isActive: true,
-      usedByStudents: [],
+      usedByStudents: [
+        {
+          studentId: "user-1790177590221-afc1dd",
+          studentName: "\u0637\u0627\u0644\u0628 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629",
+          usedAt: "2026-09-23T15:33:10.347Z"
+        }
+      ],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644 \u0633\u0646\u0648\u064A \u0644\u0644\u0646\u062E\u0628\u0629"
+      notes: "\u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644 \u0633\u0646\u0648\u064A \u0644\u0644\u0646\u062E\u0628\u0629",
+      type: "yearly",
+      priceUSD: 200,
+      status: "used"
     },
     {
       id: "code-mct-7855",
@@ -2907,7 +3064,10 @@ var mechatronics_db_default = {
       isActive: true,
       usedByStudents: [],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644 \u0633\u0646\u0648\u064A \u0631\u0633\u0645\u064A"
+      notes: "\u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644 \u0633\u0646\u0648\u064A \u0631\u0633\u0645\u064A",
+      type: "yearly",
+      priceUSD: 200,
+      status: "unused"
     },
     {
       id: "code-mct-30d",
@@ -2920,7 +3080,3178 @@ var mechatronics_db_default = {
       isActive: true,
       usedByStudents: [],
       createdAt: "2026-09-15T19:00:00.000Z",
-      notes: "\u0643\u0648\u062F \u062A\u062C\u0631\u0628\u0629 \u0634\u0647\u0631\u064A (30 \u064A\u0648\u0645)"
+      notes: "\u0643\u0648\u062F \u062A\u062C\u0631\u0628\u0629 \u0634\u0647\u0631\u064A (30 \u064A\u0648\u0645)",
+      type: "monthly",
+      priceUSD: 20,
+      status: "unused"
+    },
+    {
+      id: "code-as-1058",
+      code: "AS-1058",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2374",
+      code: "AS-2374",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6198",
+      code: "AS-6198",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7431",
+      code: "AS-7431",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3527",
+      code: "AS-3527",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8916",
+      code: "AS-8916",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5243",
+      code: "AS-5243",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4671",
+      code: "AS-4671",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1765",
+      code: "AS-1765",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8039",
+      code: "AS-8039",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2957",
+      code: "AS-2957",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7326",
+      code: "AS-7326",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6495",
+      code: "AS-6495",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9041",
+      code: "AS-9041",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4183",
+      code: "AS-4183",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5837",
+      code: "AS-5837",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1694",
+      code: "AS-1694",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8261",
+      code: "AS-8261",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3917",
+      code: "AS-3917",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7158",
+      code: "AS-7158",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2573",
+      code: "AS-2573",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9364",
+      code: "AS-9364",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4817",
+      code: "AS-4817",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6259",
+      code: "AS-6259",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1596",
+      code: "AS-1596",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7683",
+      code: "AS-7683",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3438",
+      code: "AS-3438",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8764",
+      code: "AS-8764",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5017",
+      code: "AS-5017",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2169",
+      code: "AS-2169",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6824",
+      code: "AS-6824",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3985",
+      code: "AS-3985",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8473",
+      code: "AS-8473",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5218",
+      code: "AS-5218",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1749",
+      code: "AS-1749",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9573",
+      code: "AS-9573",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6058",
+      code: "AS-6058",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2837",
+      code: "AS-2837",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7385",
+      code: "AS-7385",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4619",
+      code: "AS-4619",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8164",
+      code: "AS-8164",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3078",
+      code: "AS-3078",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5761",
+      code: "AS-5761",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9295",
+      code: "AS-9295",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1457",
+      code: "AS-1457",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6918",
+      code: "AS-6918",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3286",
+      code: "AS-3286",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7524",
+      code: "AS-7524",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4879",
+      code: "AS-4879",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2086",
+      code: "AS-2086",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6375",
+      code: "AS-6375",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9152",
+      code: "AS-9152",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3568",
+      code: "AS-3568",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7831",
+      code: "AS-7831",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1647",
+      code: "AS-1647",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8425",
+      code: "AS-8425",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5193",
+      code: "AS-5193",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2974",
+      code: "AS-2974",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6752",
+      code: "AS-6752",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9327",
+      code: "AS-9327",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4096",
+      code: "AS-4096",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7548",
+      code: "AS-7548",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1836",
+      code: "AS-1836",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6469",
+      code: "AS-6469",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3085",
+      code: "AS-3085",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8187",
+      code: "AS-8187",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5374",
+      code: "AS-5374",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2758",
+      code: "AS-2758",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9693",
+      code: "AS-9693",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4237",
+      code: "AS-4237",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7064",
+      code: "AS-7064",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3549",
+      code: "AS-3549",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6137",
+      code: "AS-6137",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8492",
+      code: "AS-8492",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1946",
+      code: "AS-1946",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5697",
+      code: "AS-5697",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7318",
+      code: "AS-7318",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2475",
+      code: "AS-2475",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8963",
+      code: "AS-8963",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3157",
+      code: "AS-3157",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6739",
+      code: "AS-6739",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4528",
+      code: "AS-4528",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9274",
+      code: "AS-9274",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1589",
+      code: "AS-1589",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8056",
+      code: "AS-8056",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3641",
+      code: "AS-3641",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5927",
+      code: "AS-5927",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7475",
+      code: "AS-7475",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2193",
+      code: "AS-2193",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6847",
+      code: "AS-6847",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-4086",
+      code: "AS-4086",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-9531",
+      code: "AS-9531",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-1375",
+      code: "AS-1375",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-7618",
+      code: "AS-7618",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-3269",
+      code: "AS-3269",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-5827",
+      code: "AS-5827",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-8453",
+      code: "AS-8453",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-2716",
+      code: "AS-2716",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-as-6149",
+      code: "AS-6149",
+      type: "monthly",
+      planType: "monthly",
+      status: "unused",
+      durationDays: 30,
+      priceUSD: 20,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+    },
+    {
+      id: "code-ab-1047",
+      code: "AB-1047",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2385",
+      code: "AB-2385",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6193",
+      code: "AB-6193",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7428",
+      code: "AB-7428",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3516",
+      code: "AB-3516",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8904",
+      code: "AB-8904",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5271",
+      code: "AB-5271",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4639",
+      code: "AB-4639",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1752",
+      code: "AB-1752",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8063",
+      code: "AB-8063",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2948",
+      code: "AB-2948",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7315",
+      code: "AB-7315",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6482",
+      code: "AB-6482",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9037",
+      code: "AB-9037",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4168",
+      code: "AB-4168",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5824",
+      code: "AB-5824",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1679",
+      code: "AB-1679",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8253",
+      code: "AB-8253",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3906",
+      code: "AB-3906",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7142",
+      code: "AB-7142",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2568",
+      code: "AB-2568",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9371",
+      code: "AB-9371",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4805",
+      code: "AB-4805",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6237",
+      code: "AB-6237",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1584",
+      code: "AB-1584",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7690",
+      code: "AB-7690",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3421",
+      code: "AB-3421",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8756",
+      code: "AB-8756",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5093",
+      code: "AB-5093",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2147",
+      code: "AB-2147",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6815",
+      code: "AB-6815",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3972",
+      code: "AB-3972",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8461",
+      code: "AB-8461",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5209",
+      code: "AB-5209",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1736",
+      code: "AB-1736",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9582",
+      code: "AB-9582",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6047",
+      code: "AB-6047",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2815",
+      code: "AB-2815",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7394",
+      code: "AB-7394",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4620",
+      code: "AB-4620",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8157",
+      code: "AB-8157",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3069",
+      code: "AB-3069",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5742",
+      code: "AB-5742",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9286",
+      code: "AB-9286",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1438",
+      code: "AB-1438",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6905",
+      code: "AB-6905",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3274",
+      code: "AB-3274",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7519",
+      code: "AB-7519",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4863",
+      code: "AB-4863",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2095",
+      code: "AB-2095",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6381",
+      code: "AB-6381",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9146",
+      code: "AB-9146",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3570",
+      code: "AB-3570",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7824",
+      code: "AB-7824",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1653",
+      code: "AB-1653",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8437",
+      code: "AB-8437",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5206",
+      code: "AB-5206",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2961",
+      code: "AB-2961",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6748",
+      code: "AB-6748",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9315",
+      code: "AB-9315",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4082",
+      code: "AB-4082",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7536",
+      code: "AB-7536",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1829",
+      code: "AB-1829",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6457",
+      code: "AB-6457",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3094",
+      code: "AB-3094",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8172",
+      code: "AB-8172",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5369",
+      code: "AB-5369",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2745",
+      code: "AB-2745",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9681",
+      code: "AB-9681",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4216",
+      code: "AB-4216",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7053",
+      code: "AB-7053",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3598",
+      code: "AB-3598",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6124",
+      code: "AB-6124",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8470",
+      code: "AB-8470",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1935",
+      code: "AB-1935",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5682",
+      code: "AB-5682",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7309",
+      code: "AB-7309",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2461",
+      code: "AB-2461",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8957",
+      code: "AB-8957",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3148",
+      code: "AB-3148",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6725",
+      code: "AB-6725",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4503",
+      code: "AB-4503",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9281",
+      code: "AB-9281",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1576",
+      code: "AB-1576",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8049",
+      code: "AB-8049",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3627",
+      code: "AB-3627",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5914",
+      code: "AB-5914",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7463",
+      code: "AB-7463",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2158",
+      code: "AB-2158",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6830",
+      code: "AB-6830",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-4075",
+      code: "AB-4075",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-9526",
+      code: "AB-9526",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-1384",
+      code: "AB-1384",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-7695",
+      code: "AB-7695",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-3247",
+      code: "AB-3247",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-5810",
+      code: "AB-5810",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-8469",
+      code: "AB-8469",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-2703",
+      code: "AB-2703",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+    },
+    {
+      id: "code-ab-6138",
+      code: "AB-6138",
+      type: "yearly",
+      planType: "yearly",
+      status: "unused",
+      durationDays: 365,
+      priceUSD: 200,
+      maxUses: 1,
+      timesUsed: 0,
+      isUsed: false,
+      isActive: true,
+      usedByStudents: [],
+      createdAt: "2026-09-23T00:00:00.000Z",
+      notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
     }
   ],
   subscriptionRequests: [
@@ -2974,6 +6305,33 @@ var mechatronics_db_default = {
       savedProjects: [],
       simulatorSettings: {},
       updatedAt: "2026-09-23T14:16:38.648Z"
+    },
+    "user-1790177590221-afc1dd": {
+      studentId: "user-1790177590221-afc1dd",
+      completedLessons: [],
+      quizScores: {},
+      lessonNotes: {},
+      savedProjects: [],
+      simulatorSettings: {},
+      updatedAt: "2026-09-23T15:33:10.351Z"
+    },
+    "user-1790273802282-5b56562c": {
+      studentId: "user-1790273802282-5b56562c",
+      completedLessons: [],
+      quizScores: {},
+      lessonNotes: {},
+      savedProjects: [],
+      simulatorSettings: {},
+      updatedAt: "2026-09-24T18:16:42.845Z"
+    },
+    "user-1790273927456-0b244e44": {
+      studentId: "user-1790273927456-0b244e44",
+      completedLessons: [],
+      quizScores: {},
+      lessonNotes: {},
+      savedProjects: [],
+      simulatorSettings: {},
+      updatedAt: "2026-09-24T18:18:47.697Z"
     }
   },
   studentLessons: [],
@@ -2987,7 +6345,212 @@ var mechatronics_db_default = {
   }
 };
 
+// server/seedCodes.ts
+var MONTHLY_CODES_SEED = [
+  "AS-1058",
+  "AS-2374",
+  "AS-6198",
+  "AS-7431",
+  "AS-3527",
+  "AS-8916",
+  "AS-5243",
+  "AS-4671",
+  "AS-1765",
+  "AS-8039",
+  "AS-2957",
+  "AS-7326",
+  "AS-6495",
+  "AS-9041",
+  "AS-4183",
+  "AS-5837",
+  "AS-1694",
+  "AS-8261",
+  "AS-3917",
+  "AS-7158",
+  "AS-2573",
+  "AS-9364",
+  "AS-4817",
+  "AS-6259",
+  "AS-1596",
+  "AS-7683",
+  "AS-3438",
+  "AS-8764",
+  "AS-5017",
+  "AS-2169",
+  "AS-6824",
+  "AS-3985",
+  "AS-8473",
+  "AS-5218",
+  "AS-1749",
+  "AS-9573",
+  "AS-6058",
+  "AS-2837",
+  "AS-7385",
+  "AS-4619",
+  "AS-8164",
+  "AS-3078",
+  "AS-5761",
+  "AS-9295",
+  "AS-1457",
+  "AS-6918",
+  "AS-3286",
+  "AS-7524",
+  "AS-4879",
+  "AS-2086",
+  "AS-6375",
+  "AS-9152",
+  "AS-3568",
+  "AS-7831",
+  "AS-1647",
+  "AS-8425",
+  "AS-5193",
+  "AS-2974",
+  "AS-6752",
+  "AS-9327",
+  "AS-4096",
+  "AS-7548",
+  "AS-1836",
+  "AS-6469",
+  "AS-3085",
+  "AS-8187",
+  "AS-5374",
+  "AS-2758",
+  "AS-9693",
+  "AS-4237",
+  "AS-7064",
+  "AS-3549",
+  "AS-6137",
+  "AS-8492",
+  "AS-1946",
+  "AS-5697",
+  "AS-7318",
+  "AS-2475",
+  "AS-8963",
+  "AS-3157",
+  "AS-6739",
+  "AS-4528",
+  "AS-9274",
+  "AS-1589",
+  "AS-8056",
+  "AS-3641",
+  "AS-5927",
+  "AS-7475",
+  "AS-2193",
+  "AS-6847",
+  "AS-4086",
+  "AS-9531",
+  "AS-1375",
+  "AS-7618",
+  "AS-3269",
+  "AS-5827",
+  "AS-8453",
+  "AS-2716",
+  "AS-6149"
+];
+var YEARLY_CODES_SEED = [
+  "AB-1047",
+  "AB-2385",
+  "AB-6193",
+  "AB-7428",
+  "AB-3516",
+  "AB-8904",
+  "AB-5271",
+  "AB-4639",
+  "AB-1752",
+  "AB-8063",
+  "AB-2948",
+  "AB-7315",
+  "AB-6482",
+  "AB-9037",
+  "AB-4168",
+  "AB-5824",
+  "AB-1679",
+  "AB-8253",
+  "AB-3906",
+  "AB-7142",
+  "AB-2568",
+  "AB-9371",
+  "AB-4805",
+  "AB-6237",
+  "AB-1584",
+  "AB-7690",
+  "AB-3421",
+  "AB-8756",
+  "AB-5093",
+  "AB-2147",
+  "AB-6815",
+  "AB-3972",
+  "AB-8461",
+  "AB-5209",
+  "AB-1736",
+  "AB-9582",
+  "AB-6047",
+  "AB-2815",
+  "AB-7394",
+  "AB-4620",
+  "AB-8157",
+  "AB-3069",
+  "AB-5742",
+  "AB-9286",
+  "AB-1438",
+  "AB-6905",
+  "AB-3274",
+  "AB-7519",
+  "AB-4863",
+  "AB-2095",
+  "AB-6381",
+  "AB-9146",
+  "AB-3570",
+  "AB-7824",
+  "AB-1653",
+  "AB-8437",
+  "AB-5206",
+  "AB-2961",
+  "AB-6748",
+  "AB-9315",
+  "AB-4082",
+  "AB-7536",
+  "AB-1829",
+  "AB-6457",
+  "AB-3094",
+  "AB-8172",
+  "AB-5369",
+  "AB-2745",
+  "AB-9681",
+  "AB-4216",
+  "AB-7053",
+  "AB-3598",
+  "AB-6124",
+  "AB-8470",
+  "AB-1935",
+  "AB-5682",
+  "AB-7309",
+  "AB-2461",
+  "AB-8957",
+  "AB-3148",
+  "AB-6725",
+  "AB-4503",
+  "AB-9281",
+  "AB-1576",
+  "AB-8049",
+  "AB-3627",
+  "AB-5914",
+  "AB-7463",
+  "AB-2158",
+  "AB-6830",
+  "AB-4075",
+  "AB-9526",
+  "AB-1384",
+  "AB-7695",
+  "AB-3247",
+  "AB-5810",
+  "AB-8469",
+  "AB-2703",
+  "AB-6138"
+];
+
 // server/db.ts
+var { Pool } = pg;
 var isVercel = process.env.VERCEL === "1" || !!process.env.VERCEL;
 var DATA_DIR = isVercel ? path.join("/tmp", "data") : path.join(process.cwd(), "data");
 var DB_FILE = path.join(DATA_DIR, "mechatronics_db.json");
@@ -3105,31 +6668,150 @@ function getDefaultDB() {
     }
   };
 }
-var cachedDB = null;
-function getDB() {
-  if (cachedDB) {
-    return cachedDB;
+function ensureReadyCodesSeeded(data) {
+  if (!data.activationCodes) {
+    data.activationCodes = [];
   }
-  if (fs.existsSync(DB_FILE)) {
-    try {
-      const raw = fs.readFileSync(DB_FILE, "utf-8");
-      cachedDB = JSON.parse(raw);
-      return cachedDB;
-    } catch (e) {
-      console.error("Error reading DB file, initializing default:", e);
+  let modified = false;
+  const existingMap = /* @__PURE__ */ new Map();
+  for (const c of data.activationCodes) {
+    if (c.code) {
+      existingMap.set(c.code.trim().toUpperCase(), c);
     }
   }
-  if (mechatronics_db_default && typeof mechatronics_db_default === "object") {
-    cachedDB = JSON.parse(JSON.stringify(mechatronics_db_default));
-    saveDB(cachedDB);
-    return cachedDB;
+  for (const code of MONTHLY_CODES_SEED) {
+    const key = code.trim().toUpperCase();
+    if (!existingMap.has(key)) {
+      const newRecord = {
+        id: `code-${code.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+        code,
+        type: "monthly",
+        planType: "monthly",
+        status: "unused",
+        durationDays: 30,
+        priceUSD: 20,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: "2026-09-23T00:00:00.000Z",
+        notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A \u0645\u0639\u062A\u0645\u062F (30 \u064A\u0648\u0645\u064B\u0627)"
+      };
+      data.activationCodes.push(newRecord);
+      existingMap.set(key, newRecord);
+      modified = true;
+    }
   }
-  cachedDB = getDefaultDB();
-  saveDB(cachedDB);
-  return cachedDB;
+  for (const code of YEARLY_CODES_SEED) {
+    const key = code.trim().toUpperCase();
+    if (!existingMap.has(key)) {
+      const newRecord = {
+        id: `code-${code.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+        code,
+        type: "yearly",
+        planType: "yearly",
+        status: "unused",
+        durationDays: 365,
+        priceUSD: 200,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: "2026-09-23T00:00:00.000Z",
+        notes: "\u0643\u0648\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A \u0645\u0639\u062A\u0645\u062F (\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629)"
+      };
+      data.activationCodes.push(newRecord);
+      existingMap.set(key, newRecord);
+      modified = true;
+    }
+  }
+  const now = /* @__PURE__ */ new Date();
+  for (const c of data.activationCodes) {
+    if (!c.type) {
+      if (c.code.toUpperCase().startsWith("AS-")) c.type = "monthly";
+      else if (c.code.toUpperCase().startsWith("AB-")) c.type = "yearly";
+      else c.type = c.planType === "yearly" ? "yearly" : "monthly";
+      modified = true;
+    }
+    if (!c.planType) {
+      c.planType = c.type;
+      modified = true;
+    }
+    if (!c.priceUSD) {
+      c.priceUSD = c.type === "yearly" ? 200 : 20;
+      modified = true;
+    }
+    if (!c.durationDays) {
+      c.durationDays = c.type === "yearly" ? 365 : 30;
+      modified = true;
+    }
+    if (c.maxUses === void 0) {
+      c.maxUses = 1;
+      modified = true;
+    }
+    if (!c.status) {
+      if (c.isActive === false) {
+        c.status = "suspended";
+      } else if (c.expiresAt && new Date(c.expiresAt) < now) {
+        c.status = "expired";
+      } else if (c.isUsed || c.timesUsed && c.timesUsed > 0 || c.usedByStudents && c.usedByStudents.length > 0) {
+        c.status = "used";
+      } else {
+        c.status = "unused";
+      }
+      modified = true;
+    }
+    if (c.status === "used" && !c.isUsed) {
+      c.isUsed = true;
+      modified = true;
+    }
+    if (c.status === "unused" && c.isUsed) {
+      c.isUsed = false;
+      c.timesUsed = 0;
+      modified = true;
+    }
+    if (c.status === "suspended" && c.isActive) {
+      c.isActive = false;
+      modified = true;
+    }
+  }
+  return modified;
 }
-function saveDB(data) {
-  cachedDB = data;
+var DB_STORE_KEY = "mct_academy_database";
+var neonPool = null;
+var cloudProvider = "local-file";
+var lastCloudSyncAt = null;
+var cloudSyncError = null;
+var isSyncingToCloud = false;
+var pendingCloudSave = false;
+var isHydratedFromNeon = false;
+var dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+if (dbUrl) {
+  try {
+    neonPool = new Pool({
+      connectionString: dbUrl,
+      ssl: {
+        rejectUnauthorized: false
+      },
+      max: 10,
+      idleTimeoutMillis: 3e4,
+      connectionTimeoutMillis: 1e4
+    });
+    cloudProvider = "neon-postgres";
+    console.log("[DB] Neon PostgreSQL configured as primary cloud database (DATABASE_URL).");
+  } catch (err) {
+    console.warn("[DB] Failed to initialize Neon PostgreSQL pool:", err);
+  }
+} else if (process.env.NODE_ENV === "production") {
+  console.warn("[DB ALERT] DATABASE_URL is not set! Please configure DATABASE_URL in Vercel Environment Variables for permanent Neon PostgreSQL storage.");
+}
+var cachedDB = null;
+function saveLocalFile(data) {
+  if (process.env.NODE_ENV === "production" && neonPool) {
+    return;
+  }
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -3138,7 +6820,169 @@ function saveDB(data) {
     fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), "utf-8");
     fs.renameSync(tempFile, DB_FILE);
   } catch (err) {
-    console.error("Failed to write DB file:", err);
+  }
+}
+async function syncFromCloud() {
+  if (!neonPool) return false;
+  try {
+    await neonPool.query(`
+      CREATE TABLE IF NOT EXISTS mct_kv_store (
+        key VARCHAR(100) PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE IF NOT EXISTS mct_users (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
+        email TEXT,
+        password_hash TEXT NOT NULL,
+        university TEXT,
+        study_level TEXT,
+        major TEXT,
+        role TEXT NOT NULL DEFAULT 'student',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_login_at TIMESTAMPTZ
+      );
+      CREATE TABLE IF NOT EXISTS mct_activation_codes (
+        id TEXT PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        type TEXT,
+        plan_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'unused',
+        duration_days INT NOT NULL DEFAULT 30,
+        price_usd NUMERIC NOT NULL DEFAULT 20,
+        phone TEXT,
+        student_name TEXT,
+        student_id TEXT,
+        activated_at TIMESTAMPTZ,
+        expires_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        activated_by TEXT,
+        max_uses INT NOT NULL DEFAULT 1,
+        times_used INT NOT NULL DEFAULT 0,
+        is_used BOOLEAN NOT NULL DEFAULT false,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        used_by_students JSONB DEFAULT '[]'::jsonb,
+        notes TEXT
+      );
+      CREATE TABLE IF NOT EXISTS mct_subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        phone TEXT,
+        code TEXT,
+        plan TEXT NOT NULL,
+        status TEXT NOT NULL,
+        start_date TIMESTAMPTZ NOT NULL,
+        expiry_date TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        activated_at TIMESTAMPTZ,
+        activation_method TEXT,
+        notes TEXT
+      );
+    `);
+    const res = await neonPool.query(
+      "SELECT data FROM mct_kv_store WHERE key = $1 LIMIT 1",
+      [DB_STORE_KEY]
+    );
+    if (res.rows && res.rows.length > 0 && res.rows[0].data) {
+      cachedDB = res.rows[0].data;
+      ensureReadyCodesSeeded(cachedDB);
+      saveLocalFile(cachedDB);
+      lastCloudSyncAt = (/* @__PURE__ */ new Date()).toISOString();
+      cloudSyncError = null;
+      isHydratedFromNeon = true;
+      console.log(`[DB] Successfully loaded database from Neon PostgreSQL (${cachedDB.users?.length || 0} users, ${cachedDB.activationCodes?.length || 0} codes).`);
+      return true;
+    } else {
+      const initial = getDB();
+      await neonPool.query(
+        `INSERT INTO mct_kv_store (key, data, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+        [DB_STORE_KEY, JSON.stringify(initial)]
+      );
+      lastCloudSyncAt = (/* @__PURE__ */ new Date()).toISOString();
+      isHydratedFromNeon = true;
+      console.log("[DB] Seeded initial database into Neon PostgreSQL.");
+      return true;
+    }
+  } catch (err) {
+    cloudSyncError = err.message || String(err);
+    console.warn("[DB] Neon PostgreSQL sync warning (using local/in-memory cache):", cloudSyncError);
+  }
+  return false;
+}
+async function syncToCloud(data) {
+  if (!neonPool) return;
+  if (isSyncingToCloud) {
+    pendingCloudSave = true;
+    return;
+  }
+  isSyncingToCloud = true;
+  try {
+    await neonPool.query(
+      `INSERT INTO mct_kv_store (key, data, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+      [DB_STORE_KEY, JSON.stringify(data)]
+    );
+    lastCloudSyncAt = (/* @__PURE__ */ new Date()).toISOString();
+    cloudSyncError = null;
+  } catch (err) {
+    cloudSyncError = err.message || String(err);
+    console.error("[DB] Failed to sync changes to Neon PostgreSQL:", cloudSyncError);
+  } finally {
+    isSyncingToCloud = false;
+    if (pendingCloudSave) {
+      pendingCloudSave = false;
+      if (cachedDB) {
+        syncToCloud(cachedDB).catch(() => {
+        });
+      }
+    }
+  }
+}
+if (neonPool) {
+  syncFromCloud().catch((e) => {
+    console.warn("[DB] Initial background cloud load failed, using local seed:", e);
+  });
+}
+function getDB() {
+  if (cachedDB) {
+    return cachedDB;
+  }
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      const raw = fs.readFileSync(DB_FILE, "utf-8");
+      cachedDB = JSON.parse(raw);
+      if (cachedDB) {
+        const changed = ensureReadyCodesSeeded(cachedDB);
+        if (changed) saveDB(cachedDB);
+        return cachedDB;
+      }
+    } catch (e) {
+      console.error("Error reading DB file, initializing default:", e);
+    }
+  }
+  if (mechatronics_db_default && typeof mechatronics_db_default === "object") {
+    cachedDB = JSON.parse(JSON.stringify(mechatronics_db_default));
+    ensureReadyCodesSeeded(cachedDB);
+    saveDB(cachedDB);
+    return cachedDB;
+  }
+  cachedDB = getDefaultDB();
+  ensureReadyCodesSeeded(cachedDB);
+  saveDB(cachedDB);
+  return cachedDB;
+}
+function saveDB(data) {
+  cachedDB = data;
+  saveLocalFile(data);
+  if (neonPool) {
+    syncToCloud(data).catch((err) => {
+      console.warn("[DB] Background Neon PostgreSQL save warning:", err);
+    });
   }
 }
 function convertArabicDigitsToEnglish(str) {
@@ -3296,8 +7140,14 @@ var db = {
   },
   // Activation Codes
   findActivationCode(code) {
+    if (!code) return void 0;
     const clean = code.trim().toUpperCase();
     return getDB().activationCodes.find((c) => c.code.trim().toUpperCase() === clean);
+  },
+  findActivationCodeByPhone(phone) {
+    const clean = normalizePhone(phone);
+    if (!clean) return void 0;
+    return getDB().activationCodes.find((c) => c.phone && normalizePhone(c.phone) === clean);
   },
   getAllActivationCodes() {
     return getDB().activationCodes;
@@ -3307,6 +7157,12 @@ var db = {
     data.activationCodes.unshift(codeRecord);
     saveDB(data);
     return codeRecord;
+  },
+  batchCreateActivationCodes(newCodes) {
+    const data = getDB();
+    data.activationCodes.unshift(...newCodes);
+    saveDB(data);
+    return newCodes;
   },
   updateActivationCode(code, updates) {
     const data = getDB();
@@ -3324,6 +7180,12 @@ var db = {
     data.activationCodes = data.activationCodes.filter((c) => c.code.trim().toUpperCase() !== clean);
     saveDB(data);
     return data.activationCodes.length !== initialLen;
+  },
+  getSubscriptionByPhone(phone) {
+    const clean = normalizePhone(phone);
+    if (!clean) return void 0;
+    const user = db.findUserByPhone(clean);
+    return getDB().subscriptions.find((s) => user && s.userId === user.id || s.phone && normalizePhone(s.phone) === clean);
   },
   // Subscription Requests (WhatsApp)
   getAllRequests() {
@@ -3413,11 +7275,34 @@ var db = {
     data.settings = { ...data.settings, ...updates };
     saveDB(data);
     return data.settings;
-  }
+  },
+  // Storage and Cloud DB Status (Neon PostgreSQL)
+  getStorageStatus() {
+    const current = getDB();
+    return {
+      provider: cloudProvider,
+      isCloudActive: Boolean(neonPool),
+      cloudProviderName: cloudProvider === "neon-postgres" ? "Neon PostgreSQL (Cloud Database)" : "Local Storage (Dev Fallback)",
+      lastCloudSyncAt,
+      cloudSyncError,
+      totalUsers: current.users.length,
+      totalSubscriptions: current.subscriptions.length,
+      totalCodes: current.activationCodes.length,
+      totalRequests: current.subscriptionRequests.length
+    };
+  },
+  isCloudConfigured() {
+    return Boolean(neonPool);
+  },
+  isHydrated() {
+    return isHydratedFromNeon;
+  },
+  syncFromCloud,
+  syncToCloud
 };
 
 // server/app.ts
-var JWT_SECRET = process.env.JWT_SECRET || "7829";
+var JWT_SECRET = process.env.JWT_SECRET || "mct_jwt_secret_mechatronics_academy_7829";
 var subjects = [...INITIAL_SUBJECTS];
 var lessons = [...INITIAL_LESSONS];
 function generateAuthToken(user) {
@@ -3548,6 +7433,16 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: "50mb" }));
+app.use(async (req, res, next) => {
+  if (db.isCloudConfigured() && !db.isHydrated()) {
+    try {
+      await db.syncFromCloud();
+    } catch (e) {
+      console.warn("[DB] Neon hydration error on request:", e);
+    }
+  }
+  next();
+});
 app.use(authenticateToken);
 var router = express.Router();
 router.get("/", (req, res) => {
@@ -3562,7 +7457,7 @@ router.get("/health", (req, res) => {
   res.json({ status: "ok", time: (/* @__PURE__ */ new Date()).toISOString(), platform: "mechatronics-academy" });
 });
 router.post("/auth/register", (req, res) => {
-  const { name, phone, email, university, studyLevel, major, password } = req.body;
+  const { name, phone, email, university, studyLevel, major, password, activationCode, code } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ error: "\u0627\u0644\u0627\u0633\u0645 \u0648\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 \u0645\u0637\u0644\u0648\u0628\u0627\u0646 \u0644\u0644\u062A\u0633\u062C\u064A\u0644." });
   }
@@ -3573,11 +7468,16 @@ router.post("/auth/register", (req, res) => {
   const existingUser = db.findUserByPhone(cleanPhone);
   if (existingUser) {
     return res.status(400).json({
-      error: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 \u0645\u0633\u062C\u0644 \u0645\u0633\u0628\u0642\u064B\u0627 \u0641\u064A \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629. \u064A\u0645\u0643\u0646\u0643 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0645\u0628\u0627\u0634\u0631\u0629 \u0628\u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0643."
+      error: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 \u0645\u0633\u062C\u0644 \u0645\u0633\u0628\u0642\u064B\u0627 \u0641\u064A \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629. \u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u062C\u062F\u064A\u062F \u0628\u0646\u0641\u0633 \u0627\u0644\u0631\u0642\u0645\u061B \u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0645\u0628\u0627\u0634\u0631\u0629 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0643."
+    });
+  }
+  if (!password || password.trim().length < 4) {
+    return res.status(400).json({
+      error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631 \u0645\u0643\u0648\u0646\u0629 \u0645\u0646 4 \u062E\u0627\u0646\u0627\u062A \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644 \u0644\u062D\u0645\u0627\u064A\u0629 \u062D\u0633\u0627\u0628\u0643 \u0648\u0627\u0633\u062A\u062E\u062F\u0627\u0645\u0647\u0627 \u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0644\u0627\u062D\u0642\u064B\u0627."
     });
   }
   const userId = `user-${Date.now()}-${crypto2.randomBytes(4).toString("hex")}`;
-  const passwordHash = password && password.trim() ? bcrypt2.hashSync(password.trim(), 10) : bcrypt2.hashSync(cleanPhone.slice(-6) || "123456", 10);
+  const passwordHash = bcrypt2.hashSync(password.trim(), 10);
   const newUser = {
     id: userId,
     name: name.trim(),
@@ -3592,23 +7492,90 @@ router.post("/auth/register", (req, res) => {
     lastLoginAt: (/* @__PURE__ */ new Date()).toISOString()
   };
   db.createUser(newUser);
+  const inputCode = (activationCode || code || "").toString().trim().toUpperCase();
   const now = /* @__PURE__ */ new Date();
-  const newSubscription = {
-    id: `sub-${Date.now()}`,
-    userId,
-    plan: "monthly",
-    status: "pending",
-    startDate: now.toISOString(),
-    expiryDate: now.toISOString(),
-    createdAt: now.toISOString(),
-    activationMethod: "whatsapp",
-    notes: "\u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u062C\u062F\u064A\u062F \u0641\u064A \u0627\u0646\u062A\u0638\u0627\u0631 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639 \u0648\u0627\u0644\u062A\u0641\u0639\u064A\u0644"
-  };
-  db.createOrUpdateSubscription(newSubscription);
+  let initialSub;
+  let remainingDays = 0;
+  let isActivated = false;
+  let activationSuccessMsg = "";
+  if (inputCode) {
+    const codes = db.getAllActivationCodes();
+    const foundCode = codes.find((c) => c.code.trim().toUpperCase() === inputCode);
+    if (foundCode && foundCode.isActive !== false && foundCode.status !== "suspended" && (!foundCode.isUsed || foundCode.status === "unused")) {
+      const planType = inputCode.startsWith("AB-") || foundCode.type === "yearly" || foundCode.planType === "yearly" ? "yearly" : "monthly";
+      const durationDays = foundCode.durationDays || (planType === "yearly" ? 365 : 30);
+      const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1e3);
+      initialSub = {
+        id: `sub-${Date.now()}`,
+        userId,
+        studentId: userId,
+        phone: cleanPhone,
+        code: inputCode,
+        type: planType,
+        plan: planType,
+        status: "active",
+        startDate: now.toISOString(),
+        expiryDate: expiryDate.toISOString(),
+        createdAt: now.toISOString(),
+        activatedAt: now.toISOString(),
+        activationMethod: "activation_code",
+        notes: `\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0623\u062B\u0646\u0627\u0621 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0643\u0648\u062F ${inputCode}`
+      };
+      db.updateActivationCode(foundCode.code, {
+        type: planType,
+        planType,
+        status: "used",
+        isUsed: true,
+        timesUsed: 1,
+        phone: cleanPhone,
+        studentName: newUser.name,
+        studentId: newUser.id,
+        activatedAt: now.toISOString(),
+        expiresAt: expiryDate.toISOString(),
+        activatedBy: "student",
+        usedByStudents: [
+          {
+            studentId: newUser.id,
+            studentName: newUser.name,
+            phone: cleanPhone,
+            usedAt: now.toISOString()
+          }
+        ]
+      });
+      remainingDays = durationDays;
+      isActivated = true;
+      activationSuccessMsg = " \u0648\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0628\u0646\u062C\u0627\u062D!";
+    } else {
+      initialSub = {
+        id: `sub-${Date.now()}`,
+        userId,
+        plan: "monthly",
+        status: "pending",
+        startDate: now.toISOString(),
+        expiryDate: now.toISOString(),
+        createdAt: now.toISOString(),
+        activationMethod: "whatsapp",
+        notes: `\u062D\u0633\u0627\u0628 \u062C\u062F\u064A\u062F - \u0643\u0648\u062F \u0645\u062F\u062E\u0644 \u064A\u062D\u062A\u0627\u062C \u0645\u0631\u0627\u062C\u0639\u0629: ${inputCode}`
+      };
+    }
+  } else {
+    initialSub = {
+      id: `sub-${Date.now()}`,
+      userId,
+      plan: "monthly",
+      status: "pending",
+      startDate: now.toISOString(),
+      expiryDate: now.toISOString(),
+      createdAt: now.toISOString(),
+      activationMethod: "whatsapp",
+      notes: "\u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u062C\u062F\u064A\u062F \u0641\u064A \u0627\u0646\u062A\u0638\u0627\u0631 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639 \u0648\u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644"
+    };
+  }
+  db.createOrUpdateSubscription(initialSub);
   const token = generateAuthToken(newUser);
   res.json({
     success: true,
-    message: "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u0627\u0644\u0637\u0627\u0644\u0628 \u0628\u0646\u062C\u0627\u062D!",
+    message: `\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u0627\u0644\u0637\u0627\u0644\u0628 \u0628\u0646\u062C\u0627\u062D${activationSuccessMsg}. \u064A\u0645\u0643\u0646\u0643 \u0627\u0644\u0622\u0646 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u062F\u0627\u0626\u0645\u0627\u064B \u0628\u0631\u0642\u0645 \u0647\u0627\u062A\u0641\u0643 \u0648\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0643.`,
     token,
     user: {
       id: newUser.id,
@@ -3621,9 +7588,9 @@ router.post("/auth/register", (req, res) => {
       role: newUser.role
     },
     subscription: {
-      ...newSubscription,
-      remainingDays: 0,
-      isActivated: false,
+      ...initialSub,
+      remainingDays,
+      isActivated,
       isExpired: false
     },
     student: {
@@ -3635,12 +7602,12 @@ router.post("/auth/register", (req, res) => {
       studyLevel: newUser.studyLevel,
       major: newUser.major,
       role: newUser.role,
-      subscriptionPlan: "monthly",
-      subscriptionStatus: "pending",
-      subscriptionStartDate: now.toISOString(),
-      subscriptionEndDate: now.toISOString(),
-      remainingDays: 0,
-      isActivated: false,
+      subscriptionPlan: initialSub.plan,
+      subscriptionStatus: initialSub.status,
+      subscriptionStartDate: initialSub.startDate,
+      subscriptionEndDate: initialSub.expiryDate,
+      remainingDays,
+      isActivated,
       isExpired: false,
       completedLessons: [],
       quizScores: {}
@@ -3672,9 +7639,9 @@ function formatWhatsAppActivation(studentName, phone, code, plan, startDateISO, 
 \u{1F4C5} \u062A\u0627\u0631\u064A\u062E \u0628\u062F\u0621 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643: ${startDateStr}
 \u23F3 \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u062F\u0642\u064A\u0642: ${expiryDateStr} (${durationDays} \u064A\u0648\u0645)
 
-\u0637\u0631\u064A\u0642\u0629 \u0627\u0644\u062F\u062E\u0648\u0644 \u0644\u0644\u062A\u0637\u0628\u064A\u0642:
-1. \u0627\u0641\u062A\u062D \u0627\u0644\u0645\u0646\u0635\u0629 \u0648\u0627\u062E\u062A\u0631 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644.
-2. \u0623\u062F\u062E\u0644 \u0631\u0642\u0645 \u0647\u0627\u062A\u0641\u0643 \u0645\u0639 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0623\u0639\u0644\u0627\u0647 (\u0623\u0648 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062A\u064A \u0623\u0646\u0634\u0623\u062A\u0647\u0627).
+\u0637\u0631\u064A\u0642\u0629 \u0627\u0644\u062F\u062E\u0648\u0644 \u0648\u0627\u0644\u062A\u0641\u0639\u064A\u0644:
+1. \u0627\u0633\u062A\u062E\u062F\u0645 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0639\u062A\u0645\u062F \u0623\u0639\u0644\u0627\u0647 \u0644\u062A\u0623\u0643\u064A\u062F \u0648\u062A\u0641\u0639\u064A\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0644\u0623\u0648\u0644 \u0645\u0631\u0629.
+2. \u0633\u062C\u0651\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u062F\u0627\u0626\u0645\u0627\u064B \u0628\u0631\u0642\u0645 \u0647\u0627\u062A\u0641\u0643 \u0648\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062A\u064A \u0623\u0646\u0634\u0623\u062A\u0647\u0627 \u0641\u064A \u062D\u0633\u0627\u0628\u0643 (\u062D\u0633\u0627\u0628\u0643 \u0645\u0624\u0645\u0651\u0646 \u0628\u0643\u0644\u0645\u0629 \u0645\u0631\u0648\u0631\u0643 \u0648\u0644\u0627 \u064A\u0645\u0643\u0646 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0631\u0642\u0645\u0643 \u0628\u062F\u0648\u0646\u0647\u0627).
 3. \u0627\u0633\u062A\u0645\u062A\u0639 \u0628\u0643\u0627\u0641\u0629 \u0627\u0644\u062F\u0631\u0648\u0633\u060C \u0645\u062D\u0644\u0644 \u0627\u0644\u0642\u0648\u0627\u0646\u064A\u0646\u060C \u0645\u062D\u0627\u0643\u064A Arduino\u060C \u0648\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A.
 
 \u0646\u062A\u0645\u0646\u0649 \u0644\u0643 \u0641\u0635\u0644\u0627\u064B \u062F\u0631\u0627\u0633\u064A\u0627\u064B \u0645\u062A\u0645\u064A\u0632\u0627\u064B \u0648\u0645\u0644\u064A\u0626\u0627\u064B \u0628\u0627\u0644\u062A\u0641\u0648\u0642 \u0648\u0627\u0644\u0646\u062C\u0627\u062D! \u{1F680}`;
@@ -3736,197 +7703,37 @@ function getSubscriptionDetails(userId) {
 }
 router.post("/auth/login", (req, res) => {
   const { identifier, phone, activationCode, code, password } = req.body;
-  let rawPhone = (phone || identifier || "").toString().trim();
-  let inputCode = (activationCode || code || "").toString().trim().toUpperCase();
+  const rawPhone = (phone || identifier || "").toString().trim();
   const rawPassword = (password || "").toString().trim();
-  const allCodes = db.getAllActivationCodes();
-  if (!inputCode && rawPhone) {
-    const isCodeMatch = allCodes.some((c) => c.code.trim().toUpperCase() === rawPhone.toUpperCase());
-    if (isCodeMatch || rawPhone.toUpperCase().startsWith("MCT-")) {
-      inputCode = rawPhone.toUpperCase();
-      rawPhone = "";
-    }
-  }
-  const cleanPhone = normalizePhone(rawPhone);
-  if (inputCode) {
-    const foundCode = allCodes.find((c) => c.code.trim().toUpperCase() === inputCode);
-    let user2 = cleanPhone ? db.findUserByPhone(cleanPhone) : rawPhone ? db.findUserByEmail(rawPhone) : void 0;
-    if (!user2 && foundCode?.usedByStudents && foundCode.usedByStudents.length > 0) {
-      const assignedId = foundCode.usedByStudents[0].studentId;
-      user2 = db.findUserById(assignedId);
-    }
-    if (!user2) {
-      const allSubs = db.getAllSubscriptions();
-      const matchedSub = allSubs.find((s) => s.notes && s.notes.toUpperCase().includes(inputCode));
-      if (matchedSub) {
-        user2 = db.findUserById(matchedSub.userId);
-      }
-    }
-    let userSub = user2 ? db.getSubscriptionByUserId(user2.id) : null;
-    const isUserAssignedCode = Boolean(
-      userSub?.notes && userSub.notes.toUpperCase().includes(inputCode) || foundCode?.usedByStudents?.some((u) => u.studentId === user2?.id)
-    );
-    if (!foundCode && !isUserAssignedCode) {
-      return res.status(400).json({
-        error: "\u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D \u0623\u0648 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0623\u0643\u062F \u0645\u0646 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0633\u062A\u0644\u0645 \u0645\u0646 \u0627\u0644\u0625\u062F\u0627\u0631\u0629."
-      });
-    }
-    if (foundCode && foundCode.isActive === false) {
-      return res.status(400).json({ error: "\u062A\u0645 \u062A\u0639\u0637\u064A\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0647\u0630\u0627 \u0645\u0646 \u0642\u0628\u0644 \u0627\u0644\u0625\u062F\u0627\u0631\u0629." });
-    }
-    if (!user2) {
-      if (cleanPhone || rawPhone) {
-        const userId = `user-${Date.now()}-${crypto2.randomBytes(3).toString("hex")}`;
-        user2 = {
-          id: userId,
-          name: `\u0637\u0627\u0644\u0628 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629 (${(cleanPhone || rawPhone).slice(-4)})`,
-          phone: cleanPhone || rawPhone,
-          university: "\u0627\u0644\u062C\u0627\u0645\u0639\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A\u064A\u0629 \u0627\u0644\u062F\u0648\u0644\u064A\u0629 \u2013 \u0635\u0646\u0639\u0627\u0621",
-          studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
-          major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
-          passwordHash: bcrypt2.hashSync((cleanPhone || rawPhone).slice(-6) || "123456", 10),
-          role: "student",
-          createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-          lastLoginAt: (/* @__PURE__ */ new Date()).toISOString()
-        };
-        db.createUser(user2);
-      } else {
-        return res.status(400).json({
-          error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0631\u0642\u0645 \u0647\u0627\u062A\u0641\u0643 \u0645\u0639 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0644\u0631\u0628\u0637 \u062D\u0633\u0627\u0628\u0643 \u0648\u062A\u0623\u0643\u064A\u062F \u0647\u0648\u064A\u062A\u0643."
-        });
-      }
-    }
-    const codeDurationDays = foundCode ? foundCode.durationDays || 30 : 30;
-    const codePlan = foundCode?.planType === "yearly" ? "yearly" : "monthly";
-    const now = /* @__PURE__ */ new Date();
-    let activeSub;
-    let effectiveRemainingDays = codeDurationDays;
-    if (userSub && userSub.status === "active") {
-      const msLeft = new Date(userSub.expiryDate).getTime() - now.getTime();
-      if (msLeft > 0) {
-        activeSub = userSub;
-        effectiveRemainingDays = Math.max(0, Math.ceil(msLeft / (1e3 * 60 * 60 * 24)));
-      } else {
-        if (isUserAssignedCode && !foundCode?.isActive) {
-          return res.status(403).json({
-            error: `\u0627\u0646\u062A\u0647\u062A \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0628\u062A\u0627\u0631\u064A\u062E ${new Date(userSub.expiryDate).toLocaleDateString("ar-YE")}. \u064A\u0631\u062C\u0649 \u062A\u062C\u062F\u064A\u062F \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0648\u062A\u0641\u0639\u064A\u0644 \u0643\u0648\u062F \u062C\u062F\u064A\u062F.`
-          });
-        }
-        const expiryDate = new Date(now.getTime() + codeDurationDays * 24 * 60 * 60 * 1e3);
-        activeSub = {
-          ...userSub,
-          plan: codePlan,
-          status: "active",
-          startDate: now.toISOString(),
-          expiryDate: expiryDate.toISOString(),
-          activatedAt: now.toISOString(),
-          activationMethod: "activation_code",
-          notes: `\u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644: ${inputCode} - \u062A\u0645 \u062A\u062C\u062F\u064A\u062F \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0628\u0646\u062C\u0627\u062D`
-        };
-        db.createOrUpdateSubscription(activeSub);
-        effectiveRemainingDays = codeDurationDays;
-      }
-    } else {
-      const expiryDate = new Date(now.getTime() + codeDurationDays * 24 * 60 * 60 * 1e3);
-      activeSub = {
-        id: userSub?.id || `sub-${Date.now()}`,
-        userId: user2.id,
-        plan: codePlan,
-        status: "active",
-        startDate: now.toISOString(),
-        expiryDate: expiryDate.toISOString(),
-        createdAt: userSub?.createdAt || now.toISOString(),
-        activatedAt: now.toISOString(),
-        activationMethod: "activation_code",
-        notes: `\u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644: ${inputCode}`
-      };
-      db.createOrUpdateSubscription(activeSub);
-      effectiveRemainingDays = codeDurationDays;
-    }
-    if (foundCode) {
-      const usedRecords = foundCode.usedByStudents || [];
-      if (!usedRecords.some((u) => u.studentId === user2.id)) {
-        usedRecords.push({
-          studentId: user2.id,
-          studentName: user2.name,
-          usedAt: now.toISOString()
-        });
-        db.updateActivationCode(foundCode.id, {
-          timesUsed: (foundCode.timesUsed || 0) + 1,
-          usedByStudents: usedRecords
-        });
-      }
-    }
-    user2.lastLoginAt = now.toISOString();
-    db.updateUser(user2.id, { lastLoginAt: user2.lastLoginAt });
-    const token2 = generateAuthToken(user2);
-    const progress2 = db.getStudentProgress(user2.id);
-    return res.json({
-      success: true,
-      message: `\u0645\u0631\u062D\u0628\u064B\u0627 \u0628\u0643 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${user2.name}! \u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0646\u062C\u0627\u062D.`,
-      token: token2,
-      user: {
-        id: user2.id,
-        name: user2.name,
-        phone: user2.phone,
-        email: user2.email,
-        university: user2.university,
-        studyLevel: user2.studyLevel,
-        major: user2.major,
-        role: user2.role
-      },
-      subscription: {
-        ...activeSub,
-        remainingDays: effectiveRemainingDays,
-        isActivated: true,
-        isExpired: false
-      },
-      student: {
-        id: user2.id,
-        name: user2.name,
-        phone: user2.phone,
-        email: user2.email,
-        university: user2.university,
-        studyLevel: user2.studyLevel,
-        major: user2.major,
-        role: user2.role,
-        subscriptionPlan: activeSub.plan,
-        subscriptionStatus: "active",
-        subscriptionStartDate: activeSub.startDate,
-        subscriptionEndDate: activeSub.expiryDate,
-        remainingDays: effectiveRemainingDays,
-        isActivated: true,
-        isExpired: false,
-        completedLessons: progress2.completedLessons || [],
-        quizScores: progress2.quizScores || {}
-      }
+  const inputCode = (activationCode || code || "").toString().trim();
+  if (!rawPassword && inputCode) {
+    return res.status(400).json({
+      error: '\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u064A\u062A\u0645 \u0628\u0631\u0642\u0645 \u0647\u0627\u062A\u0641\u0643 \u0648\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062A\u064A \u0623\u0646\u0634\u0623\u062A\u0647\u0627 \u0641\u064A \u062D\u0633\u0627\u0628\u0643 \u0641\u0642\u0637. \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0645\u062E\u0635\u0635 \u0644\u062A\u0623\u0643\u064A\u062F \u0648\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0645\u0646 \u0646\u0627\u0641\u0630\u0629 "\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643".',
+      requirePassword: true
     });
   }
-  const user = cleanPhone ? db.findUserByPhone(cleanPhone) : rawPhone ? db.findUserByEmail(rawPhone) : void 0;
-  if (!user) {
-    return res.status(401).json({
-      error: "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u0628\u0647\u0630\u0627 \u0627\u0644\u0631\u0642\u0645. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0623\u0643\u062F \u0645\u0646 \u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 \u0623\u0648 \u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u062E\u0627\u0635 \u0628\u0643."
+  if (!rawPhone) {
+    return res.status(400).json({
+      error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 \u0627\u0644\u0645\u0633\u062C\u0644 \u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644."
     });
   }
   if (!rawPassword) {
     return res.status(400).json({
-      error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0623\u0648 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644."
+      error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u062D\u0633\u0627\u0628\u0643."
+    });
+  }
+  const cleanPhone = normalizePhone(rawPhone);
+  const user = cleanPhone ? db.findUserByPhone(cleanPhone) : db.findUserByEmail(rawPhone);
+  if (!user) {
+    return res.status(401).json({
+      error: "\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u0628\u0647\u0630\u0627 \u0627\u0644\u0631\u0642\u0645. \u064A\u0631\u062C\u0649 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u062C\u062F\u064A\u062F \u0648\u062A\u0639\u064A\u064A\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0623\u0648\u0644\u0627\u064B."
     });
   }
   const convertedPassword = convertArabicDigitsToEnglish(rawPassword);
-  let isValidPassword = bcrypt2.compareSync(rawPassword, user.passwordHash) || bcrypt2.compareSync(convertedPassword, user.passwordHash);
-  if (!isValidPassword) {
-    const userPhoneClean = normalizePhone(user.phone || "");
-    const userPhoneLast6 = userPhoneClean.slice(-6);
-    if (convertedPassword === userPhoneClean || convertedPassword === userPhoneLast6 || rawPassword === userPhoneClean || rawPassword === userPhoneLast6 || convertedPassword === "123456" || rawPassword === "123456") {
-      isValidPassword = true;
-      const newHash = bcrypt2.hashSync(convertedPassword || rawPassword, 10);
-      db.updateUserPassword(user.id, newHash);
-    }
-  }
+  const isValidPassword = bcrypt2.compareSync(rawPassword, user.passwordHash) || bcrypt2.compareSync(convertedPassword, user.passwordHash);
   if (!isValidPassword) {
     return res.status(401).json({
-      error: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0623\u0643\u062F \u0645\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0623\u0648 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644."
+      error: '\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629. \u0644\u0627 \u064A\u0645\u0643\u0646 \u0627\u0644\u062F\u062E\u0648\u0644 \u0625\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628 \u0625\u0644\u0627 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0647. \u064A\u0645\u0643\u0646\u0643 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u062E\u064A\u0627\u0631 "\u0646\u0633\u064A\u062A \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631\u061F" \u0644\u0627\u0633\u062A\u0639\u0627\u062F\u062A\u0647\u0627.'
     });
   }
   user.lastLoginAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -3934,6 +7741,12 @@ router.post("/auth/login", (req, res) => {
   const token = generateAuthToken(user);
   const { sub, remainingDays, remainingHours, isActivated, isExpired } = getSubscriptionDetails(user.id);
   const progress = db.getStudentProgress(user.id);
+  if (user.role === "student" && sub?.status === "suspended") {
+    return res.status(403).json({
+      error: "\u062A\u0645 \u0625\u064A\u0642\u0627\u0641 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0645\u0646 \u0642\u0628\u0644 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062F\u0639\u0645 \u0627\u0644\u0641\u0646\u064A."
+    });
+  }
+  const welcomeMessage = user.role === "student" && !isActivated ? `\u0645\u0631\u062D\u0628\u064B\u0627 \u0628\u0643 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${user.name}. \u062D\u0633\u0627\u0628\u0643 \u0645\u0633\u062C\u0644\u060C \u064A\u0645\u0643\u0646\u0643 \u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0644\u062A\u0623\u0643\u064A\u062F \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0648\u0628\u062F\u0621 \u0627\u0644\u062A\u0635\u0641\u062D.` : user.role === "student" && isExpired ? `\u0627\u0646\u062A\u0647\u062A \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${user.name}. \u064A\u0631\u062C\u0649 \u062A\u062C\u062F\u064A\u062F \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u0625\u0645\u0643\u0627\u0646\u064A\u0629 \u0627\u0644\u0648\u0635\u0648\u0644 \u0627\u0644\u0643\u0627\u0645\u0644.` : `\u0645\u0631\u062D\u0628\u064B\u0627 \u0628\u0643 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${user.name}! \u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0646\u062C\u0627\u062D.`;
   const studentObj = {
     id: user.id,
     name: user.name,
@@ -3956,7 +7769,7 @@ router.post("/auth/login", (req, res) => {
   };
   res.json({
     success: true,
-    message: `\u0645\u0631\u062D\u0628\u064B\u0627 \u0628\u0643 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${user.name}`,
+    message: welcomeMessage,
     token,
     user: {
       id: user.id,
@@ -4111,112 +7924,222 @@ router.get("/auth/me", requireAuth, (req, res) => {
     } : null
   });
 });
-router.post("/activate-code", requireAuth, (req, res) => {
-  const { code } = req.body;
+var codeActivationLock = /* @__PURE__ */ new Set();
+router.post("/activate-code", (req, res) => {
+  const { code, phone, password } = req.body;
   if (!code || typeof code !== "string") {
     return res.status(400).json({ error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0643\u0648\u0646 \u0645\u0646 \u0623\u0631\u0642\u0627\u0645 \u0623\u0648 \u062D\u0631\u0648\u0641." });
   }
   const cleanCode = code.trim().toUpperCase();
-  const codes = db.getAllActivationCodes();
-  const foundCode = codes.find((c) => c.code.trim().toUpperCase() === cleanCode);
-  if (!foundCode) {
-    return res.status(400).json({
-      error: "\u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D \u0623\u0648 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0645\u0631\u0633\u0644 \u0644\u0643 \u0645\u0646 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629."
-    });
+  if (codeActivationLock.has(cleanCode)) {
+    return res.status(409).json({ error: "\u062C\u0627\u0631\u064A \u0645\u0639\u0627\u0644\u062C\u0629 \u062A\u0641\u0639\u064A\u0644 \u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u062D\u0627\u0644\u064A\u0627\u064B. \u064A\u0631\u062C\u0649 \u0627\u0644\u0627\u0646\u062A\u0638\u0627\u0631 \u0644\u062D\u0638\u0627\u062A." });
   }
-  if (foundCode.isActive === false) {
-    return res.status(400).json({
-      error: "\u062A\u0645 \u062A\u0639\u0637\u064A\u0644 \u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0646 \u0642\u0628\u0644 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629."
-    });
-  }
-  if (foundCode.expiresAt && new Date(foundCode.expiresAt) < /* @__PURE__ */ new Date()) {
-    return res.status(400).json({
-      error: "\u0627\u0646\u062A\u0647\u062A \u0635\u0644\u0627\u062D\u064A\u0629 \u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F."
-    });
-  }
-  const alreadyUsedByStudent = foundCode.usedByStudents?.some((u) => u.studentId === req.user.id);
-  const userSub = db.getSubscriptionByUserId(req.user.id);
-  if (alreadyUsedByStudent && userSub && userSub.status === "active") {
-    const remainingMs = new Date(userSub.expiryDate).getTime() - Date.now();
-    if (remainingMs > 0) {
-      const remainingDays = Math.max(0, Math.ceil(remainingMs / (1e3 * 60 * 60 * 24)));
-      return res.json({
-        success: true,
-        message: `\u062D\u0633\u0627\u0628\u0643 \u0645\u0641\u0639\u0644 \u0645\u0633\u0628\u0642\u064B\u0627 \u0628\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0648\u0647\u0648 \u0646\u0634\u0637 \u062D\u0627\u0644\u064A\u064B\u0627 \u0648\u0635\u0627\u0644\u062D \u0644\u0645\u062F\u0629 ${remainingDays} \u064A\u0648\u0645 \u062D\u062A\u0649 ${new Date(userSub.expiryDate).toLocaleDateString("ar-YE")}.`,
-        subscription: {
-          ...userSub,
-          remainingDays,
-          isActivated: true,
-          isExpired: false
-        }
+  codeActivationLock.add(cleanCode);
+  try {
+    const codes = db.getAllActivationCodes();
+    const foundCode = codes.find((c) => c.code.trim().toUpperCase() === cleanCode);
+    if (!foundCode) {
+      return res.status(400).json({
+        error: "\u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D \u0623\u0648 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0623\u0643\u062F \u0645\u0646 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0633\u062A\u0644\u0645 \u0645\u0646 \u0627\u0644\u0625\u062F\u0627\u0631\u0629."
       });
     }
-  }
-  const maxUses = foundCode.maxUses || 100;
-  if (!alreadyUsedByStudent && (foundCode.timesUsed || 0) >= maxUses) {
-    return res.status(400).json({
-      error: "\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627 \u0628\u0627\u0644\u0643\u0627\u0645\u0644."
-    });
-  }
-  const durationDays = foundCode.durationDays || (foundCode.planType === "yearly" ? 365 : 30);
-  const now = /* @__PURE__ */ new Date();
-  const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1e3);
-  const updatedSub = {
-    id: `sub-${Date.now()}`,
-    userId: req.user.id,
-    plan: foundCode.planType === "yearly" ? "yearly" : "monthly",
-    status: "active",
-    startDate: now.toISOString(),
-    expiryDate: expiryDate.toISOString(),
-    createdAt: now.toISOString(),
-    activatedAt: now.toISOString(),
-    activationMethod: "activation_code",
-    notes: `\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0645\u0639\u062A\u0645\u062F ${cleanCode}`
-  };
-  db.createOrUpdateSubscription(updatedSub);
-  const updatedTimesUsed = (foundCode.timesUsed || 0) + 1;
-  const isNowUsed = updatedTimesUsed >= maxUses;
-  const usedRecords = foundCode.usedByStudents || [];
-  usedRecords.push({
-    studentId: req.user.id,
-    studentName: req.user.name,
-    usedAt: now.toISOString()
-  });
-  db.updateActivationCode(foundCode.id, {
-    timesUsed: updatedTimesUsed,
-    isUsed: isNowUsed,
-    usedByStudents: usedRecords
-  });
-  const progress = db.getStudentProgress(req.user.id);
-  res.json({
-    success: true,
-    message: `\u062A\u0647\u0627\u0646\u064A\u0646\u0627 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${req.user.name}! \u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0628\u0646\u062C\u0627\u062D \u0644\u0645\u062F\u0629 ${durationDays} \u064A\u0648\u0645\u064B\u0627.`,
-    subscription: {
-      ...updatedSub,
-      remainingDays: durationDays,
-      isActivated: true,
-      isExpired: false
-    },
-    student: {
-      id: req.user.id,
-      name: req.user.name,
-      phone: req.user.phone,
-      email: req.user.email,
-      university: req.user.university,
-      studyLevel: req.user.studyLevel,
-      major: req.user.major,
-      role: req.user.role,
-      subscriptionPlan: updatedSub.plan,
-      subscriptionStatus: updatedSub.status,
-      subscriptionStartDate: updatedSub.startDate,
-      subscriptionEndDate: updatedSub.expiryDate,
-      remainingDays: durationDays,
-      isActivated: true,
-      isExpired: false,
-      completedLessons: progress.completedLessons || [],
-      quizScores: progress.quizScores || {}
+    if (foundCode.status === "suspended" || foundCode.isActive === false) {
+      return res.status(400).json({
+        error: "\u062A\u0645 \u0625\u064A\u0642\u0627\u0641 \u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F/\u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0645\u0646 \u0642\u0628\u0644 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0623\u0643\u0627\u062F\u064A\u0645\u064A\u0629."
+      });
     }
-  });
+    const now = /* @__PURE__ */ new Date();
+    if (foundCode.status === "expired" || foundCode.expiresAt && new Date(foundCode.expiresAt) < now) {
+      return res.status(400).json({
+        error: "\u0627\u0646\u062A\u0647\u062A \u0635\u0644\u0627\u062D\u064A\u0629 \u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F."
+      });
+    }
+    let targetUser = req.user;
+    const cleanPhone = phone ? normalizePhone(phone) : targetUser?.phone ? normalizePhone(targetUser.phone) : "";
+    if (!targetUser) {
+      if (!cleanPhone) {
+        return res.status(400).json({
+          error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0631\u0642\u0645 \u0647\u0627\u062A\u0641\u0643 \u0627\u0644\u0645\u0633\u062C\u0644 \u0648\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0644\u0631\u0628\u0637 \u0648\u062A\u0623\u0643\u064A\u062F \u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0643\u0648\u062F \u0628\u062D\u0633\u0627\u0628\u0643.",
+          requirePhone: true,
+          requirePassword: true
+        });
+      }
+      targetUser = db.findUserByPhone(cleanPhone);
+      if (!targetUser) {
+        return res.status(400).json({
+          error: `\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u0628\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 (${cleanPhone}). \u064A\u0631\u062C\u0649 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u062C\u062F\u064A\u062F \u0623\u0648\u0644\u0627\u064B \u0648\u062A\u0639\u064A\u064A\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631\u060C \u062B\u0645 \u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0644\u062A\u0623\u0643\u064A\u062F \u0627\u0634\u062A\u0631\u0627\u0643\u0643.`,
+          requireRegister: true
+        });
+      }
+      if (!password) {
+        return res.status(400).json({
+          error: "\u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u062D\u0633\u0627\u0628\u0643 \u0644\u0644\u062A\u062D\u0642\u0642 \u0648\u062A\u0623\u0643\u064A\u062F \u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643.",
+          requirePassword: true
+        });
+      }
+      const convertedPassword = convertArabicDigitsToEnglish(password.toString().trim());
+      const isValidPass = bcrypt2.compareSync(password.toString().trim(), targetUser.passwordHash) || bcrypt2.compareSync(convertedPassword, targetUser.passwordHash);
+      if (!isValidPass) {
+        return res.status(401).json({
+          error: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629. \u064A\u0631\u062C\u0649 \u0625\u062F\u062E\u0627\u0644 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062A\u064A \u0623\u0646\u0634\u0623\u062A\u0647\u0627 \u0639\u0646\u062F \u062A\u0633\u062C\u064A\u0644 \u062D\u0633\u0627\u0628\u0643 \u0644\u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644."
+        });
+      }
+    }
+    const isCodeUsed = foundCode.status === "used" || foundCode.isUsed || foundCode.timesUsed && foundCode.timesUsed >= 1;
+    if (isCodeUsed) {
+      const boundPhone = foundCode.phone ? normalizePhone(foundCode.phone) : foundCode.usedByStudents?.[0]?.phone ? normalizePhone(foundCode.usedByStudents[0].phone) : "";
+      if (boundPhone && cleanPhone && boundPhone !== cleanPhone) {
+        return res.status(400).json({
+          error: "\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627 \u0648\u0645\u0631\u062A\u0628\u0637 \u0628\u0631\u0642\u0645 \u0647\u0627\u062A\u0641 \u0648\u062D\u0633\u0627\u0628 \u0637\u0627\u0644\u0628 \u0622\u062E\u0631."
+        });
+      }
+      if (boundPhone && cleanPhone && boundPhone === cleanPhone) {
+        const userSub2 = db.getSubscriptionByUserId(targetUser.id) || db.getSubscriptionByPhone(cleanPhone);
+        if (userSub2 && userSub2.status === "active") {
+          const remainingMs = new Date(userSub2.expiryDate).getTime() - now.getTime();
+          if (remainingMs > 0) {
+            const remainingDays = Math.max(0, Math.ceil(remainingMs / (1e3 * 60 * 60 * 24)));
+            const token2 = generateAuthToken(targetUser);
+            const progress2 = db.getStudentProgress(targetUser.id);
+            return res.json({
+              success: true,
+              message: `\u062D\u0633\u0627\u0628\u0643 \u0645\u0641\u0639\u0644 \u0645\u0633\u0628\u0642\u064B\u0627 \u0628\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0648\u0647\u0648 \u0646\u0634\u0637 \u062D\u0627\u0644\u064A\u064B\u0627 \u0648\u0635\u0627\u0644\u062D \u0644\u0645\u062F\u0629 ${remainingDays} \u064A\u0648\u0645 \u062D\u062A\u0649 ${new Date(userSub2.expiryDate).toLocaleDateString("ar-YE")}. \u064A\u0645\u0643\u0646\u0643 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0643 \u0641\u064A \u0623\u064A \u0648\u0642\u062A.`,
+              token: token2,
+              subscription: {
+                ...userSub2,
+                remainingDays,
+                isActivated: true,
+                isExpired: false
+              },
+              student: {
+                id: targetUser.id,
+                name: targetUser.name,
+                phone: targetUser.phone,
+                email: targetUser.email,
+                university: targetUser.university,
+                studyLevel: targetUser.studyLevel,
+                major: targetUser.major,
+                role: targetUser.role,
+                subscriptionPlan: userSub2.plan,
+                subscriptionStatus: "active",
+                subscriptionStartDate: userSub2.startDate,
+                subscriptionEndDate: userSub2.expiryDate,
+                remainingDays,
+                isActivated: true,
+                isExpired: false,
+                completedLessons: progress2.completedLessons || [],
+                quizScores: progress2.quizScores || {}
+              }
+            });
+          }
+        }
+      }
+      return res.status(400).json({
+        error: boundPhone ? "\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627 \u0648\u0645\u0631\u062A\u0628\u0637 \u0628\u062D\u0633\u0627\u0628 \u0637\u0627\u0644\u0628 \u0622\u062E\u0631." : "\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627."
+      });
+    }
+    if (!targetUser) {
+      return res.status(400).json({
+        error: `\u0644\u0645 \u064A\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u062D\u0633\u0627\u0628 \u0645\u0633\u062C\u0644 \u0628\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062A\u0641 (${cleanPhone}). \u064A\u0631\u062C\u0649 \u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628 \u0627\u0644\u0637\u0627\u0644\u0628 \u0623\u0648\u0644\u0627\u064B \u0648\u062A\u0639\u064A\u064A\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631\u060C \u062B\u0645 \u0625\u062F\u062E\u0627\u0644 \u0643\u0648\u062F \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0644\u062A\u0623\u0643\u064A\u062F \u0648\u062A\u0641\u0639\u064A\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0643.`,
+        requireRegister: true
+      });
+    }
+    let planType = "monthly";
+    let durationDays = 30;
+    let priceUSD = 20;
+    if (cleanCode.startsWith("AB-") || foundCode.type === "yearly" || foundCode.planType === "yearly") {
+      planType = "yearly";
+      durationDays = 365;
+      priceUSD = 200;
+    } else {
+      planType = "monthly";
+      durationDays = 30;
+      priceUSD = 20;
+    }
+    const expiryDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1e3);
+    db.updateActivationCode(foundCode.code, {
+      type: planType,
+      planType,
+      status: "used",
+      isUsed: true,
+      timesUsed: 1,
+      maxUses: 1,
+      phone: cleanPhone,
+      studentName: targetUser.name,
+      studentId: targetUser.id,
+      activatedAt: now.toISOString(),
+      expiresAt: expiryDate.toISOString(),
+      activatedBy: "student",
+      priceUSD,
+      usedByStudents: [
+        {
+          studentId: targetUser.id,
+          studentName: targetUser.name,
+          phone: cleanPhone,
+          usedAt: now.toISOString()
+        }
+      ]
+    });
+    const userSub = db.getSubscriptionByUserId(targetUser.id);
+    const updatedSub = {
+      id: userSub?.id || `sub-${Date.now()}`,
+      userId: targetUser.id,
+      studentId: targetUser.id,
+      phone: cleanPhone,
+      code: cleanCode,
+      type: planType,
+      plan: planType,
+      status: "active",
+      startDate: now.toISOString(),
+      expiryDate: expiryDate.toISOString(),
+      createdAt: userSub?.createdAt || now.toISOString(),
+      activatedAt: now.toISOString(),
+      activationMethod: "activation_code",
+      notes: `\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0639\u0628\u0631 \u0627\u0644\u0643\u0648\u062F \u0627\u0644\u0645\u0639\u062A\u0645\u062F ${cleanCode}`
+    };
+    db.createOrUpdateSubscription(updatedSub);
+    const requests = db.getAllRequests();
+    const userReq = requests.find((r) => r.phone === cleanPhone && r.status === "pending");
+    if (userReq) {
+      db.updateRequestStatus(userReq.id, "approved");
+    }
+    targetUser.lastLoginAt = now.toISOString();
+    db.updateUser(targetUser.id, { lastLoginAt: targetUser.lastLoginAt });
+    const token = generateAuthToken(targetUser);
+    const progress = db.getStudentProgress(targetUser.id);
+    return res.json({
+      success: true,
+      message: `\u062A\u0647\u0627\u0646\u064A\u0646\u0627 \u064A\u0627 \u0628\u0627\u0634\u0645\u0647\u0646\u062F\u0633 ${targetUser.name}! \u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0643 \u0628\u0646\u062C\u0627\u062D (${planType === "yearly" ? "\u0633\u0646\u0629 \u0643\u0627\u0645\u0644\u0629" : "30 \u064A\u0648\u0645\u064B\u0627"}). \u064A\u0645\u0643\u0646\u0643 \u0627\u0644\u0622\u0646 \u0627\u0644\u062A\u0635\u0641\u062D \u0641\u0648\u0631\u0627\u064B.`,
+      token,
+      subscription: {
+        ...updatedSub,
+        remainingDays: durationDays,
+        isActivated: true,
+        isExpired: false
+      },
+      student: {
+        id: targetUser.id,
+        name: targetUser.name,
+        phone: targetUser.phone,
+        email: targetUser.email,
+        university: targetUser.university,
+        studyLevel: targetUser.studyLevel,
+        major: targetUser.major,
+        role: targetUser.role,
+        subscriptionPlan: updatedSub.plan,
+        subscriptionStatus: "active",
+        subscriptionStartDate: updatedSub.startDate,
+        subscriptionEndDate: updatedSub.expiryDate,
+        remainingDays: durationDays,
+        isActivated: true,
+        isExpired: false,
+        completedLessons: progress.completedLessons || [],
+        quizScores: progress.quizScores || {}
+      }
+    });
+  } finally {
+    codeActivationLock.delete(cleanCode);
+  }
 });
 router.post("/subscription-request", (req, res) => {
   const { studentName, name, phone, university, studyLevel, major, plan, paymentMethod, transactionRef } = req.body;
@@ -4785,16 +8708,291 @@ router.get("/admin/codes", requireAuth, requireAdmin, (req, res) => {
   const codes = db.getAllActivationCodes();
   res.json({ codes });
 });
+router.get("/admin/subscription-codes", requireAuth, requireAdmin, (req, res) => {
+  const codes = db.getAllActivationCodes();
+  const subs = db.getAllSubscriptions();
+  const now = /* @__PURE__ */ new Date();
+  const totalCodes = codes.length;
+  const monthlyCodes = codes.filter((c) => c.type === "monthly" || c.code.toUpperCase().startsWith("AS-")).length;
+  const yearlyCodes = codes.filter((c) => c.type === "yearly" || c.code.toUpperCase().startsWith("AB-")).length;
+  const usedCodes = codes.filter((c) => c.status === "used" || c.isUsed).length;
+  const unusedCodes = codes.filter((c) => c.status === "unused" && !c.isUsed).length;
+  const suspendedCodes = codes.filter((c) => c.status === "suspended" || c.isActive === false).length;
+  const activeSubscriptions = subs.filter((s) => s.status === "active" && new Date(s.expiryDate) > now).length;
+  const expiredSubscriptions = subs.filter((s) => s.status === "expired" || s.status === "active" && new Date(s.expiryDate) <= now).length;
+  res.json({
+    codes,
+    stats: {
+      totalCodes,
+      monthlyCodes,
+      yearlyCodes,
+      usedCodes,
+      unusedCodes,
+      suspendedCodes,
+      activeSubscriptions,
+      expiredSubscriptions
+    }
+  });
+});
+router.post("/admin/subscription-codes/batch-create", requireAuth, requireAdmin, (req, res) => {
+  const { type, count } = req.body;
+  const planType = type === "yearly" ? "yearly" : "monthly";
+  const prefix = planType === "yearly" ? "AB-" : "AS-";
+  const durationDays = planType === "yearly" ? 365 : 30;
+  const priceUSD = planType === "yearly" ? 200 : 20;
+  const requestedCount = Math.min(Math.max(Number(count) || 1, 1), 500);
+  const existingCodes = new Set(db.getAllActivationCodes().map((c) => c.code.trim().toUpperCase()));
+  const newCodes = [];
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  while (newCodes.length < requestedCount) {
+    const randomDigits = Math.floor(1e3 + Math.random() * 9e3);
+    const generatedCode = `${prefix}${randomDigits}`;
+    if (!existingCodes.has(generatedCode)) {
+      existingCodes.add(generatedCode);
+      newCodes.push({
+        id: `code-${generatedCode.toLowerCase()}-${crypto2.randomBytes(2).toString("hex")}`,
+        code: generatedCode,
+        type: planType,
+        planType,
+        status: "unused",
+        durationDays,
+        priceUSD,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: now,
+        notes: `\u062A\u0645 \u0627\u0644\u0625\u0646\u0634\u0627\u0621 \u0645\u0646 \u0644\u0648\u062D\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629 (${planType === "yearly" ? "\u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0646\u0648\u064A" : "\u0627\u0634\u062A\u0631\u0627\u0643 \u0634\u0647\u0631\u064A"})`
+      });
+    }
+  }
+  db.batchCreateActivationCodes(newCodes);
+  res.json({
+    success: true,
+    message: `\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 ${newCodes.length} \u0643\u0648\u062F \u062C\u062F\u064A\u062F (${planType === "yearly" ? "\u0633\u0646\u0648\u064A AB-" : "\u0634\u0647\u0631\u064A AS-"}) \u0628\u0646\u062C\u0627\u062D!`,
+    createdCodes: newCodes
+  });
+});
+router.post("/admin/subscription-codes/manual-activate", requireAuth, requireAdmin, (req, res) => {
+  const { code, phone, studentName, type } = req.body;
+  const cleanPhone = normalizePhone(phone);
+  if (!cleanPhone) {
+    return res.status(400).json({ error: "\u0631\u0642\u0645 \u0647\u0627\u062A\u0641 \u0627\u0644\u0637\u0627\u0644\u0628 \u0645\u0637\u0644\u0648\u0628 \u0644\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u064A\u062F\u0648\u064A." });
+  }
+  const name = (studentName || "").toString().trim() || "\u0637\u0627\u0644\u0628 \u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633";
+  const now = /* @__PURE__ */ new Date();
+  let targetUser = db.findUserByPhone(cleanPhone);
+  if (!targetUser) {
+    const userId = `user-${Date.now()}-${crypto2.randomBytes(3).toString("hex")}`;
+    targetUser = {
+      id: userId,
+      name,
+      phone: cleanPhone,
+      university: "\u0627\u0644\u062C\u0627\u0645\u0639\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A\u064A\u0629 \u0627\u0644\u062F\u0648\u0644\u064A\u0629 \u2013 \u0635\u0646\u0639\u0627\u0621",
+      studyLevel: "\u0627\u0644\u0633\u0646\u0629 \u0627\u0644\u0623\u0648\u0644\u0649",
+      major: "\u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u0645\u064A\u0643\u0627\u062A\u0631\u0648\u0646\u0643\u0633",
+      passwordHash: bcrypt2.hashSync(cleanPhone.slice(-6) || "123456", 10),
+      role: "student",
+      createdAt: now.toISOString(),
+      lastLoginAt: now.toISOString()
+    };
+    db.createUser(targetUser);
+  } else if (studentName && targetUser.name !== studentName) {
+    db.updateUser(targetUser.id, { name: studentName });
+    targetUser.name = studentName;
+  }
+  let codeRecord;
+  let cleanCode = (code || "").toString().trim().toUpperCase();
+  if (cleanCode) {
+    codeRecord = db.findActivationCode(cleanCode);
+    if (codeRecord) {
+      const boundPhone = codeRecord.phone ? normalizePhone(codeRecord.phone) : codeRecord.usedByStudents?.[0]?.phone ? normalizePhone(codeRecord.usedByStudents[0].phone) : "";
+      if (boundPhone && boundPhone !== cleanPhone) {
+        return res.status(400).json({
+          error: "\u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062F \u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0628\u0642\u064B\u0627 \u0648\u0645\u0631\u062A\u0628\u0637 \u0628\u0631\u0642\u0645 \u0647\u0627\u062A\u0641 \u0622\u062E\u0631."
+        });
+      }
+    } else {
+      const isYearly = cleanCode.startsWith("AB-") || type === "yearly";
+      codeRecord = {
+        id: `code-${cleanCode.toLowerCase()}-${crypto2.randomBytes(2).toString("hex")}`,
+        code: cleanCode,
+        type: isYearly ? "yearly" : "monthly",
+        planType: isYearly ? "yearly" : "monthly",
+        status: "unused",
+        durationDays: isYearly ? 365 : 30,
+        priceUSD: isYearly ? 200 : 20,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: now.toISOString(),
+        notes: "\u0643\u0648\u062F \u062A\u0645 \u0625\u062F\u062E\u0627\u0644\u0647 \u064A\u062F\u0648\u064A\u064B\u0627 \u0645\u0646 \u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645"
+      };
+      db.createActivationCode(codeRecord);
+    }
+  } else {
+    const planType2 = type === "yearly" ? "yearly" : "monthly";
+    const prefix = planType2 === "yearly" ? "AB-" : "AS-";
+    const allCodes = db.getAllActivationCodes();
+    codeRecord = allCodes.find((c) => c.status === "unused" && !c.isUsed && (c.type === planType2 || c.code.startsWith(prefix)));
+    if (!codeRecord) {
+      const existingCodes = new Set(allCodes.map((c) => c.code.trim().toUpperCase()));
+      let gen = "";
+      while (!gen || existingCodes.has(gen)) {
+        gen = `${prefix}${Math.floor(1e3 + Math.random() * 9e3)}`;
+      }
+      cleanCode = gen;
+      codeRecord = {
+        id: `code-${gen.toLowerCase()}-${crypto2.randomBytes(2).toString("hex")}`,
+        code: gen,
+        type: planType2,
+        planType: planType2,
+        status: "unused",
+        durationDays: planType2 === "yearly" ? 365 : 30,
+        priceUSD: planType2 === "yearly" ? 200 : 20,
+        maxUses: 1,
+        timesUsed: 0,
+        isUsed: false,
+        isActive: true,
+        usedByStudents: [],
+        createdAt: now.toISOString(),
+        notes: "\u0643\u0648\u062F \u062A\u0645 \u062A\u0648\u0644\u064A\u062F\u0647 \u062A\u0644\u0642\u0627\u0626\u064A\u064B\u0627 \u0644\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u064A\u062F\u0648\u064A"
+      };
+      db.createActivationCode(codeRecord);
+    } else {
+      cleanCode = codeRecord.code;
+    }
+  }
+  const planType = cleanCode.startsWith("AB-") || codeRecord.type === "yearly" ? "yearly" : "monthly";
+  const durationDays = planType === "yearly" ? 365 : 30;
+  const priceUSD = planType === "yearly" ? 200 : 20;
+  const expiryDate = new Date(now.getTime() + durationDays * 864e5);
+  const updatedCode = db.updateActivationCode(codeRecord.code, {
+    type: planType,
+    planType,
+    status: "used",
+    isUsed: true,
+    timesUsed: 1,
+    maxUses: 1,
+    phone: cleanPhone,
+    studentName: targetUser.name,
+    studentId: targetUser.id,
+    activatedAt: now.toISOString(),
+    expiresAt: expiryDate.toISOString(),
+    activatedBy: "admin",
+    priceUSD,
+    isActive: true,
+    usedByStudents: [
+      {
+        studentId: targetUser.id,
+        studentName: targetUser.name,
+        phone: cleanPhone,
+        usedAt: now.toISOString()
+      }
+    ]
+  });
+  const userSub = db.getSubscriptionByUserId(targetUser.id);
+  const updatedSub = {
+    id: userSub?.id || `sub-${Date.now()}`,
+    userId: targetUser.id,
+    studentId: targetUser.id,
+    phone: cleanPhone,
+    code: cleanCode,
+    type: planType,
+    plan: planType,
+    status: "active",
+    startDate: now.toISOString(),
+    expiryDate: expiryDate.toISOString(),
+    createdAt: userSub?.createdAt || now.toISOString(),
+    activatedAt: now.toISOString(),
+    activationMethod: "manual",
+    notes: `\u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u064A\u062F\u0648\u064A \u0645\u0646 \u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645 \u0628\u0648\u0627\u0633\u0637\u0629 \u0627\u0644\u0645\u0627\u0644\u0643 (\u0643\u0648\u062F: ${cleanCode})`
+  };
+  db.createOrUpdateSubscription(updatedSub);
+  res.json({
+    success: true,
+    message: `\u062A\u0645 \u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0643\u0648\u062F "${cleanCode}" \u0648\u062D\u0633\u0627\u0628 \u0627\u0644\u0637\u0627\u0644\u0628 ${targetUser.name} \u0628\u0646\u062C\u0627\u062D!`,
+    code: updatedCode,
+    subscription: updatedSub,
+    student: targetUser
+  });
+});
+router.patch("/admin/subscription-codes/:codeIdentifier/status", requireAuth, requireAdmin, (req, res) => {
+  const { codeIdentifier } = req.params;
+  const { status } = req.body;
+  if (!["unused", "used", "suspended", "expired"].includes(status)) {
+    return res.status(400).json({ error: "\u062D\u0627\u0644\u0629 \u0627\u0644\u0643\u0648\u062F \u063A\u064A\u0631 \u0635\u0627\u0644\u062D\u0629." });
+  }
+  const codes = db.getAllActivationCodes();
+  const cleanId = codeIdentifier.trim().toUpperCase();
+  const target = codes.find((c) => c.code.trim().toUpperCase() === cleanId || c.id === codeIdentifier);
+  if (!target) return res.status(404).json({ error: "\u0627\u0644\u0643\u0648\u062F \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+  const updates = {
+    status
+  };
+  if (status === "suspended") {
+    updates.isActive = false;
+    if (target.studentId || target.phone) {
+      const userSub = target.studentId ? db.getSubscriptionByUserId(target.studentId) : db.getSubscriptionByPhone(target.phone);
+      if (userSub) {
+        userSub.status = "suspended";
+        db.createOrUpdateSubscription(userSub);
+      }
+    }
+  } else if (status === "used") {
+    updates.isActive = true;
+    updates.isUsed = true;
+    if (target.studentId || target.phone) {
+      const userSub = target.studentId ? db.getSubscriptionByUserId(target.studentId) : db.getSubscriptionByPhone(target.phone);
+      if (userSub) {
+        userSub.status = "active";
+        db.createOrUpdateSubscription(userSub);
+      }
+    }
+  } else if (status === "unused") {
+    updates.isActive = true;
+    updates.isUsed = false;
+    updates.timesUsed = 0;
+    updates.phone = void 0;
+    updates.studentName = void 0;
+    updates.studentId = void 0;
+    updates.activatedAt = void 0;
+    updates.expiresAt = void 0;
+    updates.usedByStudents = [];
+  } else if (status === "expired") {
+    if (target.studentId || target.phone) {
+      const userSub = target.studentId ? db.getSubscriptionByUserId(target.studentId) : db.getSubscriptionByPhone(target.phone);
+      if (userSub) {
+        userSub.status = "expired";
+        db.createOrUpdateSubscription(userSub);
+      }
+    }
+  }
+  const updated = db.updateActivationCode(target.code, updates);
+  res.json({
+    success: true,
+    message: `\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u062D\u0627\u0644\u0629 \u0627\u0644\u0643\u0648\u062F \u0625\u0644\u0649 "${status}" \u0628\u0646\u062C\u0627\u062D.`,
+    code: updated
+  });
+});
 router.post("/admin/codes", requireAuth, requireAdmin, (req, res) => {
   const { code: customCode, planType, durationDays, maxUses, expiresAt, notes } = req.body;
-  const generatedCode = customCode ? customCode.trim().toUpperCase() : "MCT-" + crypto2.randomInt(1e3, 9999);
-  const days = Number(durationDays) || (planType === "yearly" ? 365 : 30);
+  const type = planType === "yearly" ? "yearly" : "monthly";
+  const prefix = type === "yearly" ? "AB-" : "AS-";
+  const generatedCode = customCode ? customCode.trim().toUpperCase() : `${prefix}${Math.floor(1e3 + Math.random() * 9e3)}`;
+  const days = Number(durationDays) || (type === "yearly" ? 365 : 30);
   const max = Number(maxUses) || 1;
   const newCode = {
     id: `code-${Date.now()}-${crypto2.randomBytes(3).toString("hex")}`,
     code: generatedCode,
-    planType: planType === "yearly" ? "yearly" : "monthly",
+    type,
+    planType: type,
+    status: "unused",
     durationDays: days,
+    priceUSD: type === "yearly" ? 200 : 20,
     maxUses: max,
     timesUsed: 0,
     isUsed: false,
@@ -5165,6 +9363,20 @@ var handleExtendStudent = (req, res) => {
 };
 router.patch("/admin/students/:studentId/extend", requireAuth, requireAdmin, handleExtendStudent);
 router.post("/admin/students/:studentId/extend", requireAuth, requireAdmin, handleExtendStudent);
+router.get("/db/status", (req, res) => {
+  res.json({
+    success: true,
+    ...db.getStorageStatus()
+  });
+});
+router.post("/db/sync", requireAuth, requireAdmin, async (req, res) => {
+  const result = await db.syncFromCloud();
+  res.json({
+    success: result,
+    message: result ? "\u062A\u0645\u062A \u0645\u0632\u0627\u0645\u0646\u0629 \u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0633\u062D\u0627\u0628\u064A\u0629 \u0628\u0646\u062C\u0627\u062D" : "\u062A\u0639\u0630\u0631\u062A \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629 \u0623\u0648 \u0644\u0627 \u062A\u0648\u062C\u062F \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0633\u062D\u0627\u0628\u064A\u0629 \u0646\u0634\u0637\u0629",
+    status: db.getStorageStatus()
+  });
+});
 router.get("/admin/settings", (req, res) => {
   const settings = db.getSettings();
   res.json(settings);
