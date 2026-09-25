@@ -63,91 +63,75 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 sm:w-96 sm:h-96 bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-3xl -z-10 pointer-events-none" />
         <div className="absolute top-20 left-1/4 w-48 h-48 bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-2xl -z-10 pointer-events-none" />
 
-        {/* Top Badges Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          {/* Main Academic Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50/90 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-bold shadow-xs backdrop-blur-md">
-            <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        {/* Top Academic Badge */}
+        <div className="flex items-center justify-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/90 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-bold shadow-xs backdrop-blur-md">
+            <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             <span>المنصة الأولى لطلاب السنة الأولى هندسة ميكاترونكس باليمن</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           </div>
-
-          {/* PWA Direct Install Button */}
-          <PWAInstallButton variant="button" />
-
-          {/* Owner Quick Access Icon Button */}
-          {onOpenAdmin && (
-            <button
-              onClick={onOpenAdmin}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-100/80 dark:bg-indigo-950/80 border border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold hover:bg-indigo-200 transition-all cursor-pointer shadow-xs"
-              title="لوحة تحكم المالك / الإدارة"
-            >
-              <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>لوحة المالك</span>
-            </button>
-          )}
         </div>
 
         {/* Hero Central Branding */}
-        <div className="space-y-4 max-w-3xl mx-auto">
+        <div className="space-y-4 max-w-3xl mx-auto px-2">
           {/* Official Emblem Logo */}
-          <div className="flex justify-center my-2">
-            <AcademyLogo variant="badge" size="xl" showSubtitle={false} className="shadow-2xl shadow-blue-500/15 hover:scale-105 transition-transform border-2 border-blue-200/80 dark:border-blue-800/80" />
+          <div className="flex justify-center my-1 sm:my-2">
+            <AcademyLogo variant="badge" size="lg" showSubtitle={false} className="shadow-xl shadow-blue-500/10 hover:scale-105 transition-transform border-2 border-blue-200/80 dark:border-blue-800/80 max-w-[220px] sm:max-w-xs py-3 px-5 sm:py-4 sm:px-8" />
           </div>
 
-          <div className="inline-block px-4 py-1.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60 text-blue-700 dark:text-blue-300 font-extrabold text-base sm:text-xl border border-blue-200/80 dark:border-blue-800/80 shadow-xs">
+          <div className="inline-block px-4 py-1.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60 text-blue-700 dark:text-blue-300 font-extrabold text-sm sm:text-lg border border-blue-200/80 dark:border-blue-800/80 shadow-xs">
             ⚡ "تعلم الميكاترونكس بطريقة أسهل"
           </div>
 
-          <p className="text-sm sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-            تغطية شاسعة وشاملة لكل ما يحتاجه طالب السنة الأولى: شروحات مبسطة، محاكيات تفاعلية للدوائر والروبوتات، حاسبات أبعاد وقوانين، ومساعد ذكاء اصطناعي أكاديمي مخصص لمنهج الجامعة الإماراتية الدولية وبقية الجامعات اليمنية.
+          <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-medium max-w-2xl mx-auto">
+            تغطية شاملة لكل ما يحتاجه طالب السنة الأولى: شروحات مبسطة، محاكيات تفاعلية للدوائر والروبوتات، حاسبات أبعاد وقوانين، ومساعد ذكاء اصطناعي أكاديمي مخصص لمنهج الجامعة الإماراتية الدولية وبقية الجامعات اليمنية.
           </p>
         </div>
 
         {/* Primary Call to Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2 max-w-md mx-auto sm:max-w-none">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3.5 pt-2 max-w-md sm:max-w-2xl mx-auto w-full px-2 sm:px-0">
           <button
             onClick={onRegister}
-            className="w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-base shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer group"
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-extrabold text-sm sm:text-base shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all cursor-pointer group"
           >
-            <UserPlus className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            <UserPlus className="w-5 h-5 shrink-0 group-hover:rotate-12 transition-transform" />
             <span>اشترك الآن</span>
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="w-4 h-4 shrink-0 group-hover:-translate-x-1 transition-transform" />
           </button>
 
           {onOpenActivation && (
             <button
               onClick={onOpenActivation}
-              className="w-full sm:w-auto min-w-[190px] flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-2 border-amber-300 dark:border-amber-700 font-extrabold text-base transition-all cursor-pointer shadow-xs hover:scale-[1.02] active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-2 border-amber-300 dark:border-amber-700 font-extrabold text-sm sm:text-base transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
-              <KeyRound className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <KeyRound className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <span>تفعيل كود الاشتراك</span>
             </button>
           )}
 
           <button
             onClick={onLogin}
-            className="w-full sm:w-auto min-w-[170px] flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-white border-2 border-slate-200 dark:border-slate-800 font-extrabold text-base transition-all cursor-pointer shadow-xs hover:border-blue-400 dark:hover:border-blue-600"
+            className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-white border-2 border-slate-200 dark:border-slate-800 font-extrabold text-sm sm:text-base transition-all cursor-pointer shadow-xs hover:border-blue-400 dark:hover:border-blue-600 active:scale-[0.98]"
           >
-            <LogIn className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <LogIn className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
             <span>تسجيل الدخول</span>
           </button>
         </div>
 
         {/* Quick Stats Highlights */}
-        <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto">
+        <div className="pt-4 sm:pt-6 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 max-w-4xl mx-auto px-1">
           {[
             { label: 'المقررات الهندسية', value: '6 مواد كاملة', icon: BookOpen, color: 'text-blue-600 dark:text-blue-400' },
-            { label: 'المنااهج المعتمدة', value: 'الإماراتية الدولية', icon: ShieldCheck, color: 'text-indigo-600 dark:text-indigo-400' },
+            { label: 'المناهج المعتمدة', value: 'الإماراتية الدولية', icon: ShieldCheck, color: 'text-indigo-600 dark:text-indigo-400' },
             { label: 'المختبر الافتراضي', value: 'Arduino & Circuits', icon: Bot, color: 'text-cyan-600 dark:text-cyan-400' },
             { label: 'الذكاء الاصطناعي', value: '24/7 مساعد طالب', icon: Sparkles, color: 'text-amber-500' },
           ].map((stat, i) => (
-            <div key={i} className="p-3.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md text-right space-y-1">
-              <div className="flex items-center gap-2">
-                <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">{stat.label}</span>
+            <div key={i} className="p-3 sm:p-3.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md text-right space-y-1 shadow-2xs">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <stat.icon className={`w-4 h-4 shrink-0 ${stat.color}`} />
+                <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-bold truncate">{stat.label}</span>
               </div>
-              <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white">{stat.value}</p>
+              <p className="text-xs sm:text-base font-black text-slate-900 dark:text-white truncate">{stat.value}</p>
             </div>
           ))}
         </div>

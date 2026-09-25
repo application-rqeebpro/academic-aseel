@@ -75,7 +75,7 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
   return (
     <div 
       onClick={onClick}
-      className={`flex items-center gap-3 select-none ${onClick ? 'cursor-pointer group' : ''} ${className}`}
+      className={`flex items-center gap-2 sm:gap-3 select-none shrink-0 min-w-0 ${onClick ? 'cursor-pointer group' : ''} ${className}`}
     >
       <div className="relative shrink-0">
         <img 
@@ -85,17 +85,18 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
           referrerPolicy="no-referrer"
         />
       </div>
-      <div className="flex flex-col justify-center">
-        <div className="flex items-center gap-2">
-          <span className={`font-black text-slate-900 dark:text-white tracking-tight leading-tight ${titleSizeClasses[size]}`}>
-            أكاديمية <span className="text-blue-600 dark:text-blue-400">الميكاترونكس</span> اليمنية
+      <div className="flex flex-col justify-center min-w-0">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className={`font-black text-slate-900 dark:text-white tracking-tight leading-tight whitespace-nowrap ${titleSizeClasses[size]}`}>
+            أكاديمية <span className="text-blue-600 dark:text-blue-400">الميكاترونكس</span>
+            <span className="hidden xs:inline"> اليمنية</span>
           </span>
-          <span className="hidden sm:inline-flex px-2 py-0.5 text-[11px] font-extrabold rounded-md bg-blue-100 dark:bg-blue-950/90 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
+          <span className="hidden md:inline-flex px-2 py-0.5 text-[11px] font-extrabold rounded-md bg-blue-100 dark:bg-blue-950/90 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
             السنة الأولى
           </span>
         </div>
         {showSubtitle && (
-          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold hidden xs:block mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold hidden sm:block mt-0.5 whitespace-nowrap">
             تعلم الميكاترونكس بطريقة أسهل
           </p>
         )}
