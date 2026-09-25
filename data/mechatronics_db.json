@@ -11,7 +11,7 @@
       "studyLevel": "السنة الأولى",
       "university": "أكاديمية الميكاترونكس اليمنية",
       "lastLoginAt": "2026-09-24T20:39:37.933Z",
-      "passwordHash": "$2b$10$IbI/MXrFtrkuagIZ7kyH8ORMkhW7MU4/JPVVneiS6mFjsihLIGi5C"
+      "passwordHash": "$2b$10$f/NZtxadHyCdvNO2F6ceMuu.ajxflv5fJ2GZY1BTS.Qx/KneMYGmK"
     },
     {
       "id": "user-1789594875928-4b554003",
@@ -169,6 +169,18 @@
       "university": "الجامعة الإماراتية الدولية – صنعاء",
       "lastLoginAt": "2026-09-24T20:39:37.961Z",
       "passwordHash": "$2b$10$jSERSqJPc6pIocTzxyaUzuEQHmd9jrawr5GH62AMIrCsvtenSbrtW"
+    },
+    {
+      "id": "user-1790283854507-a78e53f5",
+      "name": "Mohammad farag",
+      "role": "student",
+      "major": "هندسة الميكاترونكس",
+      "phone": "733957565",
+      "createdAt": "2026-09-24T21:04:14.620Z",
+      "studyLevel": "السنة الأولى",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "lastLoginAt": "2026-09-25T14:05:23.872Z",
+      "passwordHash": "$2b$10$aUinb5nUm7pZO.USdDmJXuNxryMT7syxM5v7H6lcJ4uogHrYHIy6K"
     }
   ],
   "settings": {
@@ -366,10 +378,256 @@
       "expiryDate": "2026-10-24T20:39:37.961Z",
       "activatedAt": "2026-09-24T20:39:37.961Z",
       "activationMethod": "manual"
+    },
+    {
+      "id": "sub-1790345063896",
+      "plan": "monthly",
+      "notes": "كود التفعيل: AS-4692 - تمت الموافقة وتأكيد الاشتراك من لوحة التحكم للطلب req-1790283860389-f9890e",
+      "status": "active",
+      "userId": "user-1790283854507-a78e53f5",
+      "createdAt": "2026-09-25T14:04:23.895Z",
+      "startDate": "2026-09-25T14:04:23.895Z",
+      "expiryDate": "2026-10-25T14:04:23.895Z",
+      "activatedAt": "2026-09-25T14:04:23.895Z",
+      "activationMethod": "activation_code"
     }
   ],
-  "studentLessons": [],
+  "studentLessons": [
+    {
+      "id": "expl-1790345316117-7enh9",
+      "quiz": [
+        {
+          "id": "q1",
+          "type": "mcq",
+          "options": [
+            "فولت",
+            "أمبير",
+            "أوم",
+            "وات"
+          ],
+          "question": "ما هي وحدة قياس المقاومة الكهربائية؟",
+          "explanation": "الأوم هو الوحدة الدولية لقياس المقاومة.",
+          "correctAnswer": "أوم"
+        }
+      ],
+      "terms": [
+        {
+          "term": "المقاومة",
+          "meaning": "مدى إعاقة المادة لمرور التيار الكهربائي.",
+          "englishTerm": "Resistance",
+          "isAdditionalNote": false,
+          "practicalAnalogy": "مثل ضيق أنبوب الماء الذي يقلل من سرعة تدفق الماء."
+        }
+      ],
+      "units": [
+        {
+          "notes": "1 V = 1 J/C",
+          "quantity": "الجهد الكهربائي",
+          "unitName": "فولت",
+          "unitSymbol": "V"
+        }
+      ],
+      "savedAt": "2026-09-25T14:08:37.477Z",
+      "fileName": "دوائر كهربائية أ. محمد الحبابي محاضره 5.pdf",
+      "formulas": [
+        {
+          "meaning": "قانون أوم: الجهد يساوي التيار مضروباً في المقاومة.",
+          "symbols": [
+            {
+              "name": "الجهد",
+              "unit": "Volt (V)",
+              "symbol": "V",
+              "dimension": "[V] = M L^2 T^-3 I^-1"
+            },
+            {
+              "name": "التيار",
+              "unit": "Ampere (A)",
+              "symbol": "I",
+              "dimension": "I"
+            },
+            {
+              "name": "المقاومة",
+              "unit": "Ohm (Ω)",
+              "symbol": "R",
+              "dimension": "[R] = M L^2 T^-3 I^-2"
+            }
+          ],
+          "equation": "V = I × R",
+          "whenToUse": "عند الرغبة في إيجاد قيمة الجهد أو التيار أو المقاومة في جزء من الدائرة."
+        }
+      ],
+      "createdAt": "2026-09-25T14:08:36.117Z",
+      "modelUsed": "gemini-3.1-flash-lite",
+      "studentId": "user-1790283854507-a78e53f5",
+      "dimensions": [
+        {
+          "formula": "R = V/I",
+          "quantity": "المقاومة",
+          "explanation": "تعتمد على الكتلة والطول والزمن وشدة التيار.",
+          "dimensionStr": "[R] = M L^2 T^-3 I^-2"
+        }
+      ],
+      "memoryAids": [
+        "🧠 كيف أتذكر الدرس: قانون أوم هو مثلث (V فوق، I و R تحت). إذا أردت V غطِّها، يتبقى I×R."
+      ],
+      "simpleIdea": "💡 الدرس ببساطة: نتعلم كيف نحلل الدوائر الكهربائية المعقدة باستخدام قوانين كيرشوف (KVL) وقانون أوم. تخيل الدائرة الكهربائية كشبكة طرق في مدينة؛ الجهد هو ضغط الماء أو الوقود، والتيار هو حركة السيارات. نحن ندرس كيف يتوزع هذا الضغط (الجهد) عبر المقاومات (التي تعيق الحركة) لنضمن عمل الروبوتات والمحركات بكفاءة.",
+      "sourceType": "pdf",
+      "lessonTitle": "تحليل الدوائر الكهربائية: قوانين كيرشوف وتطبيقات المقاومات",
+      "subjectName": "دوائر كهربائية 1",
+      "coreTakeaways": [
+        "🎯 قانون كيرشوف للجهد (KVL): مجموع الجهود في أي مسار مغلق يساوي صفراً.",
+        "🎯 قانون أوم (V=IR): العلاقة الأساسية بين الجهد والتيار والمقاومة.",
+        "🎯 مقسم الجهد: طريقة لتوزيع الجهد على عدة مقاومات متصلة على التوالي.",
+        "🎯 تحليل العقد والمسارات: تحديد قيم الجهد عند نقاط مختلفة في الدائرة."
+      ],
+      "isAiGenerated": true,
+      "isImageBlurry": false,
+      "pdfPageChoice": {
+        "mode": "full"
+      },
+      "solvedExample": {
+        "note": "⚠️ انتبه دائماً لتحويل الملي أمبير إلى أمبير.",
+        "unit": "Ω",
+        "given": [
+          "V_R3 = 12 V",
+          "I = 16 mA = 0.016 A"
+        ],
+        "steps": [
+          "الخطوة 1: تحويل التيار من mA إلى A: 16 / 1000 = 0.016 A",
+          "الخطوة 2: التعويض في القانون: R3 = 12 / 0.016",
+          "الخطوة 3: إجراء القسمة"
+        ],
+        "problem": "حساب قيمة المقاومة R3 في دائرة تحتوي على مصادر جهد ومقاومات معلومة.",
+        "required": "حساب قيمة المقاومة R3",
+        "subParts": [
+          {
+            "unit": "Ω",
+            "given": [
+              "V = 36 V",
+              "I = 0.016 A"
+            ],
+            "steps": [
+              "36 / 0.016"
+            ],
+            "question": "احسب R2 إذا كان الجهد 36 فولت والتيار 16 مللي أمبير",
+            "required": "R2",
+            "partLabel": "حساب R2",
+            "calculation": "2250",
+            "finalAnswer": "2.25 kΩ",
+            "formulaUsed": "R = V / I",
+            "finalAnalysis": "التحليل النهائي: المقاومة الأكبر تأخذ جهداً أكبر.",
+            "whyThisResult": "توزيع الجهد يعتمد على قيمة المقاومة."
+          }
+        ],
+        "mcqOptions": [],
+        "calculation": "12 / 0.016 = 750",
+        "finalAnswer": "R3 = 0.75 kΩ",
+        "formulaUsed": "R = V / I",
+        "isGenerated": false,
+        "finalAnalysis": "🔬 التحليل الهندسي النهائي: هذه القيمة ضرورية لضبط التيار في الدوائر الإلكترونية الحساسة.",
+        "isMcqQuestion": false,
+        "whyThisResult": "المقاومة هي النسبة بين الجهد المطبق والتيار المار.",
+        "selectedOption": "",
+        "isMultipleParts": true,
+        "optionReasoning": ""
+      },
+      "summaryPoints": [
+        "📝 الخلاصة: تحليل الدوائر يعتمد على قانون أوم وقوانين كيرشوف. تأكد من توحيد الوحدات، واتجاهات التيارات، وقطبية الجهود."
+      ],
+      "commonMistakes": [
+        {
+          "why": "لأن القوانين الفيزيائية مصممة للتعامل مع الوحدات الأساسية (SI).",
+          "mistake": "نسيان تحويل الملي أمبير (mA) إلى أمبير (A).",
+          "correction": "اقسم دائماً على 1000 قبل التعويض في القانون."
+        }
+      ],
+      "importantNotes": [
+        {
+          "note": "⚠️ ملاحظة هامة: دائماً ابدأ بتحويل الوحدات (kΩ إلى Ω، mA إلى A) قبل البدء بأي حسابات.",
+          "type": "warning",
+          "isAdditionalNote": false
+        }
+      ],
+      "suggestedTools": [
+        {
+          "icon": "circuits",
+          "title": "مختبر الدوائر الكهربائية",
+          "reason": "لتجربة القوانين عملياً ومحاكاة التوصيل",
+          "toolId": "circuits",
+          "subtitle": "محاكاة التوصيل وقوانين كيرشوف وأوم"
+        }
+      ],
+      "circuitAnalysis": {
+        "components": [
+          "Resistors",
+          "Voltage Sources"
+        ],
+        "hasCircuit": true,
+        "circuitType": "Series Circuit",
+        "analysisSummary": "تعتمد الدوائر الموضحة على تقسيم الجهد عبر مقاومات متصلة على التوالي."
+      },
+      "imagesBreakdown": [
+        {
+          "summary": "شرح كيفية إيجاد المقاومة من الرسم البياني للتيار والجهد.",
+          "imageIndex": 1,
+          "imageTitle": "📸 الصورة 1: تحليل الرسم البياني والميل",
+          "keyTakeaways": [
+            "الميل = 1/R"
+          ],
+          "extractedContent": "Slope = (y2-y1)/(x2-x1) = I/V = 1/R",
+          "detailedExplanation": "الميل في رسم التيار مقابل الجهد يمثل مقلوب المقاومة.",
+          "solvedProblemsInImage": [
+            "إيجاد R من الميل"
+          ]
+        }
+      ],
+      "explanationLevel": "simple",
+      "isNotEducational": false,
+      "totalImagesCount": 1,
+      "learningObjectives": [
+        "✓ فهم كيفية تطبيق قانون أوم في الدوائر.",
+        "✓ القدرة على استخدام قانون كيرشوف للجهد.",
+        "✓ التمكن من تحويل الوحدات الكهربائية.",
+        "✓ حل مسائل توزيع الجهد في الدوائر المتوالية."
+      ],
+      "studySheetMarkdown": "# ورقة مذاكرة: دوائر كهربائية\n\n## القوانين الأساسية\n- **قانون أوم:** V = I × R\n- **قانون كيرشوف للجهد:** ΣV = 0\n\n## تحويلات هامة\n- 1 kΩ = 1000 Ω\n- 1 mA = 0.001 A\n\n## نصيحة ذهبية\nدائماً ارسم الدائرة وحدد اتجاه التيار قبل البدء بالحل.",
+      "videoSupportNotice": "",
+      "clarificationNotice": "",
+      "conceptExplanations": [
+        {
+          "concept": "قانون كيرشوف للجهد (KVL)",
+          "isAdditionalNote": false,
+          "practicalAnalogy": "مثل ميزانية رحلة؛ المال الذي تملكه (البطارية) يجب أن ينفق بالكامل على تكاليف الطريق (المقاومات).",
+          "scientificDefinition": "مجموع فروق الجهد حول أي مسار مغلق في الدائرة الكهربائية يساوي صفراً.",
+          "simplifiedExplanation": "في أي حلقة مغلقة، الطاقة التي تعطيها البطارية يجب أن تستهلكها المقاومات بالكامل."
+        }
+      ],
+      "notEducationalNotice": ""
+    }
+  ],
   "activationCodes": [
+    {
+      "id": "code-1790345063895-5b1c",
+      "code": "AS-4692",
+      "notes": "تم التوليد التلقائي لطلب الاشتراك المقبول برقم: req-1790283860389-f9890e",
+      "isUsed": true,
+      "maxUses": 100,
+      "isActive": true,
+      "planType": "monthly",
+      "createdAt": "2026-09-25T14:04:23.895Z",
+      "timesUsed": 0,
+      "durationDays": 30,
+      "usedByStudents": [
+        {
+          "usedAt": "2026-09-25T14:04:23.895Z",
+          "studentId": "user-1790283854507-a78e53f5",
+          "studentName": "Mohammad farag"
+        }
+      ],
+      "type": "monthly",
+      "priceUSD": 20,
+      "status": "used"
+    },
     {
       "id": "code-1790172998599-80df",
       "code": "MCT-8269",
@@ -3876,10 +4134,31 @@
       "savedProjects": [],
       "completedLessons": [],
       "simulatorSettings": {}
+    },
+    "user-1790283854507-a78e53f5": {
+      "studentId": "user-1790283854507-a78e53f5",
+      "updatedAt": "2026-09-25T14:03:18.822Z",
+      "quizScores": {},
+      "lessonNotes": {},
+      "savedProjects": [],
+      "completedLessons": [],
+      "simulatorSettings": {}
     }
   },
   "passwordResetTokens": [],
   "subscriptionRequests": [
+    {
+      "id": "req-1790283860389-f9890e",
+      "plan": "monthly",
+      "notes": "هندسة الميكاترونكس - السنة الأولى - طريقة الدفع: كريمي",
+      "phone": "733957565",
+      "status": "approved",
+      "userId": "user-1790283854507-a78e53f5",
+      "priceUSD": 20,
+      "createdAt": "2026-09-24T21:04:20.389Z",
+      "university": "الجامعة الإماراتية الدولية – صنعاء",
+      "studentName": "Mohammad farag"
+    },
     {
       "id": "req-1790281032222-7b422a",
       "plan": "monthly",

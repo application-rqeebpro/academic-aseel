@@ -1,4 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
+import fs from 'fs';
+import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -192,13 +194,36 @@ app.use(authenticateToken);
 // Setup an API router so routes work both on /api/... and /...
 const router = express.Router();
 
-// Root API Endpoint
-router.get('/', (req, res) => {
+// API Info Endpoint
+router.get('/info', (req, res) => {
   res.json({
     status: 'ok',
     platform: 'أكاديمية الميكاترونكس اليمنية',
     version: '1.0.0',
     time: new Date().toISOString(),
+  });
+});
+
+// Direct APK Download Endpoint
+router.get('/download/apk', (req, res) => {
+  const possiblePaths = [
+    path.join(process.cwd(), 'public', 'downloads', 'mechatronics-academy.apk'),
+    path.join(process.cwd(), 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
+    path.join(process.cwd(), 'releases', 'apk', 'mechatronics-academy.apk'),
+  ];
+
+  for (const apkPath of possiblePaths) {
+    if (fs.existsSync(apkPath)) {
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      return res.download(apkPath, 'Mechatronics_Academy_Yemen.apk');
+    }
+  }
+
+  // If APK is not yet present, return helpful JSON with direct guidance
+  return res.status(200).json({
+    success: false,
+    message: 'جاري تجهيز حزمة التطبيق المباشرة. يمكنك تثبيت التطبيق فورياً عبر زر "تثبيت التطبيق" في أعلى الموقع بدون انتظار، أو تحميل الحزمة بمجرد اكتمال تجميعها.',
+    directInstall: true,
   });
 });
 
@@ -2608,8 +2633,13 @@ router.post('/admin/settings', requireAuth, requireAdmin, (req, res) => {
   res.json({ success: true, settings: updated });
 });
 
-// Mount router on both /api and root / so all rewrites match seamlessly
+// Mount router on /api and root fallback for serverless platforms like Vercel
 app.use('/api', router);
 app.use('/', router);
+
+// Convenience redirect for /download/apk
+app.get('/download/apk', (req, res) => {
+  res.redirect('/api/download/apk');
+});
 
 export default app;
