@@ -404,10 +404,10 @@ export const ArduinoSimulatorView: React.FC = () => {
         </div>
 
         {/* Mode Selector Tabs */}
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto scrollbar-none max-w-full">
           <button
             onClick={() => setActiveMode('sandbox')}
-            className={`px-3 py-1.5 rounded-lg transition-all font-semibold ${
+            className={`px-3 py-1.5 rounded-lg transition-all font-semibold whitespace-nowrap cursor-pointer ${
               activeMode === 'sandbox' ? 'bg-cyan-500 text-black shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -415,7 +415,7 @@ export const ArduinoSimulatorView: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveMode('guided')}
-            className={`px-3 py-1.5 rounded-lg transition-all font-semibold ${
+            className={`px-3 py-1.5 rounded-lg transition-all font-semibold whitespace-nowrap cursor-pointer ${
               activeMode === 'guided' ? 'bg-cyan-500 text-black shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -423,7 +423,7 @@ export const ArduinoSimulatorView: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveMode('quiz')}
-            className={`px-3 py-1.5 rounded-lg transition-all font-semibold ${
+            className={`px-3 py-1.5 rounded-lg transition-all font-semibold whitespace-nowrap cursor-pointer ${
               activeMode === 'quiz' ? 'bg-cyan-500 text-black shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -431,7 +431,7 @@ export const ArduinoSimulatorView: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveMode('experiments')}
-            className={`px-3 py-1.5 rounded-lg transition-all font-semibold ${
+            className={`px-3 py-1.5 rounded-lg transition-all font-semibold whitespace-nowrap cursor-pointer ${
               activeMode === 'experiments' ? 'bg-cyan-500 text-black shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >

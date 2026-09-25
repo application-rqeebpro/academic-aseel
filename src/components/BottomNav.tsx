@@ -11,6 +11,7 @@ import {
 
 export type TabType = 
   | 'dashboard' 
+  | 'learning-path'
   | 'explain'
   | 'assignments'
   | 'arduino'
@@ -46,7 +47,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab }) 
             <button
               key={item.id}
               onClick={() => onSelectTab(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 transition-all relative ${
+              className={`flex flex-col items-center justify-center gap-1 transition-all relative py-1 cursor-pointer select-none active:scale-95 ${
                 isActive
                   ? 'text-blue-600 dark:text-blue-400 font-bold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'

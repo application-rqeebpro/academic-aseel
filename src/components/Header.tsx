@@ -18,7 +18,8 @@ import {
   Camera,
   GraduationCap,
   Bot,
-  Smartphone
+  Smartphone,
+  Compass
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -30,6 +31,7 @@ interface HeaderProps {
   onOpenExplainLesson?: () => void;
   onOpenAssignments?: () => void;
   onOpenArduino?: () => void;
+  onOpenLearningPath?: () => void;
   onOpenLogin: () => void;
   onOpenRegister: () => void;
   onOpenActivation?: () => void;
@@ -47,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExplainLesson,
   onOpenAssignments,
   onOpenArduino,
+  onOpenLearningPath,
   onOpenLogin,
   onOpenRegister,
   onOpenActivation,
@@ -111,6 +114,18 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span>🤖 محاكي Arduino</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
+                  </button>
+                )}
+
+                {/* Personalized Learning Path Quick Trigger */}
+                {onOpenLearningPath && (
+                  <button
+                    onClick={onOpenLearningPath}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-bold shadow-xs transition-all cursor-pointer"
+                    title="مسار التعلم الشخصي واقتراحات الدروس"
+                  >
+                    <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>مسار التعلم 🧭</span>
                   </button>
                 )}
 
@@ -320,6 +335,23 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                   <span className="text-xs bg-white/20 px-2 py-0.5 rounded-lg">AI</span>
                 </button>
+
+                {/* Personalized Learning Path */}
+                {onOpenLearningPath && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenLearningPath();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold text-sm border border-blue-200 dark:border-blue-800/60 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Compass className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <span>مسار التعلم الشخصي واقتراحات الدروس</span>
+                    </div>
+                    <span className="text-xs bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-lg">جديد</span>
+                  </button>
+                )}
 
                 {/* Explain Lesson */}
                 {onOpenExplainLesson && (

@@ -1099,7 +1099,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             
             {/* Sidebar Navigation */}
-            <div className="w-full md:w-60 bg-slate-50 dark:bg-slate-950/40 border-b md:border-b-0 md:border-l border-slate-200 dark:border-slate-800 p-3 space-y-1 overflow-x-auto md:overflow-y-auto shrink-0 flex md:flex-col gap-1 md:gap-1">
+            <div className="w-full md:w-60 bg-slate-50 dark:bg-slate-950/40 border-b md:border-b-0 md:border-l border-slate-200 dark:border-slate-800 p-2 sm:p-3 overflow-x-auto md:overflow-y-auto shrink-0 flex md:flex-col gap-1.5 scrollbar-none">
               {[
                 { id: 'dashboard', label: 'لوحة المعلومات', icon: TrendingUp, count: null },
                 { id: 'requests', label: 'طلبات الاشتراك', icon: MessageCircle, count: stats.pendingRequests || null },
@@ -1115,7 +1115,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
+                    className={`w-auto md:w-full whitespace-nowrap flex items-center justify-between gap-2 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
                       isActive
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'

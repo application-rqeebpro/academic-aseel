@@ -10,7 +10,7 @@
       "createdAt": "2026-09-15T18:56:53.699Z",
       "studyLevel": "السنة الأولى",
       "university": "أكاديمية الميكاترونكس اليمنية",
-      "lastLoginAt": "2026-09-24T20:39:37.933Z",
+      "lastLoginAt": "2026-09-25T17:34:00.546Z",
       "passwordHash": "$2b$10$f/NZtxadHyCdvNO2F6ceMuu.ajxflv5fJ2GZY1BTS.Qx/KneMYGmK"
     },
     {
@@ -609,11 +609,14 @@
     {
       "id": "code-1790345063895-5b1c",
       "code": "AS-4692",
+      "type": "monthly",
       "notes": "تم التوليد التلقائي لطلب الاشتراك المقبول برقم: req-1790283860389-f9890e",
       "isUsed": true,
+      "status": "used",
       "maxUses": 100,
       "isActive": true,
       "planType": "monthly",
+      "priceUSD": 20,
       "createdAt": "2026-09-25T14:04:23.895Z",
       "timesUsed": 0,
       "durationDays": 30,
@@ -623,10 +626,7 @@
           "studentId": "user-1790283854507-a78e53f5",
           "studentName": "Mohammad farag"
         }
-      ],
-      "type": "monthly",
-      "priceUSD": 20,
-      "status": "used"
+      ]
     },
     {
       "id": "code-1790172998599-80df",

@@ -23,6 +23,7 @@ import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
 import { StudentProfileModal } from './components/StudentProfileModal';
 import { ExamModal } from './components/ExamModal';
+import { PersonalizedLearningPathView } from './components/PersonalizedLearningPathView';
 import { Loader2 } from 'lucide-react';
 
 export default function App() {
@@ -348,6 +349,11 @@ export default function App() {
           setSelectedLessonId(null);
           setSelectedExplainedLesson(null);
         }}
+        onOpenLearningPath={() => {
+          setActiveTab('learning-path');
+          setSelectedLessonId(null);
+          setSelectedExplainedLesson(null);
+        }}
         onOpenLogin={handleOpenLogin}
         onOpenRegister={handleStartRegistration}
         onOpenActivation={() => setOnboardingStep('code')}
@@ -367,7 +373,7 @@ export default function App() {
       />
 
       {/* Main Container Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className={`flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 ${student ? 'pb-24 md:pb-8' : 'pb-8'}`}>
         
         {/* Session Verification Loader */}
         {isVerifyingSession ? (
@@ -466,6 +472,7 @@ export default function App() {
                   <DashboardView
                     student={student}
                     subjects={subjects}
+                    lessons={lessons}
                     onNavigateToTab={(tab) => {
                       if (tab === 'ai') {
                         handleOpenAiWithTopic('');
@@ -477,6 +484,13 @@ export default function App() {
                     onSelectSubject={(subjectId) => {
                       setSelectedSubjectId(subjectId);
                       setActiveTab('subjects');
+                    }}
+                    onSelectLesson={(lessonId) => {
+                      if (!student.isActivated) {
+                        alert('حسابك في انتظار التفعيل. يرجى إدخال كود التفعيل للوصول إلى محتوى الدروس.');
+                        return;
+                      }
+                      setSelectedLessonId(lessonId);
                     }}
                     onRenewSubscription={() => {
                       const cleanNumber = whatsappNumber.startsWith('967') ? whatsappNumber : `967${whatsappNumber.replace(/^0+/, '')}`;
@@ -492,6 +506,34 @@ export default function App() {
                     }}
                     whatsappNumber={whatsappNumber}
                     onOpenExam={(subject, lesson) => handleOpenExamModal(subject, lesson)}
+                  />
+                )}
+
+                {/* 1.5 Personalized Learning Path Tab */}
+                {activeTab === 'learning-path' && (
+                  <PersonalizedLearningPathView
+                    student={student}
+                    subjects={subjects}
+                    lessons={lessons}
+                    onSelectLesson={(lessonId) => {
+                      if (!student.isActivated) {
+                        alert('حسابك في انتظار التفعيل. يرجى إدخال كود التفعيل للوصول إلى محتوى الدروس.');
+                        return;
+                      }
+                      setSelectedLessonId(lessonId);
+                    }}
+                    onSelectSubject={(subjectId) => {
+                      setSelectedSubjectId(subjectId);
+                      setActiveTab('subjects');
+                    }}
+                    onNavigateToTool={(toolId) => {
+                      if (['circuits', 'formulas', 'units', 'math', 'assignments', 'arduino'].includes(toolId)) {
+                        setActiveTab(toolId as any);
+                      } else {
+                        setActiveTab('formulas');
+                      }
+                    }}
+                    onBackToDashboard={() => setActiveTab('dashboard')}
                   />
                 )}
 

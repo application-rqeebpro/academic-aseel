@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { StudentProfile, Subject, Lesson, ExplainLessonResult } from '../types';
+import { calculatePersonalizedPath } from '../services/learningPathService';
 import { 
   GraduationCap, 
   School, 
@@ -30,17 +31,25 @@ import {
   FileText,
   Bot,
   Edit3,
-  Trash2
+  Trash2,
+  Compass,
+  TrendingUp,
+  Target,
+  RotateCcw,
+  Lightbulb,
+  ArrowRight
 } from 'lucide-react';
 
 interface DashboardViewProps {
   student: StudentProfile;
   subjects: Subject[];
+  lessons?: Lesson[];
   onNavigateToTab: (tab: any) => void;
   onSelectSubject: (subjectId: string) => void;
+  onSelectLesson?: (lessonId: string) => void;
   onRenewSubscription: () => void;
   onOpenActivation?: () => void;
-  onOpenSavedLesson?: (lesson: ExplainLessonResult) => void;
+  onOpenSavedLesson?: (lesson) => void;
   onOpenProfile?: () => void;
   whatsappNumber?: string;
   onOpenExam?: (subject?: Subject, lesson?: Lesson) => void;
@@ -49,8 +58,10 @@ interface DashboardViewProps {
 export const DashboardView: React.FC<DashboardViewProps> = ({
   student,
   subjects,
+  lessons = [],
   onNavigateToTab,
   onSelectSubject,
+  onSelectLesson,
   onRenewSubscription,
   onOpenActivation,
   onOpenSavedLesson,
@@ -131,6 +142,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalCompleted = student.completedLessons?.length || 0;
   const totalLessonsEstimate = 24;
   const overallProgress = Math.min(100, Math.round((totalCompleted / totalLessonsEstimate) * 100));
+
+  // Calculate dynamic personalized learning path data
+  const pathData = useMemo(() => {
+    return calculatePersonalizedPath(student, subjects, lessons);
+  }, [student, subjects, lessons]);
 
   return (
     <div className="space-y-6 pb-12">
@@ -255,6 +271,123 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Decorative background vectors */}
         <div className="absolute -left-12 -bottom-12 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -right-12 -top-12 w-64 h-64 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+      </div>
+
+      {/* 3.5. Personalized Learning Path & Recommendation Card (مسار التعلم المخصص) */}
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border-2 border-blue-600/80 dark:border-blue-500 shadow-xl p-5 sm:p-7 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black shadow-md shadow-blue-600/25 shrink-0">
+              <Compass className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                  مسار التعلم الشخصي الذكي
+                </span>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${pathData.readinessColor}`}>
+                  {pathData.readinessLabel}
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-1">
+                خارطة طريقك الأكاديمية المقترحة 🧭
+              </h2>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigateToTab('learning-path')}
+            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 self-start sm:self-auto"
+          >
+            <span>استعراض الخارطة الكاملة</span>
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Dynamic Recommendation Box */}
+        {pathData.primaryRecommendation && (
+          <div className={`p-4 sm:p-5 rounded-2xl border space-y-3.5 ${
+            pathData.primaryRecommendation.recommendationType === 'remediation_review'
+              ? 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800'
+              : 'bg-gradient-to-br from-blue-50/60 to-indigo-50/60 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800/60'
+          }`}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-bold mb-1">
+                  <span className={`px-2 py-0.5 rounded-md ${
+                    pathData.primaryRecommendation.recommendationType === 'remediation_review'
+                      ? 'bg-amber-500 text-slate-950 font-black'
+                      : 'bg-blue-600 text-white'
+                  }`}>
+                    {pathData.primaryRecommendation.recommendationType === 'remediation_review' ? '⚠️ تدارك وتثبيت' : 'الدرس التالي الموصى به 🎯'}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {pathData.primaryRecommendation.subject.name}
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{pathData.primaryRecommendation.estimatedMinutes} دقيقة</span>
+                  </span>
+                </div>
+
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  {pathData.primaryRecommendation.title}
+                </h3>
+              </div>
+
+              {onSelectLesson && (
+                <button
+                  onClick={() => onSelectLesson(pathData.primaryRecommendation!.lesson.id)}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105 shrink-0"
+                >
+                  <span>{pathData.primaryRecommendation.recommendationType === 'remediation_review' ? 'مراجعة الدرس وإعادة الاختبار' : 'ابدأ دراسة هذا الدرس الآن'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-white/70 dark:bg-slate-900/70 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800/50">
+              💡 <strong>سبب الاقتراح:</strong> {pathData.primaryRecommendation.reason}
+            </p>
+          </div>
+        )}
+
+        {/* Path Quick Metrics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 block text-[10px] mb-0.5 font-bold">المنهاج المنجز</span>
+            <span className="text-base font-black text-slate-900 dark:text-white">
+              {pathData.completionRate}%
+            </span>
+            <span className="text-[10px] text-slate-500 block">({pathData.completedCount} من {pathData.totalLessons} دروس)</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 block text-[10px] mb-0.5 font-bold">معدل الاختبارات</span>
+            <span className="text-base font-black text-slate-900 dark:text-white">
+              {pathData.averageQuizScore > 0 ? `${pathData.averageQuizScore}%` : '-'}
+            </span>
+            <span className="text-[10px] text-slate-500 block">{pathData.averageQuizScore >= 80 ? 'إتقان مرتفع 🌟' : 'استيعاب متوسط'}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 block text-[10px] mb-0.5 font-bold">المستوى الدراسي</span>
+            <span className="text-base font-black text-slate-900 dark:text-white line-clamp-1">
+              {student.studyLevel}
+            </span>
+            <span className="text-[10px] text-blue-600 dark:text-blue-400 block">{student.major}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <span className="text-slate-400 block text-[10px] mb-0.5 font-bold">الهدف الأسبوعي</span>
+            <span className="text-base font-black text-indigo-600 dark:text-indigo-400">
+              {pathData.weeklyTarget.recommendedLessons} دروس
+            </span>
+            <span className="text-[10px] text-slate-500 block">خلال هذا الأسبوع</span>
+          </div>
+        </div>
+
       </div>
 
       {/* 4. Hero Feature Banner for "اشرح لي درس اليوم" */}

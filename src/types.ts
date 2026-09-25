@@ -540,4 +540,68 @@ export interface ExamPaper {
   isCustomUploadedLesson?: boolean;
 }
 
+// ==========================================
+// 🚀 PERSONALIZED LEARNING PATHS TYPES
+// ==========================================
+
+export type LearningTrackId = 
+  | 'curriculum' 
+  | 'circuits' 
+  | 'physics-mechanics' 
+  | 'robotics-programming' 
+  | 'remediation';
+
+export type RecommendationType = 'next_sequential' | 'remediation_review' | 'advanced_challenge' | 'starter';
+
+export interface RecommendedLessonItem {
+  lesson: Lesson;
+  subject: Subject;
+  recommendationType: RecommendationType;
+  title: string;
+  reason: string;
+  priority: 'urgent' | 'high' | 'normal';
+  estimatedMinutes: number;
+  keyTopics: string[];
+  prerequisiteLessonTitle?: string;
+  relatedTool?: 'arduino' | 'formulas' | 'units' | 'assignments';
+  scoreAchieved?: number; // if remediation or completed
+}
+
+export interface LearningMilestone {
+  id: string;
+  stepNumber: number;
+  title: string;
+  description: string;
+  subjectId: string;
+  lessonId: string;
+  lessonTitle: string;
+  status: 'completed' | 'current' | 'locked' | 'review_needed';
+  score?: number;
+  estimatedMinutes: number;
+  category: string;
+}
+
+export interface PersonalizedPathData {
+  studentLevel: StudyLevel;
+  university: string;
+  totalLessons: number;
+  completedCount: number;
+  completionRate: number; // 0 - 100
+  averageQuizScore: number; // 0 - 100
+  readinessLabel: 'مبتدئ' | 'متوسط' | 'متقدم' | 'جاهز للاختبارات الجامعية';
+  readinessColor: string;
+  primaryRecommendation: RecommendedLessonItem | null;
+  secondaryRecommendations: RecommendedLessonItem[];
+  remediationItems: RecommendedLessonItem[];
+  strengths: { subjectName: string; skill: string; score: number }[];
+  focusAreas: { subjectName: string; topic: string; score: number; advice: string }[];
+  milestones: LearningMilestone[];
+  aiAdvisorTip: string;
+  weeklyTarget: {
+    recommendedHours: number;
+    recommendedLessons: number;
+    statusText: string;
+  };
+}
+
 
