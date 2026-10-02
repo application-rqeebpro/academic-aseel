@@ -607,16 +607,23 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   };
 
   const handleDeleteCode = async (code: string) => {
-    if (!confirm(`هل أنت متأكد من حذف كود التفعيل ${code}؟`)) return;
+    if (!confirm(`هل أنت متأكد من حذف كود التفعيل ${code} نهائيًا؟`)) return;
     try {
-      await fetch(`/api/admin/codes/${code}`, {
+      setCodes((prev) => prev.filter((c) => c.code !== code && c.id !== code));
+      const res = await fetch(`/api/admin/codes/${encodeURIComponent(code)}`, {
         method: 'DELETE',
         headers: getAuthHeader(),
       });
-      loadCodes();
-      loadStats();
+      if (res.ok) {
+        await Promise.all([loadCodes(), loadStats()]);
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'فشل حذف كود التفعيل.');
+        await loadCodes();
+      }
     } catch (e) {
       console.error(e);
+      await loadCodes();
     }
   };
 
@@ -852,22 +859,67 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   };
 
   const handleDeleteStudent = async (studentId: string, studentName: string) => {
-    if (!confirm(`هل أنت متأكد من حذف حساب الطالب (${studentName}) نهائيًا؟`)) return;
+    if (!confirm(`هل أنت متأكد من حذف حساب الطالب (${studentName}) نهائيًا من قاعدة البيانات؟\nسيتم حذف الحساب والاشتراك وكافة سجلات الطالب فوراً وبشكل دائم.`)) return;
     try {
+      setStudents((prev) => prev.filter((s) => s.id !== studentId));
       const res = await fetch(`/api/admin/students/${studentId}`, {
         method: 'DELETE',
         headers: getAuthHeader(),
       });
       if (res.ok) {
-        loadStudents();
-        loadStats();
+        await Promise.all([loadStudents(), loadStats()]);
       } else {
         const errData = await res.json();
         alert(errData.error || 'فشل حذف حساب الطالب.');
+        await loadStudents();
       }
     } catch (e) {
       console.error(e);
       alert('حدث خطأ أثناء الاتصال بالخادم.');
+      await loadStudents();
+    }
+  };
+
+  const handleDeleteSubscription = async (studentId: string, studentName: string) => {
+    if (!confirm(`هل أنت متأكد من حذف اشتراك الطالب (${studentName}) وإلغاء تفعيله؟\nسيتم إلغاء الاشتراك مع الإبقاء على حساب الطالب.`)) return;
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}/subscription`, {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+      if (res.ok) {
+        await Promise.all([loadStudents(), loadStats()]);
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'فشل حذف الاشتراك.');
+        await loadStudents();
+      }
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء الاتصال بالخادم.');
+      await loadStudents();
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!confirm('هل أنت متأكد من حذف طلب الاشتراك هذا نهائيًا؟')) return;
+    try {
+      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+      const res = await fetch(`/api/admin/requests/${requestId}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+      if (res.ok) {
+        await Promise.all([loadRequests(), loadStats()]);
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'فشل حذف الطلب.');
+        await loadRequests();
+      }
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء الاتصال بالخادم.');
+      await loadRequests();
     }
   };
 
@@ -1333,6 +1385,14 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                                   </button>
                                 </>
                               )}
+
+                              <button
+                                onClick={() => handleDeleteRequest(req.id)}
+                                className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                title="حذف طلب الاشتراك نهائيًا"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
                         );
@@ -1642,6 +1702,17 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                                       title="تعليق الحساب مؤقتًا"
                                     >
                                       تعليق
+                                    </button>
+                                  )}
+
+                                  {/* Delete Subscription Only */}
+                                  {(st.subscriptionStatus === 'active' || st.subscriptionStatus === 'pending') && (
+                                    <button
+                                      onClick={() => handleDeleteSubscription(st.id, st.name)}
+                                      className="px-2 py-1 rounded-lg text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 font-bold text-[11px] cursor-pointer transition-colors"
+                                      title="حذف اشتراك الطالب وإلغاء تفعيله فقط مع الإبقاء على حسابه"
+                                    >
+                                      حذف الاشتراك
                                     </button>
                                   )}
 

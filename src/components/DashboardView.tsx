@@ -37,8 +37,10 @@ import {
   Target,
   RotateCcw,
   Lightbulb,
-  ArrowRight
+  ArrowRight,
+  Wrench,
 } from 'lucide-react';
+
 
 interface DashboardViewProps {
   student: StudentProfile;
@@ -390,8 +392,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       </div>
 
+      {/* 3.9 Smart Engineering Project Lab Hero Card (مختبر المشاريع الهندسية الذكي) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 border-2 border-blue-500/60 p-6 sm:p-8 text-white shadow-2xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-bold text-cyan-300">
+              <Wrench className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '9s' }} />
+              <span>نظام هندسي تطبيقي متكامل بالذكاء الاصطناعي</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>🔧 مختبر المشاريع الهندسية الذكي</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-cyan-500 text-slate-950 font-black shadow-xs">
+                جديد وحصري 🚀
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
+              «<strong>ماذا تريد أن تصنع؟</strong>» اكتب فكرة مشروعك بحرية (سيارات Arduino، أذرع روبوت، طائرات درون، روبوت متتبع خط، منازل ذكية، تحكم بالمحركات، أو دوائر إلكترونية) واحصل فوراً على <strong>مخطط التوصيل مع فحص توافق الأرجل بنسبة 100%، كود Arduino كامل، خطوات تركيب تفاعلية خطوة بخطوة، ورسومات هندسية ومحاكاة برمجية حية!</strong>
+            </p>
+          </div>
+
+          <button
+            onClick={() => handleToolClick('lab')}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-cyan-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            <Wrench className="w-5 h-5 text-slate-950" />
+            <span>دخول مختبر المشاريع 🔧</span>
+          </button>
+        </div>
+
+        {/* Feature Pills */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-800/40 text-xs text-blue-200">
+          <span className="text-slate-400 font-bold">المشاريع المدعومة:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🚗 سيارات Arduino ذكية</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🤖 أذرع روبوت 4-DOF</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🚁 طائرات Drone تعليمية و PID</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🛞 روبوتات تتبع المسار</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🏠 منازل ذكية وإنذار غاز</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚙️ تحكم بمحركات ومحاكاة حية</span>
+        </div>
+      </div>
+
       {/* 4. Hero Feature Banner for "اشرح لي درس اليوم" */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 border border-blue-700/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-bold text-cyan-300">
@@ -681,6 +724,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
 
           <button
+            onClick={() => handleToolClick('lab')}
+            className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/60 dark:to-blue-950/60 border-2 border-indigo-500/50 hover:border-indigo-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <Wrench className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm text-indigo-900 dark:text-indigo-200 flex items-center gap-1">
+                <span>مختبر المشاريع</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold">ذكي ⚡</span>
+              </div>
+              <div className="text-[11px] text-indigo-600 dark:text-indigo-400">بناء ومحاكاة مشاريع Arduino</div>
+            </div>
+          </button>
+
+          <button
             onClick={() => handleToolClick('arduino')}
             className="p-4 rounded-2xl bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/60 dark:to-blue-950/60 border-2 border-cyan-500/50 hover:border-cyan-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
           >
@@ -695,6 +755,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="text-[11px] text-cyan-600 dark:text-cyan-400">مختبر إلكترونيات وتوصيل أسلاك</div>
             </div>
           </button>
+
 
           {onOpenExam && (
             <button

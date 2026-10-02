@@ -15,12 +15,14 @@ export type TabType =
   | 'explain'
   | 'assignments'
   | 'arduino'
+  | 'lab'
   | 'subjects' 
   | 'formulas' 
   | 'units' 
   | 'math' 
   | 'circuits' 
   | 'ai';
+
 
 interface BottomNavProps {
   activeTab: TabType;

@@ -9,6 +9,14 @@ import { INITIAL_SETTINGS, INITIAL_SUBJECTS, INITIAL_LESSONS, INITIAL_FORMULAS, 
 import { Subject, Lesson, AdminSettings } from '../src/types';
 import { processExplainLesson, callGeminiWithResilience, getGeminiClient as getGeminiClientFromService } from './explainService';
 import { generateEngineeringAssignment, refineAssignmentSectionWithAi } from './assignmentService';
+import {
+  generateProjectWithGemini,
+  validateAndHarmonizeProject,
+  verifyPinCompatibility,
+  CORE_PROJECT_TEMPLATES,
+  PROJECT_PRESET_BUTTONS,
+  generateSmartTemplateFallback,
+} from './projectLabService';
 import { db, normalizePhone, convertArabicDigitsToEnglish, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mct_jwt_secret_mechatronics_academy_7829';
@@ -470,23 +478,15 @@ function formatWhatsAppActivation(
 
 // Helper to accurately calculate subscription remaining days, hours, and status
 function getSubscriptionDetails(userId: string) {
-  let sub = db.getSubscriptionByUserId(userId);
+  const sub = db.getSubscriptionByUserId(userId);
   if (!sub) {
-    const user = db.findUserById(userId);
-    if (user) {
-      const now = new Date();
-      sub = {
-        id: `sub-${Date.now()}`,
-        userId,
-        plan: 'monthly',
-        status: 'pending',
-        startDate: now.toISOString(),
-        expiryDate: now.toISOString(),
-        createdAt: now.toISOString(),
-        notes: 'حساب مسجل جديد',
-      };
-      db.createOrUpdateSubscription(sub);
-    }
+    return {
+      sub: null,
+      remainingDays: 0,
+      remainingHours: 0,
+      isActivated: false,
+      isExpired: false,
+    };
   }
 
   let remainingDays = 0;
@@ -1544,8 +1544,116 @@ router.post('/assignments/refine-section', async (req: Request, res: Response) =
 });
 
 // ==========================================
+// SMART ENGINEERING LAB APIS (مختبر المشاريع الهندسية الذكي)
+// ==========================================
+
+// Get preset buttons list
+router.get('/lab/presets', (req: Request, res: Response) => {
+  return res.json({
+    success: true,
+    presets: PROJECT_PRESET_BUTTONS,
+  });
+});
+
+// Get available verified templates
+router.get('/lab/templates', (req: Request, res: Response) => {
+  const templateList = Object.entries(CORE_PROJECT_TEMPLATES).map(([key, proj]) => ({
+    id: key,
+    title: proj.title,
+    category: proj.category,
+    idea: proj.idea,
+    componentsCount: proj.components.length,
+    stepsCount: proj.steps.length,
+    simulationType: proj.simulationConfig?.type || 'generic',
+  }));
+
+  return res.json({
+    success: true,
+    templates: templateList,
+  });
+});
+
+// Get full project data by template ID
+router.get('/lab/project/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const project = CORE_PROJECT_TEMPLATES[id];
+
+  if (!project) {
+    return res.status(404).json({ error: 'لم يتم العثور على نموذج المشروع المطلوب.' });
+  }
+
+  // Ensure full harmonization and gallery images
+  const harmonized = validateAndHarmonizeProject(JSON.parse(JSON.stringify(project)));
+  return res.json({
+    success: true,
+    project: harmonized,
+  });
+});
+
+// Generate or Modify engineering project with Gemini API
+router.post('/lab/generate', async (req: Request, res: Response) => {
+  try {
+    const { prompt, category, isModification, existingProject } = req.body;
+
+    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: 'يرجى كتابة فكرة المشروع أو مواصفاته الهندسية.' });
+    }
+
+    const cleanPrompt = prompt.trim();
+    const cleanCategory = category || 'arduino';
+
+    const projectData = await generateProjectWithGemini(
+      cleanPrompt,
+      cleanCategory,
+      existingProject
+    );
+
+    const compatibility = verifyPinCompatibility(projectData);
+
+    return res.json({
+      success: true,
+      project: projectData,
+      compatibility,
+      message: isModification ? 'تم تعديل وتحديث المشروع الهندسي بنجاح.' : 'تم بناء وتوليد المشروع الهندسي المتكامل بنجاح.',
+    });
+  } catch (error: any) {
+    console.error('Project Lab generation error:', error);
+    return res.status(500).json({
+      error: 'تعذر إنشاء المشروع بالذكاء الاصطناعي، يرجى التحقق من الاتصال بالإنترنت وحاول مرة أخرى.',
+      details: error?.message,
+    });
+  }
+});
+
+// Verify pin compatibility between Arduino Code and Wiring Diagram
+router.post('/lab/validate-compatibility', (req: Request, res: Response) => {
+  try {
+    const { project } = req.body;
+    if (!project) {
+      return res.status(400).json({ error: 'بيانات المشروع مطلوبة للفحص.' });
+    }
+
+    const harmonized = validateAndHarmonizeProject(project);
+    const verification = verifyPinCompatibility(harmonized);
+
+    return res.json({
+      success: true,
+      harmonizedProject: harmonized,
+      verification,
+    });
+  } catch (error: any) {
+    console.error('Pin compatibility validation error:', error);
+    return res.status(500).json({
+      error: 'تعذر إجراء فحص التوافق للأرجل.',
+      details: error?.message,
+    });
+  }
+});
+
+// ==========================================
 // ADMIN PANEL APIS (SECURE & ROLE PROTECTED)
 // ==========================================
+
 
 // Admin Login
 router.post('/admin/login', (req, res) => {
@@ -1768,11 +1876,80 @@ router.delete('/admin/lessons/:id', requireAuth, requireAdmin, (req, res) => {
   res.json({ success: true, message: 'تم حذف الدرس بنجاح.', lessons });
 });
 
-// Admin Delete Student
-router.delete('/admin/students/:studentId', requireAuth, requireAdmin, (req, res) => {
-  const { studentId } = req.params;
-  const deleted = db.deleteUser(studentId);
-  res.json({ success: deleted, message: 'تم حذف حساب الطالب بنجاح.' });
+// Admin Delete Student Permanently (Cascades all subscriptions, progress, and codes)
+router.delete('/admin/students/:studentId', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId || typeof studentId !== 'string') {
+      return res.status(400).json({ error: 'معرف الطالب مطلوب.' });
+    }
+
+    const targetUser = db.findUserById(studentId);
+    if (targetUser && targetUser.role === 'admin') {
+      return res.status(403).json({ error: 'لا يمكن حذف حساب مدير المنصة.' });
+    }
+
+    const deleted = await db.deleteUserAsync(studentId);
+    if (!deleted) {
+      return res.status(404).json({ error: 'الطالب غير موجود أو تم حذفه مسبقًا.' });
+    }
+
+    res.json({
+      success: true,
+      message: 'تم حذف حساب الطالب واشتراكاته وكافة سجلاته نهائيًا من قاعدة البيانات.',
+    });
+  } catch (err: any) {
+    console.error('[API] Error in DELETE /admin/students/:studentId:', err);
+    res.status(500).json({ error: err.message || 'فشل حذف حساب الطالب من قاعدة البيانات.' });
+  }
+});
+
+// Admin Delete Subscription (By subscription ID or student user ID)
+router.delete('/admin/subscriptions/:subscriptionId', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { subscriptionId } = req.params;
+    if (!subscriptionId) {
+      return res.status(400).json({ error: 'معرف الاشتراك مطلوب.' });
+    }
+
+    await db.deleteSubscriptionAsync(subscriptionId);
+    res.json({ success: true, message: 'تم حذف سجل الاشتراك نهائيًا من قاعدة البيانات.' });
+  } catch (err: any) {
+    console.error('[API] Error in DELETE /admin/subscriptions/:subscriptionId:', err);
+    res.status(500).json({ error: err.message || 'فشل حذف سجل الاشتراك.' });
+  }
+});
+
+// Admin Delete Student Subscription (By student ID directly)
+router.delete('/admin/students/:studentId/subscription', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId) {
+      return res.status(400).json({ error: 'معرف الطالب مطلوب.' });
+    }
+
+    await db.deleteSubscriptionAsync(studentId);
+    res.json({ success: true, message: 'تم حذف اشتراك الطالب وإلغاء تفعيله نهائيًا من قاعدة البيانات.' });
+  } catch (err: any) {
+    console.error('[API] Error in DELETE /admin/students/:studentId/subscription:', err);
+    res.status(500).json({ error: err.message || 'فشل حذف اشتراك الطالب.' });
+  }
+});
+
+// Admin Delete Subscription Request
+router.delete('/admin/requests/:requestId', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    if (!requestId) {
+      return res.status(400).json({ error: 'معرف الطلب مطلوب.' });
+    }
+
+    await db.deleteRequestAsync(requestId);
+    res.json({ success: true, message: 'تم حذف طلب الاشتراك نهائيًا.' });
+  } catch (err: any) {
+    console.error('[API] Error in DELETE /admin/requests/:requestId:', err);
+    res.status(500).json({ error: err.message || 'فشل حذف طلب الاشتراك.' });
+  }
 });
 
 // Admin Dashboard Statistics
@@ -2148,10 +2325,18 @@ router.post('/admin/codes', requireAuth, requireAdmin, (req, res) => {
 });
 
 // Admin Delete Activation Code
-router.delete('/admin/codes/:codeId', requireAuth, requireAdmin, (req, res) => {
-  const { codeId } = req.params;
-  const success = db.deleteActivationCode(codeId);
-  res.json({ success });
+router.delete('/admin/codes/:codeId', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { codeId } = req.params;
+    if (!codeId) {
+      return res.status(400).json({ error: 'معرف الكود مطلوب.' });
+    }
+    const success = await db.deleteActivationCodeAsync(codeId);
+    res.json({ success, message: 'تم حذف كود التفعيل نهائيًا من قاعدة البيانات.' });
+  } catch (err: any) {
+    console.error('[API] Error in DELETE /admin/codes/:codeId:', err);
+    res.status(500).json({ error: err.message || 'فشل حذف كود التفعيل.' });
+  }
 });
 
 // Admin Toggle Code Status

@@ -604,4 +604,108 @@ export interface PersonalizedPathData {
   };
 }
 
+export interface ProjectComponentItem {
+  id: string;
+  name: string;
+  count: number;
+  usage: string;
+  details: {
+    whatIsIt: string;        // ما هو؟
+    function: string;        // ما وظيفته؟
+    howItWorks: string;      // كيف يعمل؟
+    whereUsed: string;       // أين يستخدم؟
+    pinoutOrSpecs?: string;  // مواصفات الأرجل أو الجهد
+  };
+}
+
+export interface ProjectWiringConnection {
+  fromComponent: string;
+  fromPin: string;
+  toComponent: string;
+  toPin: string;
+  wireColor: string; // 'red' | 'black' | 'blue' | 'yellow' | 'green' | 'orange' | 'purple'
+  signalType: '5V' | 'GND' | '3.3V' | 'VIN' | 'Digital' | 'Analog' | 'PWM' | 'Motor';
+  notes?: string;
+}
+
+export interface ProjectPinMapping {
+  componentName: string;
+  pinFunction: string;
+  boardPin: string; // e.g. "D9", "A0", "5V", "GND"
+  codeIdentifier: string; // e.g. "TRIG_PIN", "MOTOR_IN1"
+}
+
+export interface ProjectAssemblyStep {
+  stepNumber: number;
+  title: string;
+  description: string;
+  usedComponents: string[];
+  connectionsSummary?: string;
+  importantNotes?: string;
+  cautionNotice?: string;
+  illustrationSvg?: string; // High-detail educational SVG diagram
+  imageUrl?: string;
+}
+
+export interface ProjectReferenceItem {
+  type: 'book' | 'pdf' | 'video' | 'course';
+  title: string;
+  chapterOrSection?: string;
+  pageNumber?: string;
+  videoTimestamp?: string;
+  sourceNote?: string;
+}
+
+export interface ProjectGalleryImage {
+  id: string;
+  imageNumber: number; // 1 to 8
+  title: string;
+  subtitle: string;
+  description: string;
+  svgContent: string;
+}
+
+export interface EngineeringProjectData {
+  id: string;
+  title: string;
+  category: string;
+  idea: string;
+  targetAudience: string;
+  finalProjectImage?: string;
+  componentsIllustrationSvg?: string;
+  wiringDiagramSvg?: string;
+  galleryImages?: ProjectGalleryImage[];
+  components: ProjectComponentItem[];
+  connections: ProjectWiringConnection[];
+  pinMapping: ProjectPinMapping[];
+  steps: ProjectAssemblyStep[];
+  code: {
+    language: 'arduino' | 'c' | 'python' | 'cpp';
+    filename: string;
+    sourceCode: string;
+    explanation: string;
+    lineByLineNotes: Array<{ lineRange: string; explanation: string }>;
+    librariesNeeded: string[];
+    uploadSteps: string[];
+  };
+  testingProcedure: {
+    steps: string[];
+    expectedBehavior: string;
+    calibrationTips?: string;
+  };
+  troubleshooting: Array<{
+    symptom: string;
+    possibleCause: string;
+    solution: string;
+  }>;
+  futureImprovements: string[];
+  finalResultSummary: string;
+  references: ProjectReferenceItem[];
+  simulationConfig?: {
+    type: 'obstacle_avoiding_car' | 'line_follower' | 'drone_flight' | 'robotic_arm' | 'smart_traffic' | 'temperature_control' | 'generic';
+    defaultSensors?: Record<string, number>;
+  };
+}
+
+
 

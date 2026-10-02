@@ -18,6 +18,7 @@ import { CircuitsHelperView } from './components/CircuitsHelperView';
 import { MathHelperView } from './components/MathHelperView';
 import { AssignmentGeneratorView } from './components/AssignmentGeneratorView';
 import { ArduinoSimulatorView } from './components/ArduinoSimulatorView';
+import { ProjectLabView } from './components/ProjectLabView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
@@ -349,6 +350,11 @@ export default function App() {
           setSelectedLessonId(null);
           setSelectedExplainedLesson(null);
         }}
+        onOpenLab={() => {
+          setActiveTab('lab');
+          setSelectedLessonId(null);
+          setSelectedExplainedLesson(null);
+        }}
         onOpenLearningPath={() => {
           setActiveTab('learning-path');
           setSelectedLessonId(null);
@@ -569,6 +575,25 @@ export default function App() {
                 {/* 2.6 Arduino & Electronic Circuit Simulator Tab ("محاكي Arduino والدوائر الإلكترونية") */}
                 {activeTab === 'arduino' && (
                   <ArduinoSimulatorView />
+                )}
+
+                {/* 2.7 Smart Engineering Lab Tab ("مختبر المشاريع الهندسية الذكي") */}
+                {activeTab === 'lab' && (
+                  <ProjectLabView
+                    student={student}
+                    onNavigateHome={() => {
+                      setActiveTab('dashboard');
+                      setSelectedLessonId(null);
+                      setSelectedExplainedLesson(null);
+                    }}
+                    onNavigateToTab={(tab) => {
+                      setActiveTab(tab as any);
+                      setSelectedLessonId(null);
+                      if (tab !== 'explain') {
+                        setSelectedExplainedLesson(null);
+                      }
+                    }}
+                  />
                 )}
 
                 {/* 3. Subjects Tab */}

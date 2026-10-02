@@ -3,7 +3,6 @@ import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import pg from 'pg';
-import bundledDbSeed from '../data/mechatronics_db.json';
 import { MONTHLY_CODES_SEED, YEARLY_CODES_SEED } from './seedCodes';
 
 const { Pool } = pg;
@@ -137,9 +136,9 @@ try {
   if (!fs.existsSync(DB_FILE)) {
     const sourceFile = path.join(process.cwd(), 'data', 'mechatronics_db.json');
     if (fs.existsSync(sourceFile)) {
-      fs.copyFileSync(sourceFile, DB_FILE);
-    } else if (bundledDbSeed) {
-      fs.writeFileSync(DB_FILE, JSON.stringify(bundledDbSeed, null, 2), 'utf-8');
+      try {
+        fs.copyFileSync(sourceFile, DB_FILE);
+      } catch (err) {}
     }
   }
 } catch (e) {
@@ -257,17 +256,11 @@ function ensureReadyCodesSeeded(data: DBSchema): boolean {
   }
 
   let modified = false;
-  const existingMap = new Map<string, DBActivationCode>();
-  for (const c of data.activationCodes) {
-    if (c.code) {
-      existingMap.set(c.code.trim().toUpperCase(), c);
-    }
-  }
 
-  // 1. Seed Monthly Codes (AS-)
-  for (const code of MONTHLY_CODES_SEED) {
-    const key = code.trim().toUpperCase();
-    if (!existingMap.has(key)) {
+  // Only seed initial codes if activationCodes is completely empty (first brand-new initialization)
+  // Never re-seed deleted codes!
+  if (data.activationCodes.length === 0) {
+    for (const code of MONTHLY_CODES_SEED) {
       const newRecord: DBActivationCode = {
         id: `code-${code.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         code,
@@ -285,15 +278,10 @@ function ensureReadyCodesSeeded(data: DBSchema): boolean {
         notes: 'كود اشتراك شهري معتمد (30 يومًا)',
       };
       data.activationCodes.push(newRecord);
-      existingMap.set(key, newRecord);
       modified = true;
     }
-  }
 
-  // 2. Seed Yearly Codes (AB-)
-  for (const code of YEARLY_CODES_SEED) {
-    const key = code.trim().toUpperCase();
-    if (!existingMap.has(key)) {
+    for (const code of YEARLY_CODES_SEED) {
       const newRecord: DBActivationCode = {
         id: `code-${code.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         code,
@@ -311,7 +299,6 @@ function ensureReadyCodesSeeded(data: DBSchema): boolean {
         notes: 'كود اشتراك سنوي معتمد (سنة كاملة)',
       };
       data.activationCodes.push(newRecord);
-      existingMap.set(key, newRecord);
       modified = true;
     }
   }
@@ -424,8 +411,27 @@ function saveLocalFile(data: DBSchema): void {
   }
 }
 
+let cloudSyncPromise: Promise<boolean> | null = null;
+
 // Hydrate DB from Neon PostgreSQL
 export async function syncFromCloud(): Promise<boolean> {
+  if (cloudSyncPromise) {
+    return cloudSyncPromise;
+  }
+  cloudSyncPromise = doSyncFromCloud().finally(() => {
+    cloudSyncPromise = null;
+  });
+  return cloudSyncPromise;
+}
+
+export async function ensureDBInitialized(): Promise<DBSchema> {
+  if (neonPool && !isHydratedFromNeon) {
+    await syncFromCloud();
+  }
+  return getDB();
+}
+
+async function doSyncFromCloud(): Promise<boolean> {
   if (!neonPool) return false;
   try {
     // Ensure all tables exist in Neon PostgreSQL
@@ -512,48 +518,176 @@ export async function syncFromCloud(): Promise<boolean> {
       );
     `);
 
-    const res = await neonPool.query(
-      'SELECT data FROM mct_kv_store WHERE key = $1 LIMIT 1',
-      [DB_STORE_KEY]
-    );
+    // Fetch live relational tables directly
+    const [resUsers, resSubs, resCodes, resReqs, resProg, resSettings, resKv] = await Promise.all([
+      neonPool.query('SELECT * FROM mct_users ORDER BY created_at ASC;'),
+      neonPool.query('SELECT * FROM mct_subscriptions ORDER BY created_at ASC;'),
+      neonPool.query('SELECT * FROM mct_activation_codes ORDER BY created_at ASC;'),
+      neonPool.query('SELECT * FROM mct_subscription_requests ORDER BY created_at DESC;'),
+      neonPool.query('SELECT * FROM mct_student_progress;'),
+      neonPool.query("SELECT data FROM mct_settings WHERE id = 'main_settings' LIMIT 1;"),
+      neonPool.query('SELECT data FROM mct_kv_store WHERE key = $1 LIMIT 1;', [DB_STORE_KEY]),
+    ]);
 
-    if (res.rows && res.rows.length > 0 && res.rows[0].data) {
-      cachedDB = res.rows[0].data as DBSchema;
+    const kvData = (resKv.rows?.[0]?.data as DBSchema) || null;
+
+    if (resUsers.rows && resUsers.rows.length > 0) {
+      // 1. Authoritative users list from relational table
+      const users: DBUser[] = resUsers.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        phone: row.phone,
+        email: row.email || undefined,
+        passwordHash: row.password_hash,
+        university: row.university || '',
+        studyLevel: row.study_level || '',
+        major: row.major || '',
+        role: (row.role || 'student') as 'student' | 'admin',
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+        lastLoginAt: row.last_login_at ? new Date(row.last_login_at).toISOString() : undefined,
+      }));
+
+      // 2. Authoritative subscriptions from relational table (filtered to valid users only)
+      const validUserIds = new Set(users.map((u) => u.id));
+      const subscriptions: DBSubscription[] = resSubs.rows
+        .filter((row) => validUserIds.has(row.user_id))
+        .map((row) => ({
+          id: row.id,
+          userId: row.user_id,
+          studentId: row.user_id,
+          phone: row.phone || undefined,
+          code: row.code || undefined,
+          plan: (row.plan || 'monthly') as 'monthly' | 'yearly',
+          status: (row.status || 'pending') as 'pending' | 'active' | 'expired' | 'suspended',
+          startDate: row.start_date ? new Date(row.start_date).toISOString() : new Date().toISOString(),
+          expiryDate: row.expiry_date ? new Date(row.expiry_date).toISOString() : new Date().toISOString(),
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+          activatedAt: row.activated_at ? new Date(row.activated_at).toISOString() : undefined,
+          activationMethod: row.activation_method || undefined,
+          notes: row.notes || undefined,
+        }));
+
+      // Asynchronously clean up any orphaned subscription rows in PostgreSQL whose user was deleted
+      const orphanedSubIds = resSubs.rows
+        .filter((row) => !validUserIds.has(row.user_id))
+        .map((row) => row.id);
+      if (orphanedSubIds.length > 0) {
+        neonPool.query(
+          'DELETE FROM mct_subscriptions WHERE id NOT IN (SELECT unnest($1::text[]));',
+          [subscriptions.map((s) => s.id).concat(['__keep_valid__'])]
+        ).catch(() => {});
+      }
+
+      // 3. Authoritative activation codes
+      const activationCodes: DBActivationCode[] = resCodes.rows.map((row) => ({
+        id: row.id,
+        code: row.code,
+        type: row.type as any,
+        planType: (row.plan_type || 'monthly') as any,
+        status: (row.status || 'unused') as any,
+        durationDays: Number(row.duration_days) || 30,
+        priceUSD: Number(row.price_usd) || 20,
+        phone: row.phone || undefined,
+        studentName: row.student_name || undefined,
+        studentId: row.student_id || undefined,
+        activatedAt: row.activated_at ? new Date(row.activated_at).toISOString() : undefined,
+        expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : undefined,
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+        activatedBy: row.activated_by || undefined,
+        maxUses: Number(row.max_uses) || 1,
+        timesUsed: Number(row.times_used) || 0,
+        isUsed: Boolean(row.is_used),
+        isActive: Boolean(row.is_active !== false),
+        usedByStudents: Array.isArray(row.used_by_students) ? row.used_by_students : [],
+        notes: row.notes || undefined,
+      }));
+
+      // 4. Requests
+      const subscriptionRequests: DBSubscriptionRequest[] = resReqs.rows.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        studentName: row.student_name || '',
+        phone: row.phone || '',
+        university: row.university || '',
+        plan: (row.plan || 'monthly') as 'monthly' | 'yearly',
+        priceUSD: Number(row.price_usd) || 20,
+        status: (row.status || 'pending') as 'pending' | 'approved' | 'rejected',
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+        notes: row.notes || undefined,
+      }));
+
+      // 5. Student Progress
+      const studentProgress: Record<string, DBStudentProgress> = {};
+      for (const row of resProg.rows) {
+        if (validUserIds.has(row.student_id)) {
+          studentProgress[row.student_id] = {
+            studentId: row.student_id,
+            completedLessons: row.completed_lessons || [],
+            quizScores: row.quiz_scores || {},
+            lessonNotes: row.lesson_notes || {},
+            savedProjects: row.saved_projects || [],
+            simulatorSettings: row.simulator_settings || {},
+            updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+          };
+        }
+      }
+
+      // 6. Settings
+      const settings = (resSettings.rows?.[0]?.data as any) || kvData?.settings || getDefaultDB().settings;
+
+      cachedDB = {
+        users,
+        subscriptions,
+        activationCodes,
+        subscriptionRequests,
+        studentProgress,
+        studentLessons: kvData?.studentLessons || [],
+        passwordResetTokens: kvData?.passwordResetTokens || [],
+        settings,
+      };
+
       ensureReadyCodesSeeded(cachedDB);
-      saveLocalFile(cachedDB);
-      lastCloudSyncAt = new Date().toISOString();
-      cloudSyncError = null;
-      isHydratedFromNeon = true;
-      console.log(`[DB] Successfully loaded database from Neon PostgreSQL (${cachedDB.users?.length || 0} users, ${cachedDB.activationCodes?.length || 0} codes).`);
-      
-      // Perform background non-destructive relational sync
-      syncRelationalTables(cachedDB).catch(() => {});
-      return true;
-    } else {
-      // First-time seed into Neon PostgreSQL
-      const initial = getDB();
+
+      // Keep mct_kv_store perfectly in sync with the relational tables
       await neonPool.query(
         `INSERT INTO mct_kv_store (key, data, updated_at)
          VALUES ($1, $2, NOW())
          ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
-        [DB_STORE_KEY, JSON.stringify(initial)]
+        [DB_STORE_KEY, JSON.stringify(cachedDB)]
       );
+
+      saveLocalFile(cachedDB);
       lastCloudSyncAt = new Date().toISOString();
+      cloudSyncError = null;
       isHydratedFromNeon = true;
-      console.log('[DB] Seeded initial database into Neon PostgreSQL.');
-      
-      // Perform initial relational migration
-      syncRelationalTables(initial).catch(() => {});
+      console.log(`[DB] Successfully hydrated from Neon PostgreSQL tables: ${cachedDB.users.length} users, ${cachedDB.subscriptions.length} subscriptions, ${cachedDB.activationCodes.length} codes.`);
+      return true;
+    } else {
+      // Clean DB (Admin only, 0 students, 0 subscriptions)
+      cachedDB = getDefaultDB();
+      ensureReadyCodesSeeded(cachedDB);
+      await syncRelationalTables(cachedDB);
+      await neonPool.query(
+        `INSERT INTO mct_kv_store (key, data, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+        [DB_STORE_KEY, JSON.stringify(cachedDB)]
+      );
+      saveLocalFile(cachedDB);
+      lastCloudSyncAt = new Date().toISOString();
+      cloudSyncError = null;
+      isHydratedFromNeon = true;
+      console.log('[DB] Initialized clean database in Neon PostgreSQL (Admin only, no demo students).');
       return true;
     }
   } catch (err: any) {
     cloudSyncError = err.message || String(err);
-    console.warn('[DB] Neon PostgreSQL sync warning (using local/in-memory cache):', cloudSyncError);
+    console.warn('[DB] Neon PostgreSQL sync error:', cloudSyncError);
   }
   return false;
 }
 
-// Synchronize entities into relational tables without losing any data
+// Synchronize entities into relational tables with strict cleanup of removed records
 export async function syncRelationalTables(data: DBSchema): Promise<void> {
   if (!neonPool) return;
   try {
@@ -562,8 +696,9 @@ export async function syncRelationalTables(data: DBSchema): Promise<void> {
       await neonPool.query(
         `INSERT INTO mct_users (id, name, phone, email, password_hash, university, study_level, major, role, created_at, last_login_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-         ON CONFLICT (phone) DO UPDATE SET
+         ON CONFLICT (id) DO UPDATE SET
            name = EXCLUDED.name,
+           phone = EXCLUDED.phone,
            email = EXCLUDED.email,
            password_hash = EXCLUDED.password_hash,
            university = EXCLUDED.university,
@@ -576,6 +711,15 @@ export async function syncRelationalTables(data: DBSchema): Promise<void> {
           u.university || null, u.studyLevel || null, u.major || null,
           u.role || 'student', u.createdAt || new Date().toISOString(), u.lastLoginAt || null
         ]
+      );
+    }
+
+    // Clean up users removed from data.users
+    if (data.users && data.users.length > 0) {
+      const activeIds = data.users.map((u) => u.id);
+      await neonPool.query(
+        'DELETE FROM mct_users WHERE id NOT IN (SELECT unnest($1::text[]));',
+        [activeIds]
       );
     }
 
@@ -602,6 +746,19 @@ export async function syncRelationalTables(data: DBSchema): Promise<void> {
           s.activationMethod || null, s.notes || null
         ]
       );
+    }
+
+    // Clean up subscriptions removed from data.subscriptions
+    if (data.subscriptions) {
+      const activeSubIds = data.subscriptions.map((s) => s.id);
+      if (activeSubIds.length > 0) {
+        await neonPool.query(
+          'DELETE FROM mct_subscriptions WHERE id NOT IN (SELECT unnest($1::text[]));',
+          [activeSubIds]
+        );
+      } else {
+        await neonPool.query('DELETE FROM mct_subscriptions;');
+      }
     }
 
     // 3. Sync activation codes
@@ -695,7 +852,7 @@ export async function syncToCloud(data: DBSchema): Promise<void> {
 // Initial background sync from Neon if configured
 if (neonPool) {
   syncFromCloud().catch((e) => {
-    console.warn('[DB] Initial background cloud load failed, using local seed:', e);
+    console.warn('[DB] Initial background cloud load warning:', e);
   });
 }
 
@@ -704,13 +861,13 @@ export function getDB(): DBSchema {
     return cachedDB;
   }
 
-  if (fs.existsSync(DB_FILE)) {
+  // If Neon PostgreSQL is NOT configured, fallback to local file
+  if (!neonPool && fs.existsSync(DB_FILE)) {
     try {
       const raw = fs.readFileSync(DB_FILE, 'utf-8');
       cachedDB = JSON.parse(raw);
       if (cachedDB) {
-        const changed = ensureReadyCodesSeeded(cachedDB);
-        if (changed) saveDB(cachedDB);
+        ensureReadyCodesSeeded(cachedDB);
         return cachedDB;
       }
     } catch (e) {
@@ -718,16 +875,8 @@ export function getDB(): DBSchema {
     }
   }
 
-  if (bundledDbSeed && typeof bundledDbSeed === 'object') {
-    cachedDB = JSON.parse(JSON.stringify(bundledDbSeed));
-    ensureReadyCodesSeeded(cachedDB!);
-    saveDB(cachedDB!);
-    return cachedDB!;
-  }
-
   cachedDB = getDefaultDB();
   ensureReadyCodesSeeded(cachedDB);
-  saveDB(cachedDB);
   return cachedDB;
 }
 
@@ -834,15 +983,127 @@ export const db = {
   getAllUsers(): DBUser[] {
     return getDB().users;
   },
+  async deleteUserAsync(id: string): Promise<boolean> {
+    const data = getDB();
+    const user = data.users.find((u) => u.id === id);
+    if (!user) {
+      if (neonPool) {
+        try {
+          await Promise.all([
+            neonPool.query('DELETE FROM mct_users WHERE id = $1;', [id]),
+            neonPool.query('DELETE FROM mct_subscriptions WHERE user_id = $1 OR id = $1;', [id]),
+            neonPool.query('DELETE FROM mct_student_progress WHERE student_id = $1;', [id]),
+          ]);
+        } catch (e) {}
+      }
+      return false;
+    }
+
+    if (user.role === 'admin') {
+      throw new Error('لا يمكن حذف حساب مدير المنصة.');
+    }
+
+    const userPhone = user.phone ? normalizePhone(user.phone) : '';
+
+    // 1. Remove student from users array
+    data.users = data.users.filter((u) => u.id !== id);
+
+    // 2. Remove all student subscriptions
+    data.subscriptions = (data.subscriptions || []).filter(
+      (s) => s.userId !== id && s.id !== id && (!userPhone || !s.phone || normalizePhone(s.phone) !== userPhone)
+    );
+
+    // 3. Remove student progress & saved work
+    if (data.studentProgress) {
+      delete data.studentProgress[id];
+    }
+
+    // 4. Remove student lessons
+    if (data.studentLessons) {
+      data.studentLessons = data.studentLessons.filter((l) => l.studentId !== id);
+    }
+
+    // 5. Remove student subscription requests
+    if (data.subscriptionRequests) {
+      data.subscriptionRequests = data.subscriptionRequests.filter(
+        (r) => r.userId !== id && (!userPhone || !r.phone || normalizePhone(r.phone) !== userPhone)
+      );
+    }
+
+    // 6. Remove password reset tokens
+    if (data.passwordResetTokens) {
+      data.passwordResetTokens = data.passwordResetTokens.filter((t) => t.userId !== id);
+    }
+
+    // 7. Clean up or unlink activation codes tied to this student
+    if (data.activationCodes) {
+      for (const c of data.activationCodes) {
+        const isBound =
+          c.studentId === id ||
+          (userPhone && c.phone && normalizePhone(c.phone) === userPhone) ||
+          (c.usedByStudents && c.usedByStudents.some((st) => st.studentId === id || (userPhone && st.phone && normalizePhone(st.phone) === userPhone)));
+
+        if (isBound) {
+          c.studentId = undefined;
+          c.studentName = undefined;
+          c.phone = undefined;
+          c.activatedAt = undefined;
+          c.expiresAt = undefined;
+          c.isUsed = false;
+          c.timesUsed = 0;
+          c.status = 'unused';
+          if (c.usedByStudents) {
+            c.usedByStudents = c.usedByStudents.filter(
+              (st) => st.studentId !== id && (!userPhone || !st.phone || normalizePhone(st.phone) !== userPhone)
+            );
+          }
+        }
+      }
+    }
+
+    cachedDB = data;
+    saveLocalFile(data);
+
+    // 8. CRITICAL: Await all Neon PostgreSQL deletions before responding to client
+    if (neonPool) {
+      try {
+        await Promise.all([
+          neonPool.query('DELETE FROM mct_users WHERE id = $1;', [id]),
+          neonPool.query('DELETE FROM mct_subscriptions WHERE user_id = $1 OR (phone IS NOT NULL AND phone = $2);', [id, user.phone || '']),
+          neonPool.query('DELETE FROM mct_student_progress WHERE student_id = $1;', [id]),
+          neonPool.query('DELETE FROM mct_subscription_requests WHERE user_id = $1 OR (phone IS NOT NULL AND phone = $2);', [id, user.phone || '']),
+          neonPool.query(
+            `UPDATE mct_activation_codes
+             SET student_id = NULL, student_name = NULL, phone = NULL, activated_at = NULL, expires_at = NULL, is_used = false, times_used = 0, status = 'unused'
+             WHERE student_id = $1 OR (phone IS NOT NULL AND phone = $2);`,
+            [id, user.phone || '']
+          ),
+        ]);
+
+        await neonPool.query(
+          `INSERT INTO mct_kv_store (key, data, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+          [DB_STORE_KEY, JSON.stringify(data)]
+        );
+        lastCloudSyncAt = new Date().toISOString();
+        cloudSyncError = null;
+      } catch (err: any) {
+        console.error('[DB] Neon PostgreSQL student deletion error:', err);
+        throw err;
+      }
+    }
+
+    return true;
+  },
+
   deleteUser(id: string): boolean {
     const data = getDB();
     const initLen = data.users.length;
+    this.deleteUserAsync(id).catch((e) => console.error('[DB] Sync deleteUser background error:', e));
     data.users = data.users.filter((u) => u.id !== id);
-    saveDB(data);
-    if (neonPool) {
-      neonPool.query('DELETE FROM mct_users WHERE id = $1;', [id]).catch((e) => console.warn('[DB] User delete error:', e));
-      neonPool.query('DELETE FROM mct_subscriptions WHERE user_id = $1;', [id]).catch(() => {});
-    }
+    data.subscriptions = (data.subscriptions || []).filter((s) => s.userId !== id && s.id !== id);
+    if (data.studentProgress) delete data.studentProgress[id];
     return data.users.length !== initLen;
   },
 
@@ -981,6 +1242,84 @@ export const db = {
     return current;
   },
 
+  async deleteSubscriptionAsync(idOrUserId: string): Promise<boolean> {
+    const data = getDB();
+    const targetSub = (data.subscriptions || []).find((s) => s.id === idOrUserId || s.userId === idOrUserId);
+    const targetUserId = targetSub?.userId || idOrUserId;
+    const targetPhone = targetSub?.phone ? normalizePhone(targetSub.phone) : '';
+
+    // 1. Remove from in-memory subscriptions
+    data.subscriptions = (data.subscriptions || []).filter(
+      (s) => s.id !== idOrUserId && s.userId !== idOrUserId && (!targetPhone || !s.phone || normalizePhone(s.phone) !== targetPhone)
+    );
+
+    // 2. Unlink any activation codes tied to this subscription/user
+    if (data.activationCodes && targetUserId) {
+      for (const c of data.activationCodes) {
+        if (c.studentId === targetUserId || (targetPhone && c.phone && normalizePhone(c.phone) === targetPhone)) {
+          c.studentId = undefined;
+          c.studentName = undefined;
+          c.phone = undefined;
+          c.activatedAt = undefined;
+          c.expiresAt = undefined;
+          c.isUsed = false;
+          c.timesUsed = 0;
+          c.status = 'unused';
+          if (c.usedByStudents) {
+            c.usedByStudents = c.usedByStudents.filter(
+              (st) => st.studentId !== targetUserId && (!targetPhone || !st.phone || normalizePhone(st.phone) !== targetPhone)
+            );
+          }
+        }
+      }
+    }
+
+    cachedDB = data;
+    saveLocalFile(data);
+
+    // 3. Await Neon PostgreSQL query
+    if (neonPool) {
+      try {
+        await Promise.all([
+          neonPool.query(
+            'DELETE FROM mct_subscriptions WHERE id = $1 OR user_id = $1 OR (phone IS NOT NULL AND phone = $2);',
+            [idOrUserId, targetSub?.phone || '']
+          ),
+          targetUserId
+            ? neonPool.query(
+                `UPDATE mct_activation_codes
+                 SET student_id = NULL, student_name = NULL, phone = NULL, activated_at = NULL, expires_at = NULL, is_used = false, times_used = 0, status = 'unused'
+                 WHERE student_id = $1 OR (phone IS NOT NULL AND phone = $2);`,
+                [targetUserId, targetSub?.phone || '']
+              )
+            : Promise.resolve(),
+        ]);
+
+        await neonPool.query(
+          `INSERT INTO mct_kv_store (key, data, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+          [DB_STORE_KEY, JSON.stringify(data)]
+        );
+        lastCloudSyncAt = new Date().toISOString();
+        cloudSyncError = null;
+      } catch (err: any) {
+        console.error('[DB] Neon PostgreSQL subscription deletion error:', err);
+        throw err;
+      }
+    }
+
+    return true;
+  },
+
+  deleteSubscription(idOrUserId: string): boolean {
+    const data = getDB();
+    const initLen = (data.subscriptions || []).length;
+    this.deleteSubscriptionAsync(idOrUserId).catch((e) => console.error('[DB] Sync deleteSubscription error:', e));
+    data.subscriptions = (data.subscriptions || []).filter((s) => s.id !== idOrUserId && s.userId !== idOrUserId);
+    return data.subscriptions.length !== initLen;
+  },
+
   // Activation Codes
   findActivationCode(code: string): DBActivationCode | undefined {
     if (!code) return undefined;
@@ -1070,15 +1409,42 @@ export const db = {
     }
     return data.activationCodes[idx];
   },
+  async deleteActivationCodeAsync(codeOrId: string): Promise<boolean> {
+    const data = getDB();
+    const clean = (codeOrId || '').trim().toUpperCase();
+    const initialLen = (data.activationCodes || []).length;
+    data.activationCodes = (data.activationCodes || []).filter(
+      (c) => c.id !== codeOrId && c.code.trim().toUpperCase() !== clean
+    );
+    cachedDB = data;
+    saveLocalFile(data);
+
+    if (neonPool) {
+      try {
+        await neonPool.query(
+          'DELETE FROM mct_activation_codes WHERE id = $1 OR UPPER(code) = $2;',
+          [codeOrId, clean]
+        );
+        await neonPool.query(
+          `INSERT INTO mct_kv_store (key, data, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+          [DB_STORE_KEY, JSON.stringify(data)]
+        );
+      } catch (err: any) {
+        console.error('[DB] Neon code deletion error:', err);
+        throw err;
+      }
+    }
+    return (data.activationCodes || []).length !== initialLen;
+  },
+
   deleteActivationCode(code: string): boolean {
     const data = getDB();
     const clean = code.trim().toUpperCase();
     const initialLen = data.activationCodes.length;
-    data.activationCodes = data.activationCodes.filter((c) => c.code.trim().toUpperCase() !== clean);
-    saveDB(data);
-    if (neonPool) {
-      neonPool.query('DELETE FROM mct_activation_codes WHERE UPPER(code) = $1;', [clean]).catch((e) => console.warn('[DB] Code direct delete error:', e));
-    }
+    this.deleteActivationCodeAsync(code).catch((e) => console.error('[DB] Sync deleteCode background error:', e));
+    data.activationCodes = data.activationCodes.filter((c) => c.id !== code && c.code.trim().toUpperCase() !== clean);
     return data.activationCodes.length !== initialLen;
   },
   getSubscriptionByPhone(phone: string): DBSubscription | undefined {
@@ -1105,6 +1471,36 @@ export const db = {
     req.status = status;
     saveDB(data);
     return req;
+  },
+  async deleteRequestAsync(requestId: string): Promise<boolean> {
+    const data = getDB();
+    const initLen = (data.subscriptionRequests || []).length;
+    data.subscriptionRequests = (data.subscriptionRequests || []).filter((r) => r.id !== requestId);
+    cachedDB = data;
+    saveLocalFile(data);
+
+    if (neonPool) {
+      try {
+        await neonPool.query('DELETE FROM mct_subscription_requests WHERE id = $1;', [requestId]);
+        await neonPool.query(
+          `INSERT INTO mct_kv_store (key, data, updated_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (key) DO UPDATE SET data = $2, updated_at = NOW();`,
+          [DB_STORE_KEY, JSON.stringify(data)]
+        );
+      } catch (err: any) {
+        console.error('[DB] Neon request deletion error:', err);
+        throw err;
+      }
+    }
+    return (data.subscriptionRequests || []).length !== initLen;
+  },
+  deleteRequest(requestId: string): boolean {
+    const data = getDB();
+    const initLen = (data.subscriptionRequests || []).length;
+    this.deleteRequestAsync(requestId).catch((e) => console.error('[DB] Sync deleteRequest background error:', e));
+    data.subscriptionRequests = (data.subscriptionRequests || []).filter((r) => r.id !== requestId);
+    return (data.subscriptionRequests || []).length !== initLen;
   },
 
   // Student Lessons (Explained Lessons)

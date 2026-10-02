@@ -19,7 +19,8 @@ import {
   GraduationCap,
   Bot,
   Smartphone,
-  Compass
+  Compass,
+  Wrench,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -31,6 +32,7 @@ interface HeaderProps {
   onOpenExplainLesson?: () => void;
   onOpenAssignments?: () => void;
   onOpenArduino?: () => void;
+  onOpenLab?: () => void;
   onOpenLearningPath?: () => void;
   onOpenLogin: () => void;
   onOpenRegister: () => void;
@@ -49,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExplainLesson,
   onOpenAssignments,
   onOpenArduino,
+  onOpenLab,
   onOpenLearningPath,
   onOpenLogin,
   onOpenRegister,
@@ -116,6 +119,19 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
                   </button>
                 )}
+
+                {/* Smart Project Lab Quick Trigger */}
+                {onOpenLab && (
+                  <button
+                    onClick={onOpenLab}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                    title="مختبر المشاريع الهندسية الذكي"
+                  >
+                    <span>🔧 مختبر المشاريع</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                  </button>
+                )}
+
 
                 {/* Personalized Learning Path Quick Trigger */}
                 {onOpenLearningPath && (
@@ -378,6 +394,20 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <Bot className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                     <span>محاكي Arduino والدوائر الإلكترونية</span>
+                  </button>
+                )}
+
+                {/* Smart Project Lab */}
+                {onOpenLab && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenLab();
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold text-sm border border-indigo-200 dark:border-indigo-800/60 cursor-pointer"
+                  >
+                    <Wrench className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <span>مختبر المشاريع الهندسية الذكي</span>
                   </button>
                 )}
 
