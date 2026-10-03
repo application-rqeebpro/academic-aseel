@@ -39,6 +39,7 @@ import {
   Lightbulb,
   ArrowRight,
   Wrench,
+  Calculator,
 } from 'lucide-react';
 
 
@@ -753,6 +754,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500 text-black font-bold">تفاعلي</span>
               </div>
               <div className="text-[11px] text-cyan-600 dark:text-cyan-400">مختبر إلكترونيات وتوصيل أسلاك</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleToolClick('calculator')}
+            className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/60 dark:to-indigo-950/60 border-2 border-purple-500/50 hover:border-purple-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <Calculator className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm text-purple-900 dark:text-purple-200 flex items-center gap-1">
+                <span>الحاسبة العلمية</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold">علمية 🧮</span>
+              </div>
+              <div className="text-[11px] text-purple-600 dark:text-purple-400">كسور، زوايا، أعداد مركبة، وشرح الحل</div>
             </div>
           </button>
 

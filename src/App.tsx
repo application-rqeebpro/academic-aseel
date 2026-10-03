@@ -19,6 +19,7 @@ import { MathHelperView } from './components/MathHelperView';
 import { AssignmentGeneratorView } from './components/AssignmentGeneratorView';
 import { ArduinoSimulatorView } from './components/ArduinoSimulatorView';
 import { ProjectLabView } from './components/ProjectLabView';
+import { ScientificCalculatorView } from './components/ScientificCalculatorView';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { AdminPanelView } from './components/AdminPanelView';
 import { LoginModal } from './components/LoginModal';
@@ -355,6 +356,11 @@ export default function App() {
           setSelectedLessonId(null);
           setSelectedExplainedLesson(null);
         }}
+        onOpenCalculator={() => {
+          setActiveTab('calculator');
+          setSelectedLessonId(null);
+          setSelectedExplainedLesson(null);
+        }}
         onOpenLearningPath={() => {
           setActiveTab('learning-path');
           setSelectedLessonId(null);
@@ -533,7 +539,7 @@ export default function App() {
                       setActiveTab('subjects');
                     }}
                     onNavigateToTool={(toolId) => {
-                      if (['circuits', 'formulas', 'units', 'math', 'assignments', 'arduino'].includes(toolId)) {
+                      if (['circuits', 'formulas', 'units', 'math', 'assignments', 'arduino', 'lab', 'calculator'].includes(toolId)) {
                         setActiveTab(toolId as any);
                       } else {
                         setActiveTab('formulas');
@@ -593,6 +599,17 @@ export default function App() {
                         setSelectedExplainedLesson(null);
                       }
                     }}
+                  />
+                )}
+
+                {/* 2.8 Scientific Calculator Tab ("الحاسبة العلمية") */}
+                {activeTab === 'calculator' && (
+                  <ScientificCalculatorView
+                    onBackToDashboard={() => {
+                      setActiveTab('dashboard');
+                      setSelectedLessonId(null);
+                    }}
+                    onAskAiWithTopic={(topic) => handleOpenAiWithTopic(topic)}
                   />
                 )}
 

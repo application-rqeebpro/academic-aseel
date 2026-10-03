@@ -16,6 +16,7 @@ export type TabType =
   | 'assignments'
   | 'arduino'
   | 'lab'
+  | 'calculator'
   | 'subjects' 
   | 'formulas' 
   | 'units' 

@@ -21,6 +21,7 @@ import {
   Smartphone,
   Compass,
   Wrench,
+  Calculator,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -33,6 +34,7 @@ interface HeaderProps {
   onOpenAssignments?: () => void;
   onOpenArduino?: () => void;
   onOpenLab?: () => void;
+  onOpenCalculator?: () => void;
   onOpenLearningPath?: () => void;
   onOpenLogin: () => void;
   onOpenRegister: () => void;
@@ -52,6 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAssignments,
   onOpenArduino,
   onOpenLab,
+  onOpenCalculator,
   onOpenLearningPath,
   onOpenLogin,
   onOpenRegister,
@@ -129,6 +132,17 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span>🔧 مختبر المشاريع</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                  </button>
+                )}
+
+                {/* Scientific Calculator Quick Trigger */}
+                {onOpenCalculator && (
+                  <button
+                    onClick={onOpenCalculator}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                    title="الحاسبة العلمية الهندسية المتطورة"
+                  >
+                    <span>🧮 الحاسبة العلمية</span>
                   </button>
                 )}
 
@@ -408,6 +422,20 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <Wrench className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                     <span>مختبر المشاريع الهندسية الذكي</span>
+                  </button>
+                )}
+
+                {/* Scientific Calculator */}
+                {onOpenCalculator && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenCalculator();
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-sm border border-purple-200 dark:border-purple-800/60 cursor-pointer"
+                  >
+                    <Calculator className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <span>🧮 الحاسبة العلمية (كسور، زوايا، أعداد مركبة)</span>
                   </button>
                 )}
 
