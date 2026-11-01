@@ -86,11 +86,14 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
   const [savedLessons, setSavedLessons] = useState<SmartDoctorGeneratedLesson[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
 
-  // Selected doctor object (Dynamic for Custom Doctor or standard presets)
+  // Selected doctor object (Dynamic for ALL doctors with student overrides)
   const selectedDoctor = useMemo(() => {
+    const rawDoctorName = customDoctorName.trim();
+    const hasCustomDoctorName = rawDoctorName && rawDoctorName !== 'د. (أدخل اسم دكتورك هنا)' && rawDoctorName !== 'د. المحاضر الجامعي';
+
     if (isCustomDoctorMode || selectedDoctorId === 'custom-doctor') {
-      const nameRaw = customDoctorName.trim() || 'د. المحاضر الجامعي';
-      const formattedName = nameRaw.startsWith('د.') || nameRaw.startsWith('الدكتور') ? nameRaw : `د. ${nameRaw}`;
+      const nameRaw = hasCustomDoctorName ? rawDoctorName : 'د. المحاضر الجامعي';
+      const formattedName = nameRaw.startsWith('د.') || nameRaw.startsWith('الدكتور') || nameRaw.startsWith('م.') ? nameRaw : `د. ${nameRaw}`;
       return {
         id: 'custom-doctor',
         name: formattedName,
@@ -104,7 +107,24 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
         suggestedTopics: ['مفاهيم الشرح والمبادئ الأساسية', 'حل مسائل الاختبارات وحلقات البحث'],
       } as SpecialistDoctor;
     }
-    return doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
+
+    const baseDoc = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
+    const finalDocName = hasCustomDoctorName
+      ? (rawDoctorName.startsWith('د.') || rawDoctorName.startsWith('الدكتور') || rawDoctorName.startsWith('م.') ? rawDoctorName : `د. ${rawDoctorName}`)
+      : baseDoc.name;
+
+    const finalSubject = customSubjectName.trim() || baseDoc.specialty;
+    const finalUniversity = customUniversityName.trim() || baseDoc.university;
+
+    return {
+      ...baseDoc,
+      name: finalDocName,
+      specialty: finalSubject,
+      university: finalUniversity,
+      bio: hasCustomDoctorName
+        ? `شرح مخصص لمادة ${finalSubject} بقسم ${customMajorName.trim() || 'الميكاترونكس'} في ${finalUniversity} مع الدكتور ${finalDocName}.`
+        : baseDoc.bio,
+    } as SpecialistDoctor;
   }, [
     doctors,
     selectedDoctorId,
@@ -206,6 +226,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
     try {
       const payload = {
         doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
         lessonTitle: lessonTitle.trim(),
         subject: selectedDoctor.specialty,
         studyLevel,
@@ -215,14 +236,14 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
         useSerwayReference: useSerway,
         studentFileContent: uploadedFileText,
         studentId: student?.id,
-        customDoctorInfo: (isCustomDoctorMode || selectedDoctorId === 'custom-doctor') ? {
-          name: customDoctorName.trim(),
-          subject: customSubjectName.trim(),
-          major: customMajorName.trim(),
-          university: customUniversityName.trim(),
-          avatarStyle: customAvatarStyle,
-          boardTheme: customBoardTheme,
-        } : undefined,
+        customDoctorInfo: {
+          name: selectedDoctor.name,
+          subject: selectedDoctor.specialty,
+          major: customMajorName.trim() || 'هندسة الميكاترونكس',
+          university: selectedDoctor.university,
+          avatarStyle: selectedDoctor.avatarStyle,
+          boardTheme: selectedDoctor.boardTheme,
+        },
       };
 
       const res = await fetch('/api/smart-doctor/generate', {
@@ -437,6 +458,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                     onClick={() => {
                       setIsCustomDoctorMode(false);
                       setSelectedDoctorId(doc.id);
+                      setCustomSubjectName(doc.specialty);
                       if (doc.suggestedTopics?.[0]) {
                         setLessonTitle(doc.suggestedTopics[0]);
                       }
@@ -491,80 +513,84 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
               })}
             </div>
 
-            {/* Custom Doctor Form Inputs Panel */}
-            {(isCustomDoctorMode || selectedDoctorId === 'custom-doctor') && (
-              <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-indigo-500/10 border-2 border-amber-500/40 shadow-lg space-y-4">
-                <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
-                  <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-                    <GraduationCap className="w-5 h-5 text-amber-600" />
-                    <h3 className="text-base font-black">
-                      بيانات دكتورك الجامعي ومادتك الخاصة
-                    </h3>
-                  </div>
-                  <span className="text-xs bg-amber-500/20 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full font-bold">
-                    خيار مخصص لطالب الميكاترونكس
-                  </span>
+            {/* Academic Info Inputs Panel (Always Available for All Doctors) */}
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-indigo-500/10 border-2 border-amber-500/40 shadow-lg space-y-4">
+              <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
+                <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                  <GraduationCap className="w-5 h-5 text-amber-600" />
+                  <h3 className="text-base font-black">
+                    البيانات الأكاديمية للدكتور والمادة (أدخل اسم دكتورك الحقيقي في جامعتك)
+                  </h3>
+                </div>
+                <span className="text-xs bg-amber-500/20 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full font-bold">
+                  تخصيص كامل للطالب 🎓
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs sm:text-sm">
+                {/* Doctor Name */}
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                    اسم الدكتور المحاضر:
+                  </label>
+                  <input
+                    type="text"
+                    value={customDoctorName}
+                    onChange={(e) => setCustomDoctorName(e.target.value)}
+                    placeholder="مثال: د. عبد السلام المقطري"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                  <span className="text-[10px] text-slate-500 block">اكتب اسم دكتورك في الجامعة ليظهر بالشرح</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs sm:text-sm">
-                  {/* Doctor Name */}
-                  <div className="space-y-1.5">
-                    <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                      اسم الدكتور المحاضر:
-                    </label>
-                    <input
-                      type="text"
-                      value={customDoctorName}
-                      onChange={(e) => setCustomDoctorName(e.target.value)}
-                      placeholder="مثال: د. عبد السلام المقطري"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  {/* Subject Name */}
-                  <div className="space-y-1.5">
-                    <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                      اسم المادة / المقرر الدراسـي:
-                    </label>
-                    <input
-                      type="text"
-                      value={customSubjectName}
-                      onChange={(e) => setCustomSubjectName(e.target.value)}
-                      placeholder="مثال: الفيزياء الهندسية 1، ديناميكا الحرارة..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  {/* Major Name */}
-                  <div className="space-y-1.5">
-                    <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                      اسم التخصص الهندسي:
-                    </label>
-                    <input
-                      type="text"
-                      value={customMajorName}
-                      onChange={(e) => setCustomMajorName(e.target.value)}
-                      placeholder="مثال: هندسة الميكاترونكس، الهندسة الطبية..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  {/* University Name */}
-                  <div className="space-y-1.5">
-                    <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                      اسم الجامعة / الكلية:
-                    </label>
-                    <input
-                      type="text"
-                      value={customUniversityName}
-                      onChange={(e) => setCustomUniversityName(e.target.value)}
-                      placeholder="مثال: جامعة صنعاء - كلية الهندسة"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
+                {/* Subject Name */}
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                    اسم المادة / المقرر الدراسـي:
+                  </label>
+                  <input
+                    type="text"
+                    value={customSubjectName}
+                    onChange={(e) => setCustomSubjectName(e.target.value)}
+                    placeholder="مثال: الرياضيات الهندسية 1، ديناميكا الحرارة..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                  <span className="text-[10px] text-slate-500 block">اسم المادة في خطتك الدراسية</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs">
+                {/* Major Name */}
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                    اسم التخصص الهندسي:
+                  </label>
+                  <input
+                    type="text"
+                    value={customMajorName}
+                    onChange={(e) => setCustomMajorName(e.target.value)}
+                    placeholder="مثال: هندسة الميكاترونكس، الهندسة الطبية..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                  <span className="text-[10px] text-slate-500 block">قسمك الأكاديمي</span>
+                </div>
+
+                {/* University Name */}
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
+                    اسم الجامعة / الكلية:
+                  </label>
+                  <input
+                    type="text"
+                    value={customUniversityName}
+                    onChange={(e) => setCustomUniversityName(e.target.value)}
+                    placeholder="مثال: جامعة صنعاء - كلية الهندسة"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                  <span className="text-[10px] text-slate-500 block">جامعتك الحالية</span>
+                </div>
+              </div>
+
+              {(isCustomDoctorMode || selectedDoctorId === 'custom-doctor') && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs border-t border-amber-500/20 mt-2">
                   {/* Doctor Avatar Style */}
                   <div className="space-y-1.5">
                     <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
@@ -598,8 +624,8 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                     </select>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* B. LESSON CONFIGURATION FORM */}

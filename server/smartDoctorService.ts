@@ -503,36 +503,50 @@ export async function generateSmartDoctorLesson(params: {
     boardTheme?: 'chalkboard_green' | 'blackboard_dark' | 'whiteboard_academic' | 'blueprint_cyan';
   };
 }): Promise<SmartDoctorGeneratedLesson> {
-  let doctor: SpecialistDoctor;
+  const doctors = getActiveSpecialistDoctors();
+  const baseDoc = doctors.find((d) => d.id === params.doctorId);
 
   if (params.customDoctorInfo && params.customDoctorInfo.name?.trim()) {
     const c = params.customDoctorInfo;
-    const docName = c.name.trim().startsWith('د.') ? c.name.trim() : `د. ${c.name.trim()}`;
-    const subjectName = c.subject?.trim() || 'المادة الدراسية';
+    const rawName = c.name.trim();
+    const docName = rawName.startsWith('د.') || rawName.startsWith('الدكتور') || rawName.startsWith('م.') ? rawName : `د. ${rawName}`;
+    const subjectName = c.subject?.trim() || baseDoc?.specialty || 'المادة الدراسية';
     const majorName = c.major?.trim() || 'هندسة الميكاترونكس';
-    const uniName = c.university?.trim() || 'الجامعة';
+    const uniName = c.university?.trim() || baseDoc?.university || 'جامعتك الحالية';
 
-    doctor = {
-      id: 'custom-doctor',
-      name: docName,
-      title: `أستاذ مقرر ${subjectName} — قسم ${majorName}`,
-      specialty: subjectName,
-      englishSpecialty: `${subjectName} (${majorName})`,
-      avatarStyle: c.avatarStyle || 'male_professor',
-      coatColor: '#1e3a8a',
-      hairColor: '#1e293b',
-      accentColor: '#3b82f6',
-      bio: `دكتور محاضر لمادة ${subjectName} في ${uniName} — قسم ${majorName}`,
-      university: uniName,
-      suggestedTopics: [],
-      boardTheme: c.boardTheme || 'chalkboard_green',
-      voiceGender: c.avatarStyle === 'female_engineer' ? 'female' : 'male',
-      voicePitch: c.avatarStyle === 'female_engineer' ? 1.2 : 1.0,
-      voiceRate: 0.95,
-    };
+    if (baseDoc) {
+      doctor = {
+        ...baseDoc,
+        name: docName,
+        specialty: subjectName,
+        university: uniName,
+        title: `أستاذ مقرر ${subjectName} — قسم ${majorName}`,
+        bio: `دكتور محاضر لمادة ${subjectName} في ${uniName} — قسم ${majorName}`,
+        avatarStyle: c.avatarStyle || baseDoc.avatarStyle,
+        boardTheme: c.boardTheme || baseDoc.boardTheme,
+      };
+    } else {
+      doctor = {
+        id: 'custom-doctor',
+        name: docName,
+        title: `أستاذ مقرر ${subjectName} — قسم ${majorName}`,
+        specialty: subjectName,
+        englishSpecialty: `${subjectName} (${majorName})`,
+        avatarStyle: c.avatarStyle || 'male_professor',
+        coatColor: '#1e3a8a',
+        hairColor: '#1e293b',
+        accentColor: '#3b82f6',
+        bio: `دكتور محاضر لمادة ${subjectName} في ${uniName} — قسم ${majorName}`,
+        university: uniName,
+        suggestedTopics: ['مفاهيم الشرح والمبادئ الأساسية', 'حل مسائل الاختبارات وحلقات البحث'],
+        boardTheme: c.boardTheme || 'chalkboard_green',
+        voiceGender: c.avatarStyle === 'female_engineer' ? 'female' : 'male',
+        voicePitch: c.avatarStyle === 'female_engineer' ? 1.2 : 1.0,
+        voiceRate: 0.95,
+      };
+    }
   } else {
-    const doctors = getActiveSpecialistDoctors();
-    doctor = doctors.find((d) => d.id === params.doctorId) || doctors[0];
+    doctor = baseDoc || doctors[0];
   }
 
   const lessonTitle = params.lessonTitle?.trim() || 'قانون أوم وتحليل الدوائر';
