@@ -77,7 +77,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         <div className="flex items-center justify-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/90 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-bold shadow-xs backdrop-blur-md">
             <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-            <span>المنصة الأولى لطلاب السنة الأولى هندسة ميكاترونكس باليمن</span>
+            <span>المنصة الأولى لطلاب هندسة الميكاترونكس بالجامعات اليمنية</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           </div>
         </div>
@@ -94,7 +94,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
           </div>
 
           <p className="text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-medium max-w-2xl mx-auto">
-            تغطية شاملة لكل ما يحتاجه طالب السنة الأولى: شروحات مبسطة، محاكيات تفاعلية للدوائر والروبوتات، حاسبات أبعاد وقوانين، ومساعد ذكاء اصطناعي أكاديمي مخصص لمنهج الجامعة الإماراتية الدولية وبقية الجامعات اليمنية.
+            تغطية شاملة لكل ما يحتاجه طالب الميكاترونكس: شروحات مبسطة، محاكيات تفاعلية للدوائر والروبوتات، حاسبات أبعاد وقوانين، ودكاترة ذكاء اصطناعي أكاديميون مخصصون لمناهج الجامعات اليمنية.
           </p>
         </div>
 

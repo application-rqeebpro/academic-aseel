@@ -854,16 +854,9 @@ export default function App() {
             أكاديمية الميكاترونكس اليمنية © {new Date().getFullYear()} – "افهم الميكاترونكس بطريقة سهلة"
           </p>
           <p>
-            مخصصة لطلاب السنة الأولى في الجامعة الإماراتية الدولية بصنعاء وبقية الجامعات اليمنية | للتفعيل والتواصل عبر واتساب: <span className="font-mono font-bold text-blue-600 dark:text-blue-400" dir="ltr">{whatsappNumber}</span>
+            مخصصة لطلاب الميكاترونكس في الجامعات اليمنيه للتفعيل والتواصل عبر واتساب 785502919
           </p>
           <div className="pt-1 flex items-center justify-center gap-4 text-[11px]">
-            <button
-              onClick={() => setIsAdminOpen(true)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:underline cursor-pointer"
-            >
-              بوابة إدارة المنصة (Admin)
-            </button>
-            <span>•</span>
             <button
               onClick={handleOpenLogin}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:underline cursor-pointer"
