@@ -29,6 +29,7 @@ import { PersonalizedLearningPathView } from './components/PersonalizedLearningP
 import { ReferencesLibraryView } from './components/ReferencesLibraryView';
 import { ExplanationVideosView } from './components/ExplanationVideosView';
 import { SmartDoctorView } from './components/SmartDoctorView';
+import { PlatformGuideModal } from './components/PlatformGuideModal';
 import { Loader2 } from 'lucide-react';
 
 export default function App() {
@@ -46,6 +47,9 @@ export default function App() {
 
   // Onboarding / Active flow step: 'welcome' | 'registration' | 'plans' | 'payment' | 'code' | 'dashboard'
   const [onboardingStep, setOnboardingStep] = useState<string>('welcome');
+
+  // Platform User Guide Modal State
+  const [isPlatformGuideOpen, setIsPlatformGuideOpen] = useState(false);
 
   // Temporary staging data for registration
   const [regData, setRegData] = useState<{
@@ -412,11 +416,11 @@ export default function App() {
             setOnboardingStep('smart-doctor');
           }
         }}
-        onOpenAdmin={() => setIsAdminOpen(true)}
         onOpenLogin={handleOpenLogin}
         onOpenRegister={handleStartRegistration}
         onOpenActivation={() => setOnboardingStep('code')}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenGuide={() => setIsPlatformGuideOpen(true)}
         onLogout={handleLogout}
         onNavigateHome={() => {
           if (student) {
@@ -453,6 +457,7 @@ export default function App() {
                 onOpenVideos={() => setOnboardingStep('videos')}
                 onOpenSmartDoctor={() => setOnboardingStep('smart-doctor')}
                 onExploreAsGuest={handleExploreAsGuest}
+                onOpenGuide={() => setIsPlatformGuideOpen(true)}
                 subjects={subjects}
                 monthlyPriceUSD={monthlyPriceUSD}
                 yearlyPriceUSD={yearlyPriceUSD}
@@ -484,6 +489,7 @@ export default function App() {
                 onProceedToPlans={handleRegistrationProceed}
                 onBack={() => setOnboardingStep('welcome')}
                 onOpenLogin={handleOpenLogin}
+                onOpenGuide={() => setIsPlatformGuideOpen(true)}
               />
             )}
 
@@ -833,6 +839,13 @@ export default function App() {
           student={student || undefined}
         />
       )}
+
+      {/* Platform Detailed Usage Guide Modal */}
+      <PlatformGuideModal
+        isOpen={isPlatformGuideOpen}
+        onClose={() => setIsPlatformGuideOpen(false)}
+        onOpenRegister={handleStartRegistration}
+      />
 
       {/* Footer */}
       <footer className="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">

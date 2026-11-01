@@ -62,7 +62,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
   const [customDoctorName, setCustomDoctorName] = useState<string>('د. المحاضر الجامعي');
   const [customSubjectName, setCustomSubjectName] = useState<string>('مادة التخصص الهندسي');
   const [customMajorName, setCustomMajorName] = useState<string>(student?.major || 'هندسة الميكاترونكس');
-  const [customUniversityName, setCustomUniversityName] = useState<string>(student?.universityName || 'الجامعة اليمنية');
+  const [customUniversityName, setCustomUniversityName] = useState<string>(student?.university || 'الجامعة اليمنية');
   const [customAvatarStyle, setCustomAvatarStyle] = useState<'classic_professor' | 'young_professor' | 'glasses_expert' | 'female_expert'>('classic_professor');
   const [customBoardTheme, setCustomBoardTheme] = useState<'chalkboard_green' | 'dark_slate' | 'whiteboard'>('chalkboard_green');
 
@@ -94,15 +94,36 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
     if (isCustomDoctorMode || selectedDoctorId === 'custom-doctor') {
       const nameRaw = hasCustomDoctorName ? rawDoctorName : 'د. المحاضر الجامعي';
       const formattedName = nameRaw.startsWith('د.') || nameRaw.startsWith('الدكتور') || nameRaw.startsWith('م.') ? nameRaw : `د. ${nameRaw}`;
+      
+      const avatarStyleMapped = customAvatarStyle === 'female_expert' 
+        ? 'female_engineer' 
+        : customAvatarStyle === 'young_professor' 
+        ? 'young_innovator' 
+        : customAvatarStyle === 'glasses_expert' 
+        ? 'modern_tech' 
+        : 'male_professor';
+
+      const boardThemeMapped = customBoardTheme === 'dark_slate' 
+        ? 'blackboard_dark' 
+        : customBoardTheme === 'whiteboard' 
+        ? 'whiteboard_academic' 
+        : 'chalkboard_green';
+
       return {
         id: 'custom-doctor',
         name: formattedName,
+        title: `أستاذ مقرر ${customSubjectName.trim() || 'المادة الجامعية'}`,
         specialty: customSubjectName.trim() || 'المادة الجامعية',
         englishSpecialty: 'Custom Subject',
         university: customUniversityName.trim() || 'جامعتك الحالية',
-        avatarStyle: customAvatarStyle || 'classic_professor',
-        voiceGender: 'male' as const,
-        boardTheme: customBoardTheme || 'chalkboard_green',
+        avatarStyle: avatarStyleMapped,
+        coatColor: '#1e3a8a',
+        hairColor: '#1e293b',
+        accentColor: '#3b82f6',
+        voiceGender: avatarStyleMapped === 'female_engineer' ? 'female' as const : 'male' as const,
+        voicePitch: avatarStyleMapped === 'female_engineer' ? 1.2 : 1.0,
+        voiceRate: 0.95,
+        boardTheme: boardThemeMapped,
         bio: `دكتورك الجامعي المخصص لمادة ${customSubjectName || 'التخصص'} بقسم ${customMajorName || 'الميكاترونكس'} في ${customUniversityName || 'جامعتك'}.`,
         suggestedTopics: ['مفاهيم الشرح والمبادئ الأساسية', 'حل مسائل الاختبارات وحلقات البحث'],
       } as SpecialistDoctor;

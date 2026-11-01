@@ -12,7 +12,8 @@ import {
   Loader2,
   CheckCircle2,
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { StudyLevel } from '../types';
 
@@ -28,6 +29,7 @@ interface RegistrationViewProps {
   }) => void;
   onBack: () => void;
   onOpenLogin?: () => void;
+  onOpenGuide?: () => void;
 }
 
 const UNIVERSITIES = [
@@ -58,6 +60,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
   onProceedToPlans,
   onBack,
   onOpenLogin,
+  onOpenGuide,
 }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -146,6 +149,35 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
     <div className="max-w-xl mx-auto py-8 px-4 sm:px-6">
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
         
+        {/* Top Interactive Platform Instructions & Guide Banner */}
+        {onOpenGuide && (
+          <div className="p-4.5 rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white shadow-lg space-y-2.5 border border-blue-400/40">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold bg-white/20 px-2.5 py-0.5 rounded-full">
+                <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                <span>دليل الاستخدام والتعليمات</span>
+              </span>
+              <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-md">
+                موصى به للطلاب الجدد 📖
+              </span>
+            </div>
+            <h3 className="text-sm sm:text-base font-black leading-snug">
+              كيفية استخدام الموقع والعمل فيه بالكامل؟
+            </h3>
+            <p className="text-xs text-blue-100 leading-relaxed font-medium">
+              تعرّف بالتفصيل والدقة على طريقة عمل الخدمات: الدكتور الذكي، مرجع سيرواي، محاكي الدوائر، اشرح لي درسي، والحاسبة العلمية.
+            </p>
+            <button
+              type="button"
+              onClick={onOpenGuide}
+              className="w-full mt-1 py-2.5 px-4 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              <span>اقرأ دليل التعليمات وطريقة العمل بالموقع بالتفصيل 📖</span>
+            </button>
+          </div>
+        )}
+
         {/* Title */}
         <div className="text-center space-y-2">
           <AcademyLogo variant="icon" size="lg" className="mx-auto" />

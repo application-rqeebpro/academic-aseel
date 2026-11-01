@@ -39,6 +39,7 @@ interface WelcomeViewProps {
   onOpenVideos?: () => void;
   onOpenSmartDoctor?: () => void;
   onExploreAsGuest?: () => void;
+  onOpenGuide?: () => void;
   subjects?: Subject[];
   monthlyPriceUSD?: number;
   yearlyPriceUSD?: number;
@@ -52,6 +53,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
   onOpenVideos,
   onOpenSmartDoctor,
   onExploreAsGuest,
+  onOpenGuide,
   subjects = [],
   monthlyPriceUSD = 20,
   yearlyPriceUSD = 200,
@@ -136,9 +138,22 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
           </button>
         </div>
 
+        {/* Platform Detailed Guide Banner */}
+        {onOpenGuide && (
+          <div className="pt-2 max-w-xl mx-auto">
+            <button
+              onClick={onOpenGuide}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-md shadow-indigo-500/20 active:scale-[0.98]"
+            >
+              <BookOpen className="w-4 h-4 text-amber-300" />
+              <span>📖 دليل استخدام المنصة — شرح خطوة بخطوة لكل الميزات بالكامل</span>
+            </button>
+          </div>
+        )}
+
         {/* Free Guest Exploration Banner */}
         {onExploreAsGuest && (
-          <div className="pt-2 max-w-xl mx-auto">
+          <div className="pt-1 max-w-xl mx-auto">
             <button
               onClick={onExploreAsGuest}
               className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-2 border-emerald-300/80 dark:border-emerald-700/80 font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-xs active:scale-[0.98]"

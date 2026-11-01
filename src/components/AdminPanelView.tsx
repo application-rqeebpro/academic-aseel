@@ -2662,14 +2662,14 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                                   {doc.name}
                                 </h5>
                                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-semibold shrink-0">
-                                  {doc.category}
+                                  {doc.specialty}
                                 </span>
                               </div>
                               <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
                                 {doc.title}
                               </p>
                               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5" dir="ltr">
-                                {doc.englishName} • {doc.specialization}
+                                {doc.englishSpecialty} • {doc.university}
                               </p>
                               <p className="text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 leading-relaxed">
                                 {doc.bio}
@@ -2679,13 +2679,13 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
                           <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-700/60 text-[10px]">
                             <span className="text-slate-400 font-bold">الموضوعات:</span>
-                            {doc.topics.slice(0, 3).map((top, idx) => (
+                            {(doc.suggestedTopics || []).slice(0, 3).map((top, idx) => (
                               <span key={idx} className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                                 {top}
                               </span>
                             ))}
-                            {doc.topics.length > 3 && (
-                              <span className="text-slate-400">+{doc.topics.length - 3}</span>
+                            {(doc.suggestedTopics || []).length > 3 && (
+                              <span className="text-slate-400">+{(doc.suggestedTopics || []).length - 3}</span>
                             )}
                           </div>
 
@@ -2733,9 +2733,9 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {adminLessons.map((les) => (
                               <tr key={les.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                <td className="p-3 font-bold text-slate-900 dark:text-white">{les.title}</td>
+                                <td className="p-3 font-bold text-slate-900 dark:text-white">{les.lessonTitle}</td>
                                 <td className="p-3 text-purple-600 dark:text-purple-400 font-semibold">{les.doctorName}</td>
-                                <td className="p-3 text-slate-600 dark:text-slate-300">{les.studyLevel}</td>
+                                <td className="p-3 text-slate-600 dark:text-slate-300">{les.explanationLevel || '-'}</td>
                                 <td className="p-3 text-slate-600 dark:text-slate-300">{les.scenes?.length || 0} مشاهد</td>
                                 <td className="p-3 text-slate-400 font-mono" dir="ltr">
                                   {les.createdAt ? new Date(les.createdAt).toLocaleDateString('ar-YE') : '-'}
@@ -2799,8 +2799,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                             <label className="block text-slate-500 mb-1">التخصص بالإنجليزية:</label>
                             <input
                               type="text"
-                              value={editingDoctor.specialization}
-                              onChange={(e) => setEditingDoctor({ ...editingDoctor, specialization: e.target.value })}
+                              value={editingDoctor.englishSpecialty}
+                              onChange={(e) => setEditingDoctor({ ...editingDoctor, englishSpecialty: e.target.value })}
                               className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                               dir="ltr"
                             />
@@ -2820,10 +2820,10 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                             <label className="block text-slate-500 mb-1">الموضوعات المقترحة (مفصولة بفواصل):</label>
                             <input
                               type="text"
-                              value={editingDoctor.topics.join('، ')}
+                              value={(editingDoctor.suggestedTopics || []).join('، ')}
                               onChange={(e) => setEditingDoctor({
                                 ...editingDoctor,
-                                topics: e.target.value.split(/[,،]/).map(s => s.trim()).filter(Boolean)
+                                suggestedTopics: e.target.value.split(/[,،]/).map(s => s.trim()).filter(Boolean)
                               })}
                               className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                             />

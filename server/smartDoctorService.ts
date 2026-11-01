@@ -505,6 +505,7 @@ export async function generateSmartDoctorLesson(params: {
 }): Promise<SmartDoctorGeneratedLesson> {
   const doctors = getActiveSpecialistDoctors();
   const baseDoc = doctors.find((d) => d.id === params.doctorId);
+  let doctor: SpecialistDoctor;
 
   if (params.customDoctorInfo && params.customDoctorInfo.name?.trim()) {
     const c = params.customDoctorInfo;
@@ -559,9 +560,9 @@ export async function generateSmartDoctorLesson(params: {
   if (useSerway) {
     try {
       const searchRes = searchBookChunks(SERWAY_BOOK_ID, lessonTitle, 3);
-      if (searchRes.length > 0) {
+      if (searchRes.chunks && searchRes.chunks.length > 0) {
         serwayContext = `\n\n[اقتباسات من كتاب Physics for Scientists and Engineers — Serway]:\n` +
-          searchRes.map((c) => `- الفصل ${c.chapterNumber || ''} (${c.chapterTitle || ''}): ${c.content}`).join('\n');
+          searchRes.chunks.map((c) => `- الفصل (${c.chapterTitle || ''} صفحة ${c.pageNumber}): ${c.content}`).join('\n');
       }
     } catch (e) {
       console.warn('Serway search skipped:', e);

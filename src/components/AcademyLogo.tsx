@@ -32,13 +32,13 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
         clearTimeout(resetTimerRef.current);
       }
 
-      if (clickCountRef.current >= 20) {
+      if (clickCountRef.current >= 10) {
         clickCountRef.current = 0;
         onAdminTrigger();
       } else {
         resetTimerRef.current = setTimeout(() => {
           clickCountRef.current = 0;
-        }, 4000);
+        }, 3000);
       }
     }
   };

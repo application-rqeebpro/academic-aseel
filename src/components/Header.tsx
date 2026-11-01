@@ -5,7 +5,6 @@ import { PWAInstallButton } from './PWAInstallButton';
 import { 
   Moon, 
   Sun, 
-  ShieldCheck, 
   LogOut, 
   Clock, 
   LogIn, 
@@ -46,6 +45,7 @@ interface HeaderProps {
   onOpenRegister: () => void;
   onOpenActivation?: () => void;
   onOpenProfile?: () => void;
+  onOpenGuide?: () => void;
   onLogout: () => void;
   onNavigateHome: () => void;
 }
@@ -69,6 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenRegister,
   onOpenActivation,
   onOpenProfile,
+  onOpenGuide,
   onLogout,
   onNavigateHome,
 }) => {
@@ -285,6 +286,17 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     <span>تفعيل الاشتراك بكود</span>
+                  </button>
+                )}
+
+                {onOpenGuide && (
+                  <button
+                    onClick={onOpenGuide}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                    title="دليل وطريقة استخدام الموقع بالتفصيل"
+                  >
+                    <Book className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>📖 دليل الاستخدام</span>
                   </button>
                 )}
 
