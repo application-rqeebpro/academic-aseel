@@ -1,5 +1,18 @@
 import { GoogleGenAI } from '@google/genai';
-import { ExplainLessonResult, ExplainLevel, ExplainSourceType } from '../src/types';
+import { 
+  ExplainLessonResult, 
+  ExplainLevel, 
+  ExplainSourceType, 
+  SmartDoctorConfig, 
+  EducationalPresentation, 
+  EducationalSlide 
+} from '../src/types';
+import { 
+  searchBookChunks, 
+  SERWAY_BOOK_ID, 
+  getReferenceBookById, 
+  getPhysicsTopicInfo 
+} from './referenceBookService';
 
 function parsePdfPageRange(rangeStr: string, maxPages: number): Set<number> {
   const pages = new Set<number>();
@@ -226,6 +239,89 @@ export interface ExplainRequestParams {
   studentMajor?: string;
   studentId?: string;
   pdfPageChoice?: { mode: 'full' | 'pages'; selectedPages?: string };
+  useSerwayReference?: boolean;
+  doctorConfig?: SmartDoctorConfig;
+}
+
+export function buildEducationalPresentation(
+  lessonTitle: string,
+  simpleIdea: string,
+  formulas: any[],
+  solvedExample: any,
+  commonMistakes: any[],
+  summaryPoints: string[]
+): EducationalPresentation {
+  const safeTitle = lessonTitle || 'شرح الدرس الهندسي';
+  const slides: EducationalSlide[] = [
+    {
+      slideNumber: 1,
+      title: `المقدمة والهدف الأساسي: ${safeTitle}`,
+      type: 'concept',
+      bullets: [
+        simpleIdea ? simpleIdea.slice(0, 160) : 'استيعاب المفهوم الفيزيائي والهندسي الأساسي.',
+        'ربط الموضوع بتطبيقات هندسة الميكاترونكس والأنظمة الذكية.',
+        'معرفة معايير التحليل الرياضي والوحدات الدولية المعتمدة.',
+      ],
+      audioNarrationScript: `مرحباً بكم في العرض التعليمي التفاعلي لدرس: ${safeTitle}. في هذه الشريحة نستعرض الفكرة الأساسية: ${simpleIdea ? simpleIdea.slice(0, 120) : 'فهم المفهوم الهندسي وتطبيقاته'}.`,
+      durationSeconds: 15,
+    },
+    {
+      slideNumber: 2,
+      title: 'القوانين والمعادلات الحاكمة',
+      type: 'formula',
+      bullets: Array.isArray(formulas) && formulas.length > 0
+        ? formulas.slice(0, 3).map(f => `${f.equation}: ${f.meaning || 'المعادلة الحاكمة'}`)
+        : ['مراجعة الصيغة الرياضية وتجانس الوحدات في النظام الدولي.'],
+      latexFormula: formulas?.[0]?.equation,
+      audioNarrationScript: formulas?.[0]
+        ? `القانون الحاكم الأساسي هو ${formulas[0].equation}، حيث يعبر عن ${formulas[0].meaning || 'العلاقة الفيزيائية'}.`
+        : 'نستعرض هنا القوانين والمعادلات الحاكمة للموضوع.',
+      durationSeconds: 20,
+    },
+    {
+      slideNumber: 3,
+      title: 'مسألة تطبيقية محلولة خطوة بخطوة',
+      type: 'example',
+      bullets: [
+        `المعطيات: ${(solvedExample?.given || []).slice(0, 2).join(' | ') || 'استخراج المعطيات بدقة'}`,
+        `المطلوب: ${solvedExample?.required || 'حل المسألة'}`,
+        `القانون المستخدم: ${solvedExample?.formulaUsed || formulas?.[0]?.equation || 'القانون الحاكم'}`,
+        `الناتج النهائي: ${solvedExample?.finalAnswer || 'حساب القيمة والوحدة الصحيحة'}`,
+      ],
+      diagramDescription: 'مخطط خطوات التعويض الحسابي والتحليل الفيزيائي للحل',
+      audioNarrationScript: `ننتقل الآن لحل المسألة الهندسية: بعد استخراج المعطيات والتأكد من وحدات SI، نعوض مباشرة في القانون لنصل إلى النتيجة: ${solvedExample?.finalAnswer || 'الناتج النهائي'}.`,
+      durationSeconds: 25,
+    },
+    {
+      slideNumber: 4,
+      title: 'الأخطاء الشائعة والتنبيهات الهندسية',
+      type: 'summary',
+      bullets: Array.isArray(commonMistakes) && commonMistakes.length > 0
+        ? commonMistakes.slice(0, 2).map(m => `⚠️ خطأ شائع: ${m.mistake} — التصحيح: ${m.correction}`)
+        : ['تأكد دائمًا من تحويل الوحدات إلى النظام الدولي SI قبل التعويض الرياضي.'],
+      audioNarrationScript: 'انتبهوا جيداً لتفادي الأخطاء الشائعة أثناء حل المسائل، وأهمها تحويل الوحدات وتحديد الاتجاهات الصحيحة للقوى والحقول.',
+      durationSeconds: 15,
+    },
+    {
+      slideNumber: 5,
+      title: 'خلاصة الدرس ونقاط الامتحان السريعة',
+      type: 'summary',
+      bullets: Array.isArray(summaryPoints) && summaryPoints.length > 0
+        ? summaryPoints.slice(0, 3)
+        : ['استيعاب المفهوم، حفظ القانون والرموز، والتدرب على المسائل.'],
+      audioNarrationScript: `وفي الختام، تتلخص أهم نقاط الدرس في استيعاب المفهوم الأساسي وتطبيق القوانين بدقة. بالتوفيق لجميع مهندسي المستقبل.`,
+      durationSeconds: 15,
+    },
+  ];
+
+  return {
+    id: `pres-${Date.now()}`,
+    lessonTitle: safeTitle,
+    slides,
+    totalDurationSeconds: slides.reduce((acc, s) => acc + (s.durationSeconds || 15), 0),
+    isGeneratedAlternative: true,
+    disclaimer: 'عرض تعليمي تفاعلي بديل لشرح الفيديو بالشرائح والصوت التفاعلي لتيسير الفهم بدون انقطاع.',
+  };
 }
 
 export async function processExplainLesson(params: ExplainRequestParams): Promise<ExplainLessonResult> {
@@ -242,6 +338,8 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
     studentUniversity = 'الجامعة الإماراتية الدولية – صنعاء',
     studentMajor = 'هندسة الميكاترونكس',
     pdfPageChoice,
+    useSerwayReference = false,
+    doctorConfig,
   } = params;
 
   const client = getGeminiClient();
@@ -390,8 +488,71 @@ export async function processExplainLesson(params: ExplainRequestParams): Promis
      اجعل "isNotEducational": true واكتب في "notEducationalNotice": "الصورة المرفوعة لا تحتوي على درس أو مسألة أو مخطط هندسي واضح لمواد الميكاترونكس. يرجى رفع صورة لدفتر، سبورة، كتاب، ملزمة، أو دائرة كهربائية."
 ` : '';
 
+      // RAG Retrieval for Serway Reference
+      let serwayChunksContext = '';
+      let retrievedSerwayChunks: any[] = [];
+      let serwayStatusNotice = '';
+      const serwayBook = getReferenceBookById(SERWAY_BOOK_ID);
+
+      if (useSerwayReference) {
+        const queryTopic = [prompt, fileName, specificPart].filter(Boolean).join(' ');
+        if (serwayBook?.hasFile && serwayBook.processingStatus === 'ready') {
+          const searchRes = searchBookChunks(SERWAY_BOOK_ID, queryTopic, 4);
+          retrievedSerwayChunks = searchRes.chunks;
+          if (retrievedSerwayChunks.length > 0) {
+            serwayChunksContext = `
+[المقاطع المسترجعة من مرجع Physics for Scientists and Engineers — Serway عبر محرك RAG]:
+${retrievedSerwayChunks.map((c, i) => `--- [مقطع ${i + 1} - ${c.chapterTitle} (صفحة ${c.pageNumber || 'غير محددة'})] ---\n${c.content}`).join('\n\n')}
+
+توجيهات صارمة للاقتباس والتوثيق من مرجع Serway:
+1. استند إلى هذه المقاطع المسترجعة من كتاب Serway في صياغة الشرح والقوانين والمصطلحات.
+2. اذكر رقم الصفحة والفصل بدقة كما ورد في المقاطع أعلاه في مصفوفة "serwayCitations".
+3. ضع تمييزاً واضحاً بين:
+   - المعلومات المسترجعة من مرجع Serway (اذكر رقم الصفحة والفصل).
+   - المعلومات المستخرجة من ملف الطالب.
+   - التوضيحات الهندسية الإضافية المولدة بالذكاء الاصطناعي.
+4. لا تخترع أرقام صفحات أو فصول غير موجودة في المقاطع المسترجعة.
+`;
+          } else {
+            serwayStatusNotice = 'تم البحث داخل مرجع Serway المفهرس ولم يتم العثور على مقاطع مباشرة مطابقة لموضوع الدرس. تم إعداد الشرح اعتماداً على محتوى الطالب والمعرفة الفيزيائية العامة دون ادعاء الاقتباس.';
+          }
+        } else {
+          serwayStatusNotice = 'مرجع Physics for Scientists and Engineers — Serway غير مرفوع حالياً في النظام من قبل إدارة الأكاديمية. تم بناء الشرح اعتماداً على محتوى الطالب والمعرفة الهندسية المعتمدة دون ادعاء الاقتباس من صفحات الكتاب.';
+        }
+      }
+
+      // Smart Doctor configuration prompt
+      let smartDoctorPrompt = '';
+      if (doctorConfig?.enabled) {
+        const styleLabels: Record<string, string> = {
+          simplified_beginner: 'شرح مبسط للمبتدئين من الصفر مع تشبيهات ملموسة',
+          university_detailed: 'شرح جامعي مفصل وأكاديمي متعمق مع ربط بالنظريات الهندسية',
+          formulas_derivation: 'شرح القوانين واشتقاقها ودلالة رموزها ووحداتها وأبعادها الفيزيائية',
+          step_by_step_problems: 'حل المسائل خطوة بخطوة بالتعويض الدقيق وتفسير النتيجة',
+          diagrams_visual: 'شرح بالرسومات والمخططات التوضيحية وتوزيع القوى والدوائر',
+          practical_applications: 'أمثلة وتطبيقات هندسية وميكاترونية في الروبوتات والسيارات والمصانع',
+          exam_review: 'مراجعة مركزة للامتحان النهائي والأسئلة المتوقعة والأخطاء الشائعة',
+          practice_questions: 'أسئلة تدريبية وتمارين متنوعة مع الحل النموذجي خطوة بخطوة',
+        };
+
+        smartDoctorPrompt = `
+[إعدادات خدمة الدكتور الذكي]:
+- اسم المحاضر / الدكتور: ${doctorConfig.doctorName || 'دكتور المادة'}
+- الجامعة: ${doctorConfig.university || studentUniversity}
+- المستوى: ${doctorConfig.studyLevel || 'السنة الأولى'}
+- المادة: ${doctorConfig.subject || 'الفيزياء الهندسية 1'}
+- أسلوب الشرح المختار: ${styleLabels[doctorConfig.explanationStyle || ''] || 'شرح جامعي مفصل'}
+- مدة الشرح المستهدفة: ${doctorConfig.durationMinutes || 15} دقيقة
+تنبيه مهني وأكاديمي: قدم الشرح بأسلوب المحاضر الجامعي المتمرس (${doctorConfig.doctorName || 'دكتور المادة'}) مع التأكيد على أنه شرح تعليمي ذكي ميسر لمساعدة الطالب.
+`;
+      }
+
       const userInstructionPrompt = `
 أنت مدرس جامعي ذكي متخصص في هندسة الميكاترونكس، ومهمتك مساعدة طالب سنة أولى في الجامعات اليمنية (${studentUniversity}) في تخصص (${studentMajor}) على فهم الدرس الذي يرفعه بطريقة سهلة ومبسطة ومختصرة، مع المحافظة التامة على المعلومات المهمة الموجودة في المحتوى الأصلي دون حذفها.
+
+${smartDoctorPrompt}
+${serwayChunksContext}
+${serwayStatusNotice ? `[تنبيه حالة المرجع]: ${serwayStatusNotice}` : ''}
 
 المعطيات:
 - نوع المحتوى المرفوع: ${mode}
@@ -401,6 +562,7 @@ ${prompt ? `- استفسار أو نص الطالب: "${prompt}"` : ''}
 ${specificPart ? `- الطالب حدد هذا الجزء للتركيز عليه: "${specificPart}"` : ''}
 - مستوى الشرح المطلوب: ${levelDescriptions[explanationLevel] || levelDescriptions.simple}
 - الإجراء المطلوب: ${actionInstructions[actionType] || actionInstructions.full_explain}
+${useSerwayReference ? '- خيار استخدام مرجع Serway: مفعل' : ''}
 
 ${imageSpecificInstructions}
 
@@ -748,6 +910,36 @@ ${imageSpecificInstructions}
           pdfPageChoice: params.pdfPageChoice,
           isAiGenerated: true,
           modelUsed,
+          usedSerwayReference: Boolean(useSerwayReference && retrievedSerwayChunks.length > 0),
+          serwayCitations: Array.isArray(parsed.serwayCitations) && parsed.serwayCitations.length > 0
+            ? parsed.serwayCitations
+            : (useSerwayReference && retrievedSerwayChunks.length > 0
+                ? retrievedSerwayChunks.map((c: any) => ({
+                    chapterTitle: c.chapterTitle,
+                    pageNumber: c.pageNumber,
+                    snippet: c.snippet || c.content.slice(0, 160),
+                    confidence: 0.95
+                  }))
+                : undefined),
+          serwayStatusNotice: serwayStatusNotice || (useSerwayReference && retrievedSerwayChunks.length > 0
+            ? `تم استرجاع مقاطع موثقة من مرجع Serway (الفصل: ${retrievedSerwayChunks[0]?.chapterTitle || 'الفيزياء الهندسية'}) وتضمينها بأمانة في الشرح.`
+            : undefined),
+          smartDoctorConfig: doctorConfig?.enabled ? doctorConfig : undefined,
+          educationalPresentation: buildEducationalPresentation(
+            parsed.lessonTitle || 'الدرس الهندسي',
+            parsed.simpleIdea || '',
+            parsed.formulas || [],
+            parsed.solvedExample || null,
+            parsed.commonMistakes || [],
+            parsed.summaryPoints || []
+          ),
+          sourceAttributions: {
+            fromStudentFile: mode !== 'text' || fileName ? [`المحتوى المرفوع: ${fileName || 'بيانات الطالب'}`] : [],
+            fromSerwayBook: (useSerwayReference && retrievedSerwayChunks.length > 0)
+              ? retrievedSerwayChunks.map((c: any) => `${c.chapterTitle} (صفحة ${c.pageNumber || 'غير محددة'})`)
+              : [],
+            fromAiSynthesis: ['صياغة وتبسيط الذكاء الاصطناعي الأكاديمي'],
+          },
         };
       }
     } catch (err: any) {
@@ -758,6 +950,39 @@ ${imageSpecificInstructions}
   // Smart fallback generator when API key is not present or API call fails
   const fallback = generateFallbackExplainedLesson(params);
   fallback.isAiGenerated = false;
+  fallback.educationalPresentation = buildEducationalPresentation(
+    fallback.lessonTitle,
+    fallback.simpleIdea,
+    fallback.formulas,
+    fallback.solvedExample,
+    fallback.commonMistakes,
+    fallback.summaryPoints
+  );
+
+  if (params.useSerwayReference) {
+    const serwayBook = getReferenceBookById(SERWAY_BOOK_ID);
+    if (serwayBook?.hasFile) {
+      const searchRes = searchBookChunks(SERWAY_BOOK_ID, params.prompt || params.fileName || '', 3);
+      if (searchRes.chunks.length > 0) {
+        fallback.usedSerwayReference = true;
+        fallback.serwayCitations = searchRes.chunks.map(c => ({
+          chapterTitle: c.chapterTitle,
+          pageNumber: c.pageNumber,
+          snippet: c.snippet || c.content.slice(0, 160),
+          confidence: 0.9,
+        }));
+      } else {
+        fallback.serwayStatusNotice = 'مرجع Serway مفهرس ولكن لم يعثر على مقطع مطابق تماماً للبحث، تم إعداد الشرح اعتماداً على المنهاج المعتمد.';
+      }
+    } else {
+      fallback.serwayStatusNotice = 'مرجع Physics for Scientists and Engineers — Serway غير مرفوع حالياً في المنصة من قبل الإدارة. تم تقديم الشرح وفق مفردات الفيزياء الهندسية المعتمدة دون ادعاء الاقتباس.';
+    }
+  }
+
+  if (params.doctorConfig?.enabled) {
+    fallback.smartDoctorConfig = params.doctorConfig;
+  }
+
   fallback.noticeMessage = 'تم تحضير الشرح بالاعتماد على المنظومة التعليمية الهندسية المعتمدة لضمان استمرار دراستك بسلاسة دون تأخير.';
   return fallback;
 }

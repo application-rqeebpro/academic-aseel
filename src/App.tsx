@@ -26,6 +26,9 @@ import { LoginModal } from './components/LoginModal';
 import { StudentProfileModal } from './components/StudentProfileModal';
 import { ExamModal } from './components/ExamModal';
 import { PersonalizedLearningPathView } from './components/PersonalizedLearningPathView';
+import { ReferencesLibraryView } from './components/ReferencesLibraryView';
+import { ExplanationVideosView } from './components/ExplanationVideosView';
+import { SmartDoctorView } from './components/SmartDoctorView';
 import { Loader2 } from 'lucide-react';
 
 export default function App() {
@@ -251,6 +254,26 @@ export default function App() {
     setActiveTab('dashboard');
   };
 
+  const handleExploreAsGuest = () => {
+    const guestProfile: StudentProfile = {
+      id: 'guest-' + Date.now(),
+      name: 'طالب زائر (تجربة مجانية)',
+      phone: '770000000',
+      university: 'الجامعة الإماراتية الدولية – صنعاء',
+      studyLevel: 'السنة الأولى',
+      major: 'هندسة الميكاترونكس',
+      role: 'student',
+      isActivated: true,
+      isExpired: false,
+      remainingDays: 7,
+      completedLessons: [],
+      quizScores: {},
+    };
+    setStudent(guestProfile);
+    setOnboardingStep('dashboard');
+    setActiveTab('dashboard');
+  };
+
   const handleLogout = () => {
     if (confirm('هل تريد بالتأكيد تسجيل الخروج من حسابك؟')) {
       setStudent(null);
@@ -366,6 +389,30 @@ export default function App() {
           setSelectedLessonId(null);
           setSelectedExplainedLesson(null);
         }}
+        onOpenReferences={() => {
+          setActiveTab('references');
+          setSelectedLessonId(null);
+          setSelectedExplainedLesson(null);
+        }}
+        onOpenVideos={() => {
+          if (student) {
+            setActiveTab('videos');
+            setSelectedLessonId(null);
+            setSelectedExplainedLesson(null);
+          } else {
+            setOnboardingStep('videos');
+          }
+        }}
+        onOpenSmartDoctor={() => {
+          if (student) {
+            setActiveTab('smart-doctor');
+            setSelectedLessonId(null);
+            setSelectedExplainedLesson(null);
+          } else {
+            setOnboardingStep('smart-doctor');
+          }
+        }}
+        onOpenAdmin={() => setIsAdminOpen(true)}
         onOpenLogin={handleOpenLogin}
         onOpenRegister={handleStartRegistration}
         onOpenActivation={() => setOnboardingStep('code')}
@@ -403,9 +450,32 @@ export default function App() {
                 onLogin={handleOpenLogin}
                 onOpenActivation={() => setOnboardingStep('code')}
                 onOpenAdmin={() => setIsAdminOpen(true)}
+                onOpenVideos={() => setOnboardingStep('videos')}
+                onOpenSmartDoctor={() => setOnboardingStep('smart-doctor')}
+                onExploreAsGuest={handleExploreAsGuest}
                 subjects={subjects}
                 monthlyPriceUSD={monthlyPriceUSD}
                 yearlyPriceUSD={yearlyPriceUSD}
+              />
+            )}
+            {onboardingStep === 'videos' && (
+              <ExplanationVideosView
+                onBack={() => setOnboardingStep('welcome')}
+                onOpenAiWithTopic={(topic) => handleOpenAiWithTopic(topic)}
+                onOpenSerwayReference={() => {
+                  handleExploreAsGuest();
+                  setTimeout(() => setActiveTab('references'), 100);
+                }}
+              />
+            )}
+            {onboardingStep === 'smart-doctor' && (
+              <SmartDoctorView
+                student={null}
+                onBackToDashboard={() => setOnboardingStep('welcome')}
+                onOpenSerwayLibrary={() => {
+                  handleExploreAsGuest();
+                  setTimeout(() => setActiveTab('references'), 100);
+                }}
               />
             )}
 
@@ -498,10 +568,6 @@ export default function App() {
                       setActiveTab('subjects');
                     }}
                     onSelectLesson={(lessonId) => {
-                      if (!student.isActivated) {
-                        alert('حسابك في انتظار التفعيل. يرجى إدخال كود التفعيل للوصول إلى محتوى الدروس.');
-                        return;
-                      }
                       setSelectedLessonId(lessonId);
                     }}
                     onRenewSubscription={() => {
@@ -521,6 +587,24 @@ export default function App() {
                   />
                 )}
 
+                {/* 1.4 Explanation Videos Tab */}
+                {activeTab === 'videos' && (
+                  <ExplanationVideosView
+                    onBack={() => setActiveTab('dashboard')}
+                    onOpenAiWithTopic={(topic) => handleOpenAiWithTopic(topic)}
+                    onOpenSerwayReference={() => setActiveTab('references')}
+                  />
+                )}
+
+                {/* 1.45 Smart Doctor Tab */}
+                {activeTab === 'smart-doctor' && (
+                  <SmartDoctorView
+                    student={student}
+                    onBackToDashboard={() => setActiveTab('dashboard')}
+                    onOpenSerwayLibrary={() => setActiveTab('references')}
+                  />
+                )}
+
                 {/* 1.5 Personalized Learning Path Tab */}
                 {activeTab === 'learning-path' && (
                   <PersonalizedLearningPathView
@@ -528,10 +612,6 @@ export default function App() {
                     subjects={subjects}
                     lessons={lessons}
                     onSelectLesson={(lessonId) => {
-                      if (!student.isActivated) {
-                        alert('حسابك في انتظار التفعيل. يرجى إدخال كود التفعيل للوصول إلى محتوى الدروس.');
-                        return;
-                      }
                       setSelectedLessonId(lessonId);
                     }}
                     onSelectSubject={(subjectId) => {
@@ -621,10 +701,6 @@ export default function App() {
                     selectedSubjectId={selectedSubjectId}
                     onSelectSubject={(subjId) => setSelectedSubjectId(subjId)}
                     onSelectLesson={(lessonId) => {
-                      if (!student.isActivated) {
-                        alert('حسابك في انتظار التفعيل. يرجى إدخال كود التفعيل للوصول إلى محتوى الدروس.');
-                        return;
-                      }
                       setSelectedLessonId(lessonId);
                     }}
                     completedLessons={student.completedLessons || []}
@@ -647,6 +723,27 @@ export default function App() {
 
                 {/* 7. Math Helper Tab */}
                 {activeTab === 'math' && <MathHelperView />}
+
+                {/* 8. References Library Tab ("مكتبة الكتب والمراجع — Serway") */}
+                {activeTab === 'references' && (
+                  <ReferencesLibraryView
+                    student={student}
+                    onExplainTopic={(topic) => {
+                      setSelectedExplainedLesson(null);
+                      setSelectedLessonId(null);
+                      setActiveTab('explain');
+                      window.dispatchEvent(new CustomEvent('mct_explain_topic', { detail: { topic } }));
+                    }}
+                    onOpenTool={(toolId) => {
+                      if (['videos', 'circuits', 'formulas', 'units', 'math', 'assignments', 'arduino', 'lab', 'calculator'].includes(toolId)) {
+                        setActiveTab(toolId as any);
+                      } else {
+                        setActiveTab('formulas');
+                      }
+                    }}
+                    onBackToDashboard={() => setActiveTab('dashboard')}
+                  />
+                )}
 
               </div>
             )}

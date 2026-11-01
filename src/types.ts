@@ -182,6 +182,13 @@ export interface Lesson {
   practiceQuestions: { question: string; hint: string; answer: string }[]; // 13. أسئلة تدريبية
   quiz: QuizQuestion[]; // 14. اختبار قصير
   summary: string[]; // 15. ملخص الدرس
+  // Video lecture integration:
+  videoEmbedId?: string;
+  videoTitle?: string;
+  videoInstructor?: string;
+  videoDuration?: string;
+  videoTimestamps?: { time: string; title: string }[];
+  isFreePreview?: boolean;
 }
 
 export interface Subject {
@@ -403,6 +410,21 @@ export interface ExplainLessonResult {
   isAiGenerated?: boolean;
   modelUsed?: string;
   noticeMessage?: string;
+  usedSerwayReference?: boolean;
+  serwayCitations?: Array<{
+    chapterTitle: string;
+    pageNumber?: number;
+    snippet: string;
+    confidence?: number;
+  }>;
+  serwayStatusNotice?: string;
+  smartDoctorConfig?: SmartDoctorConfig;
+  educationalPresentation?: EducationalPresentation;
+  sourceAttributions?: {
+    fromStudentFile?: string[];
+    fromSerwayBook?: string[];
+    fromAiSynthesis?: string[];
+  };
 }
 
 // ==========================================
@@ -612,8 +634,8 @@ export interface ProjectComponentItem {
   details: {
     whatIsIt: string;        // ما هو؟
     function: string;        // ما وظيفته؟
-    howItWorks: string;      // كيف يعمل؟
-    whereUsed: string;       // أين يستخدم؟
+    howItWorks?: string;      // كيف يعمل؟
+    whereUsed?: string;       // أين يستخدم؟
     pinoutOrSpecs?: string;  // مواصفات الأرجل أو الجهد
   };
 }
@@ -707,5 +729,99 @@ export interface EngineeringProjectData {
   };
 }
 
+// ==========================================
+// 📚 ACADEMIC REFERENCES & SERWAY SYSTEM
+// ==========================================
 
+export type BookProcessingStatus = 'not_uploaded' | 'processing' | 'ready' | 'failed';
 
+export interface ReferenceBook {
+  id: string; // e.g. "book-serway-physics"
+  title: string;
+  originalTitle: string;
+  authors: string[];
+  edition?: string;
+  publicationYear?: number;
+  language: string;
+  field: string;
+  targetMajor: string;
+  description: string;
+  hasFile: boolean;
+  fileReference?: string;
+  fileName?: string;
+  fileSize?: number;
+  totalPages?: number;
+  processingStatus: BookProcessingStatus;
+  processingProgress?: number;
+  processingError?: string;
+  indexedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  chunksCount: number;
+  officialExternalUrl?: string;
+  topicsCovered: string[];
+  accessRole?: 'student' | 'admin' | 'public';
+}
+
+export interface ReferenceBookChunk {
+  id: string;
+  bookId: string;
+  chapterTitle: string;
+  pageNumber?: number;
+  sectionTitle?: string;
+  content: string;
+  snippet?: string;
+  score?: number;
+  keywords?: string[];
+}
+
+export interface BookSearchResult {
+  query: string;
+  bookId: string;
+  bookTitle: string;
+  totalMatches: number;
+  chunks: ReferenceBookChunk[];
+}
+
+export type DoctorExplanationStyle = 
+  | 'simplified_beginner'
+  | 'university_detailed'
+  | 'formulas_derivation'
+  | 'step_by_step_problems'
+  | 'diagrams_visual'
+  | 'practical_applications'
+  | 'exam_review'
+  | 'practice_questions';
+
+export interface SmartDoctorConfig {
+  enabled: boolean;
+  doctorName?: string;
+  university?: string;
+  studyLevel?: string;
+  subject?: string;
+  lessonTitle?: string;
+  referenceSource?: 'serway' | 'student_file' | 'general' | 'other';
+  explanationStyle?: DoctorExplanationStyle;
+  durationMinutes?: 5 | 15 | 30;
+  isAiDisclaimerAcknowledged?: boolean;
+}
+
+export interface EducationalSlide {
+  slideNumber: number;
+  title: string;
+  type: 'concept' | 'formula' | 'diagram' | 'example' | 'summary';
+  bullets: string[];
+  latexFormula?: string;
+  diagramDescription?: string;
+  audioNarrationScript?: string;
+  durationSeconds?: number;
+}
+
+export interface EducationalPresentation {
+  id: string;
+  lessonTitle: string;
+  slides: EducationalSlide[];
+  totalDurationSeconds: number;
+  isGeneratedAlternative: boolean;
+  disclaimer: string;
+}

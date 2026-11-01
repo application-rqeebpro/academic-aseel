@@ -7,7 +7,7 @@ import {
   AssignmentDetailLevel,
   AssignmentLanguage,
 } from '../types';
-import { ASSIGNMENT_TYPES_INFO } from '../../server/assignmentService';
+import { ASSIGNMENT_TYPES_INFO } from '../data/assignmentConstants';
 import { AssignmentSectionEditor } from './AssignmentSectionEditor';
 import { AssignmentDocumentView } from './AssignmentDocumentView';
 import { exportElementToPdf } from '../utils/pdfGenerator';

@@ -10,8 +10,8 @@ export interface ProjectComponentItem {
   details: {
     whatIsIt: string;        // ما هو؟
     function: string;        // ما وظيفته؟
-    howItWorks: string;      // كيف يعمل؟
-    whereUsed: string;       // أين يستخدم؟
+    howItWorks?: string;      // كيف يعمل؟
+    whereUsed?: string;       // أين يستخدم؟
     pinoutOrSpecs?: string;  // مواصفات الأرجل أو الجهد
   };
 }

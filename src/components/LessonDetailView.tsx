@@ -18,7 +18,9 @@ import {
   RotateCcw, 
   ChevronDown, 
   ChevronUp, 
-  FileText 
+  FileText,
+  Play,
+  Video
 } from 'lucide-react';
 
 interface LessonDetailViewProps {
@@ -190,6 +192,82 @@ export const LessonDetailView: React.FC<LessonDetailViewProps> = ({
       {/* 📝 ملاحظاتي الشخصية على هذا الدرس */}
       {/* ============================================================ */}
       <LessonNoteWidget lessonId={lesson.id} lessonTitle={lesson.title} />
+
+      {/* ============================================================ */}
+      {/* 🎬 فيديو شرح الدرس والمحاضرة المرئية المعتمدة */}
+      {/* ============================================================ */}
+      {lesson.videoEmbedId && (
+        <section id="section-video" className="bg-slate-950 text-white rounded-3xl overflow-hidden border border-slate-800 shadow-xl space-y-4">
+          <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-900/60 via-indigo-900/40 to-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black tracking-wider flex items-center gap-1">
+                  <Play className="w-3 h-3 fill-white" />
+                  <span>محاضرة مرئية معتمدة</span>
+                </span>
+                {lesson.videoDuration && (
+                  <span className="text-xs text-slate-300 font-mono flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{lesson.videoDuration}</span>
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base sm:text-xl font-black text-white">
+                {lesson.videoTitle || `فيديو شرح درس: ${lesson.title}`}
+              </h3>
+              {lesson.videoInstructor && (
+                <p className="text-xs text-blue-200">
+                  المُحاضر: {lesson.videoInstructor}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://www.youtube.com/watch?v=${lesson.videoEmbedId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
+              >
+                <span>مشاهدة في YouTube</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Responsive 16:9 Video Embed */}
+          <div className="px-3 sm:px-6">
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-inner border border-slate-800">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${lesson.videoEmbedId}?rel=0`}
+                title={lesson.videoTitle || lesson.title}
+                className="absolute inset-0 w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+
+          {/* Timestamps if available */}
+          {lesson.videoTimestamps && lesson.videoTimestamps.length > 0 && (
+            <div className="p-4 sm:p-6 bg-slate-900/60 border-t border-slate-800 space-y-2">
+              <span className="text-xs font-bold text-slate-300 block">
+                ⏱️ محاور الفيديو والانتقال المباشر للمفهوم:
+              </span>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {lesson.videoTimestamps.map((ts, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 flex items-center gap-1.5"
+                  >
+                    <span className="text-blue-400 font-mono font-bold">{ts.time}</span>
+                    <span>{ts.title}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ============================================================ */}
       {/* 2 & 3. الشرح المبسط جدًا من الصفر + الفكرة الأساسية */}

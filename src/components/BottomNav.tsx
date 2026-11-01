@@ -11,12 +11,15 @@ import {
 
 export type TabType = 
   | 'dashboard' 
+  | 'videos'
   | 'learning-path'
   | 'explain'
+  | 'smart-doctor'
   | 'assignments'
   | 'arduino'
   | 'lab'
   | 'calculator'
+  | 'references'
   | 'subjects' 
   | 'formulas' 
   | 'units' 

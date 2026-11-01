@@ -40,6 +40,8 @@ import {
   ArrowRight,
   Wrench,
   Calculator,
+  Play,
+  Video,
 } from 'lucide-react';
 
 
@@ -433,6 +435,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* 3.95 Smart Mechatronics Doctor Hero Card (دكتور الميكاترونكس الذكي — فيديوهات كرتونية على السبورة) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-950 via-slate-900 to-indigo-950 border-2 border-purple-500/60 p-6 sm:p-8 text-white shadow-2xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-xs font-bold text-purple-300">
+              <GraduationCap className="w-4 h-4 text-amber-400 animate-bounce" />
+              <span>نظام الدكاترة التخصصيين الـ 20 بالذكاء الاصطناعي</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>🎓 دكتور الميكاترونكس الذكي</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-black shadow-xs">
+                شرح كرتوني تفاعلي على السبورة 🎨
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-purple-100/90 leading-relaxed">
+              افهم الهندسة <strong>وكأن دكتورك يشرح لك على السبورة!</strong> اختر دكتورك من بين <strong>20 دكتوراً تخصصياً</strong> (فيزياء Serway، رياضيات، دوائر، PLC، روبوتات، تحكم، برمجة C++، أردوينو، درون...) وشاهد <strong>محاكاة كرتونية حية بأسلوب Anime مع كتابة تدريجية بالطباشير، صوت عربي واضح، معادلات LaTeX، وتجارب هندسية تفاعلية قابلة للتحريك!</strong>
+            </p>
+          </div>
+
+          <button
+            onClick={() => handleToolClick('smart-doctor')}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white font-black text-sm sm:text-base shadow-xl shadow-purple-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            <GraduationCap className="w-5 h-5 text-amber-300" />
+            <span>ادخل قاعة الدكتور الذكي 🎓</span>
+          </button>
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-purple-800/40 text-xs text-purple-200">
+          <span className="text-slate-400 font-bold">الدكاترة المميزون:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📘 د. رامي المهدي (فيزياء Serway)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚡ د. طارق الشميري (دوائر وإلكترونيات)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🤖 د. عمار القدسي (روبوتات و ROS)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚙️ د. هاني الذماري (PLC وتحكم صناعي)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">💻 د. هشام الأكوع (برمجة C++ ومتحكمات)</span>
+        </div>
+      </div>
+
       {/* 4. Hero Feature Banner for "اشرح لي درس اليوم" */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 border border-blue-700/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
 
@@ -549,6 +590,80 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span className="px-2.5 py-0.5 rounded-md bg-white/10">⏱️ كويزات فصيلة واختبارات دروس</span>
           <span className="px-2.5 py-0.5 rounded-md bg-white/10">✅ سلم الدرجات والحلول النموذجية</span>
           <span className="px-2.5 py-0.5 rounded-md bg-white/10">🖼️ تنزيل فوري كصورة PNG أو PDF</span>
+        </div>
+      </div>
+
+      {/* 4.3 Academic References & Serway Physics Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-900 border border-blue-500/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-bold text-blue-200">
+              <BookOpen className="w-4 h-4 text-amber-300" />
+              <span>مكتبة المراجع الأكاديمية الدولية</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>📘 مرجع Serway للفيزياء الهندسية</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-blue-500 text-white font-black shadow-xs">
+                Physics for Scientists & Engineers
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
+              تصفح مرجع الفيزياء الدولي <strong>Physics for Scientists and Engineers — Serway</strong> المعتمد في كليات الهندسة، وابحث في مقاطعه المفهرسة، واستدعِ الشرح الذكي وخدمة الدكتور الذكي مع التوثيق الأكاديمي وربطه بالمحاكيات.
+            </p>
+          </div>
+
+          <button
+            onClick={() => handleToolClick('references')}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-black text-sm sm:text-base shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            <BookOpen className="w-5 h-5 text-amber-300" />
+            <span>تصفح مرجع Serway 📘</span>
+          </button>
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-800/40 text-xs text-blue-200">
+          <span className="text-slate-400 font-bold">الميزات:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🔍 بحث داخل الكتاب ونظام RAG</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🎓 خدمة الدكتور الذكي</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🎬 شرح الفيديو والشرائح التفاعلية</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚡ ربط بمحاكي الحركة والدوائر</span>
+        </div>
+      </div>
+
+      {/* 4.4 Explanation Videos & Lectures Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950 via-slate-900 to-slate-950 border border-red-500/40 p-6 sm:p-8 text-white shadow-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-400/30 text-xs font-bold text-red-200">
+              <Play className="w-4 h-4 text-red-400 fill-red-400" />
+              <span>مكتبة المحاضرات المرئية المعتمدة لطلاب الميكاترونكس</span>
+            </div>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>🎬 فيديوهات الشرح المعتمدة ومرجع Serway</span>
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-red-600 text-white font-black shadow-xs">
+                فيديو + Timestamps
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-red-100/90 leading-relaxed">
+              محاضرات مرئية دقيقة تشرح مفردات الفيزياء 1 (سيرواي)، الدوائر الكهربائية، وبرمجة C++ للمتحكمات، مع محاور زمنية (Timestamps)، تلخيص القوانين، وأسئلة تدريبية.
+            </p>
+          </div>
+          <button
+            onClick={() => handleToolClick('videos' as any)}
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-red-500/25 flex items-center justify-center gap-2.5 cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            <Play className="w-5 h-5 fill-white" />
+            <span>شاهد فيديوهات الشرح 🎬</span>
+          </button>
+        </div>
+        {/* Quick Links */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-red-900/40 text-xs text-red-200">
+          <span className="text-slate-400 font-bold">المحاضرات المتوفرة:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📘 المتجهات والقوى (Serway Ch 3)</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">⚡ قانون أوم وتدفق التيار</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">🤖 برمجة المتحكمات بلغة C++</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-white/10">📐 تحليل الدوائر KCL/KVL</span>
         </div>
       </div>
 
@@ -773,6 +888,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </button>
 
+
+          {/* Smart Doctor Tool Card */}
+          <button
+            onClick={() => handleToolClick('smart-doctor')}
+            className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/60 dark:to-pink-950/60 border-2 border-purple-500/50 hover:border-purple-600 text-right space-y-2 group transition-all cursor-pointer shadow-xs relative"
+          >
+            {isPending && <Lock className="w-3.5 h-3.5 absolute top-3 left-3 text-slate-400" />}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-xs sm:text-sm text-purple-900 dark:text-purple-200 flex items-center gap-1">
+                <span>دكتور الميكاترونكس</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-600 text-white font-bold">سبورة 🎨</span>
+              </div>
+              <div className="text-[11px] text-purple-600 dark:text-purple-400">20 دكتوراً تخصصياً وشرح كرتوني تفاعلي</div>
+            </div>
+          </button>
 
           {onOpenExam && (
             <button

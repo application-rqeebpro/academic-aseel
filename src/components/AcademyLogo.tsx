@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 interface AcademyLogoProps {
   variant?: 'full' | 'icon' | 'badge';
@@ -6,6 +6,7 @@ interface AcademyLogoProps {
   showSubtitle?: boolean;
   className?: string;
   onClick?: () => void;
+  onAdminTrigger?: () => void;
 }
 
 export const AcademyLogo: React.FC<AcademyLogoProps> = ({
@@ -14,7 +15,34 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
   showSubtitle = true,
   className = '',
   onClick,
+  onAdminTrigger,
 }) => {
+  const clickCountRef = useRef(0);
+  const resetTimerRef = useRef<any>(null);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      onClick();
+    }
+
+    if (onAdminTrigger) {
+      clickCountRef.current += 1;
+
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+
+      if (clickCountRef.current >= 20) {
+        clickCountRef.current = 0;
+        onAdminTrigger();
+      } else {
+        resetTimerRef.current = setTimeout(() => {
+          clickCountRef.current = 0;
+        }, 4000);
+      }
+    }
+  };
+
   // Size mappings
   const iconSizeClasses = {
     xs: 'w-7 h-7',
@@ -35,8 +63,8 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
   if (variant === 'icon') {
     return (
       <div 
-        onClick={onClick}
-        className={`relative flex items-center justify-center shrink-0 ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''} ${className}`}
+        onClick={handleClick}
+        className={`relative flex items-center justify-center shrink-0 cursor-pointer hover:scale-105 transition-transform ${className}`}
       >
         <img 
           src="/logo.svg" 
@@ -51,8 +79,8 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
   if (variant === 'badge') {
     return (
       <div 
-        onClick={onClick}
-        className={`flex flex-col items-center justify-center text-center p-4 rounded-3xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/60 shadow-lg shadow-blue-500/10 ${onClick ? 'cursor-pointer hover:scale-[1.02] transition-transform' : ''} ${className}`}
+        onClick={handleClick}
+        className={`flex flex-col items-center justify-center text-center p-4 rounded-3xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/60 shadow-lg shadow-blue-500/10 cursor-pointer hover:scale-[1.02] transition-transform ${className}`}
       >
         <img 
           src="/logo.svg" 
@@ -74,8 +102,8 @@ export const AcademyLogo: React.FC<AcademyLogoProps> = ({
 
   return (
     <div 
-      onClick={onClick}
-      className={`flex items-center gap-2 sm:gap-3 select-none shrink-0 min-w-0 ${onClick ? 'cursor-pointer group' : ''} ${className}`}
+      onClick={handleClick}
+      className={`flex items-center gap-2 sm:gap-3 select-none shrink-0 min-w-0 cursor-pointer group ${className}`}
     >
       <div className="relative shrink-0">
         <img 

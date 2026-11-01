@@ -22,6 +22,9 @@ import {
   Compass,
   Wrench,
   Calculator,
+  Book,
+  Play,
+  Video,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -30,11 +33,14 @@ interface HeaderProps {
   onToggleDarkMode: () => void;
   onOpenAdmin: () => void;
   onOpenAiModal: () => void;
+  onOpenVideos?: () => void;
+  onOpenSmartDoctor?: () => void;
   onOpenExplainLesson?: () => void;
   onOpenAssignments?: () => void;
   onOpenArduino?: () => void;
   onOpenLab?: () => void;
   onOpenCalculator?: () => void;
+  onOpenReferences?: () => void;
   onOpenLearningPath?: () => void;
   onOpenLogin: () => void;
   onOpenRegister: () => void;
@@ -50,11 +56,14 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDarkMode,
   onOpenAdmin,
   onOpenAiModal,
+  onOpenVideos,
+  onOpenSmartDoctor,
   onOpenExplainLesson,
   onOpenAssignments,
   onOpenArduino,
   onOpenLab,
   onOpenCalculator,
+  onOpenReferences,
   onOpenLearningPath,
   onOpenLogin,
   onOpenRegister,
@@ -74,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
           
           {/* Logo & Branding - Protected from collapsing */}
           <div className="shrink-0 min-w-0">
-            <AcademyLogo onClick={onNavigateHome} size="md" />
+            <AcademyLogo onClick={onNavigateHome} onAdminTrigger={onOpenAdmin} size="md" />
           </div>
 
           {/* ========================================================= */}
@@ -88,6 +97,31 @@ export const Header: React.FC<HeaderProps> = ({
             {/* If Student is Logged in */}
             {student ? (
               <>
+                {/* Explanation Videos Quick Trigger */}
+                {onOpenVideos && (
+                  <button
+                    onClick={onOpenVideos}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                    title="مكتبة فيديوهات الشرح المعتمدة ومرجع Serway"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-red-600 dark:fill-red-400" />
+                    <span>🎬 فيديوهات الشرح</span>
+                  </button>
+                )}
+
+                {/* Smart Doctor Quick Trigger */}
+                {onOpenSmartDoctor && (
+                  <button
+                    onClick={onOpenSmartDoctor}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs sm:text-sm font-bold transition-all cursor-pointer shadow-xs"
+                    title="دكتور الميكاترونكس الذكي — فيديوهات وشروحات كرتونية على السبورة"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>🎓 دكتور الميكاترونكس</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
+                  </button>
+                )}
+
                 {/* Explain Today's Lesson Quick Trigger */}
                 {student.isActivated && onOpenExplainLesson && (
                   <button
@@ -146,6 +180,17 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 )}
 
+                {/* Academic References (Serway) Quick Trigger */}
+                {onOpenReferences && (
+                  <button
+                    onClick={onOpenReferences}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm font-bold transition-all cursor-pointer"
+                    title="مكتبة المراجع والكتب الأكاديمية (Serway)"
+                  >
+                    <span>📘 المراجع (Serway)</span>
+                  </button>
+                )}
+
 
                 {/* Personalized Learning Path Quick Trigger */}
                 {onOpenLearningPath && (
@@ -198,17 +243,6 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </button>
 
-                {/* Admin role badge */}
-                {student.role === 'admin' && (
-                  <button
-                    onClick={onOpenAdmin}
-                    className="p-2 rounded-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
-                    title="لوحة الإدارة"
-                  >
-                    <ShieldCheck className="w-5 h-5" />
-                  </button>
-                )}
-
                 {/* Logout Button */}
                 <button
                   onClick={onLogout}
@@ -221,6 +255,28 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               /* Visitor view for Desktop */
               <>
+                {onOpenVideos && (
+                  <button
+                    onClick={onOpenVideos}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-xs"
+                    title="شاهد فيديوهات الشرح المعتمدة لطلاب الميكاترونكس ومرجع Serway"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-red-600 dark:fill-red-400" />
+                    <span>🎬 فيديوهات الشرح</span>
+                  </button>
+                )}
+
+                {onOpenSmartDoctor && (
+                  <button
+                    onClick={onOpenSmartDoctor}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/80 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-xs"
+                    title="دكتور الميكاترونكس الذكي — فيديوهات كرتونية تفاعلية على السبورة"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>🎓 دكتور الميكاترونكس</span>
+                  </button>
+                )}
+
                 {onOpenActivation && (
                   <button
                     onClick={onOpenActivation}
@@ -246,15 +302,6 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>اشترك الآن</span>
-                </button>
-
-                {/* Owner / Admin Control Panel Icon Button */}
-                <button
-                  onClick={onOpenAdmin}
-                  className="p-2 rounded-xl text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 border border-indigo-200 dark:border-indigo-800 transition-all cursor-pointer"
-                  title="لوحة تحكم المالك / الإدارة"
-                >
-                  <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </button>
               </>
             )}
@@ -351,6 +398,40 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
+                {/* Explanation Videos Mobile */}
+                {onOpenVideos && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenVideos();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 font-bold text-sm border border-red-200 dark:border-red-800/60 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Play className="w-5 h-5 fill-red-600 dark:fill-red-400 text-red-600 dark:text-red-400" />
+                      <span>🎬 فيديوهات الشرح المعتمدة (Serway)</span>
+                    </div>
+                    <span className="text-xs bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-0.5 rounded-lg">جديد</span>
+                  </button>
+                )}
+
+                {/* Smart Doctor Mobile */}
+                {onOpenSmartDoctor && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenSmartDoctor();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-sm border border-purple-200 dark:border-purple-800/60 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <GraduationCap className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      <span>🎓 دكتور الميكاترونكس الذكي (سبورة وشرح كرتوني)</span>
+                    </div>
+                    <span className="text-xs bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded-lg">شرح حي</span>
+                  </button>
+                )}
+
                 {/* AI Assistant */}
                 <button
                   onClick={() => {
@@ -439,6 +520,20 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 )}
 
+                {/* Academic References (Serway) */}
+                {onOpenReferences && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenReferences();
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold text-sm border border-amber-200 dark:border-amber-800/60 cursor-pointer"
+                  >
+                    <Book className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    <span>📘 مكتبة المراجع والكتب (Serway)</span>
+                  </button>
+                )}
+
                 {/* Assignment Generator */}
                 {onOpenAssignments && (
                   <button
@@ -472,20 +567,6 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
                 )}
 
-                {/* Admin Panel (if admin) */}
-                {student.role === 'admin' && (
-                  <button
-                    onClick={() => {
-                      closeMenu();
-                      onOpenAdmin();
-                    }}
-                    className="w-full flex items-center gap-3 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-sm border border-indigo-200 dark:border-indigo-800 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    <span>لوحة تحكم المالك والإدارة</span>
-                  </button>
-                )}
-
                 {/* Logout */}
                 <button
                   onClick={() => {
@@ -501,6 +582,39 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               /* Visitor Mobile Menu */
               <>
+                {/* Explanation Videos for Visitors */}
+                {onOpenVideos && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenVideos();
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-sm shadow-md cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Play className="w-5 h-5 fill-white text-white" />
+                      <span>🎬 فيديوهات الشرح المعتمدة ومرجع Serway</span>
+                    </div>
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-lg">شاهد مجانًا</span>
+                  </button>
+                )}
+
+                {onOpenSmartDoctor && (
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                      onOpenSmartDoctor();
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-black text-sm shadow-md cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-amber-300" />
+                      <span>🎓 دكتور الميكاترونكس الذكي (سبورة وشرح كرتوني)</span>
+                    </div>
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-lg">20 تخصص</span>
+                  </button>
+                )}
+
                 {/* Primary Register CTA */}
                 <button
                   onClick={() => {
@@ -543,18 +657,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="pt-1">
                   <PWAInstallButton variant="button" className="w-full justify-center py-3 rounded-2xl text-sm" />
                 </div>
-
-                {/* Owner / Admin Control Panel */}
-                <button
-                  onClick={() => {
-                    closeMenu();
-                    onOpenAdmin();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-200 dark:border-indigo-800 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>لوحة تحكم المالك / الإدارة</span>
-                </button>
               </>
             )}
 

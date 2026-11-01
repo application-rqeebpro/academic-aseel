@@ -32,6 +32,7 @@ import {
   Trash2, 
   Lightbulb, 
   ArrowRight,
+  ArrowLeft,
   Sliders,
   Send,
   Atom,
@@ -43,8 +44,14 @@ import {
   Square,
   Play,
   Volume2,
+  VolumeX,
+  Pause,
   Wand2,
-  Plus
+  Plus,
+  BookMarked,
+  GraduationCap,
+  Presentation,
+  CheckSquare
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { 
@@ -52,7 +59,11 @@ import {
   ExplainLessonResult, 
   ExplainSourceType, 
   ExplainLevel,
-  ExplainQuizQuestion
+  ExplainQuizQuestion,
+  SmartDoctorConfig,
+  EducationalSlide,
+  EducationalPresentation,
+  BookSearchResult
 } from '../types';
 
 export interface ProcessedImageItem {
@@ -195,6 +206,74 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
 
   // Presentation View Mode: 'stream' (Ordered 1-14 single flow) vs 'tabs'
   const [viewMode, setViewMode] = useState<'stream' | 'tabs'>('stream');
+
+  // Serway Reference RAG integration
+  const [useSerwayReference, setUseSerwayReference] = useState<boolean>(true);
+
+  // Smart Doctor (الدكتور الذكي) Configuration
+  const [showDoctorModal, setShowDoctorModal] = useState<boolean>(false);
+  const [doctorConfig, setDoctorConfig] = useState<SmartDoctorConfig>({
+    enabled: false,
+    doctorName: '',
+    university: student.university || 'الجامعة الإماراتية الدولية – صنعاء',
+    studyLevel: student.studyLevel || 'السنة الأولى',
+    subject: 'الفيزياء العامة والهندسية (Physics for Mechatronics)',
+    lessonTitle: '',
+    referenceSource: 'serway',
+    explanationStyle: 'simplified_beginner',
+    durationMinutes: 15,
+    isAiDisclaimerAcknowledged: true,
+  });
+
+  // Educational Presentation (سلايدات الفيديو التفاعلية)
+  const [showPresentationModal, setShowPresentationModal] = useState<boolean>(false);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
+  const [isSpeakingSlide, setIsSpeakingSlide] = useState<boolean>(false);
+
+  // Listen for custom topic events from References Library
+  useEffect(() => {
+    const handleExternalTopic = (e: any) => {
+      if (e.detail?.topic) {
+        setSourceType('text');
+        setTextInput(e.detail.topic);
+        setUseSerwayReference(true);
+        if (doctorConfig) {
+          setDoctorConfig((prev) => ({ ...prev, lessonTitle: e.detail.topic }));
+        }
+      }
+    };
+    window.addEventListener('mct_explain_topic', handleExternalTopic);
+    return () => window.removeEventListener('mct_explain_topic', handleExternalTopic);
+  }, []);
+
+  // Web Speech API synthesis helper for slides
+  const speakSlideText = (text: string) => {
+    if (!('speechSynthesis' in window)) {
+      alert('المتصفح الحالي لا يدعم ميزة تحويل النص إلى كلام (Web Speech API).');
+      return;
+    }
+    if (isSpeakingSlide) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingSlide(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ar-SA';
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setIsSpeakingSlide(false);
+    utterance.onerror = () => setIsSpeakingSlide(false);
+    setIsSpeakingSlide(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeakingSlide(false);
+  };
 
   // Audio Recording & Speech-to-Text states
   const [isRecording, setIsRecording] = useState(false);
@@ -847,6 +926,8 @@ export const ExplainLessonView: React.FC<ExplainLessonViewProps> = ({
         studentUniversity: student.university,
         studentMajor: student.major,
         studentId: student.id,
+        useSerwayReference,
+        doctorConfig: (doctorConfig.doctorName || doctorConfig.enabled) ? { ...doctorConfig, enabled: true } : undefined,
       };
 
       const response = await fetch('/api/explain-lesson', {
@@ -1096,6 +1177,69 @@ ${analysisResult.summaryPoints.join('\n')}
               <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
               <span>مدرسك الجامعي الذكي والخاص</span>
             </div>
+
+        {/* Serway Reference Toggle & Smart Doctor Options */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-sky-50/70 dark:from-slate-800/90 dark:via-indigo-950/40 dark:to-slate-850 border border-blue-200/80 dark:border-blue-900/60 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={useSerwayReference}
+                onChange={(e) => setUseSerwayReference(e.target.checked)}
+                className="w-5 h-5 mt-0.5 rounded-md text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer"
+              />
+              <div>
+                <span className="font-black text-sm text-slate-900 dark:text-white flex flex-wrap items-center gap-1.5">
+                  <span>☑️ استخدم مرجع Serway عند توفره</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold">
+                    Physics for Scientists and Engineers
+                  </span>
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                  عند تفعيل الخيار، يبحث النظام داخل الكتاب المرفوع ويسترجع مقاطع دقيقة لدعم الشرح بالقوانين والصفحات المعتمدة.
+                </p>
+              </div>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setShowDoctorModal(true)}
+              className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs shrink-0 self-end sm:self-auto"
+            >
+              <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>🎓 الدكتور الذكي</span>
+              {doctorConfig.doctorName ? (
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-extrabold truncate max-w-[100px]">
+                  {doctorConfig.doctorName}
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-400">تخصيص الأسلوب</span>
+              )}
+            </button>
+          </div>
+
+          {/* Quick Doctor Style summary pill if configured */}
+          {doctorConfig.doctorName && (
+            <div className="pt-2 border-t border-blue-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-bold">
+                <span>👨‍🏫 المحاضر المختار:</span>
+                <span className="text-blue-600 dark:text-blue-400 font-black">{doctorConfig.doctorName}</span>
+                <span className="text-slate-400 text-[11px]">({doctorConfig.university})</span>
+              </span>
+              <span className="text-[11px] px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">
+                أسلوب: {
+                  doctorConfig.explanationStyle === 'university_detailed' ? 'شرح جامعي مفصل' :
+                  doctorConfig.explanationStyle === 'formulas_derivation' ? 'شرح القوانين' :
+                  doctorConfig.explanationStyle === 'step_by_step_problems' ? 'حل المسائل خطوة بخطوة' :
+                  doctorConfig.explanationStyle === 'diagrams_visual' ? 'شرح بالرسومات' :
+                  doctorConfig.explanationStyle === 'practical_applications' ? 'أمثلة تطبيقية' :
+                  doctorConfig.explanationStyle === 'exam_review' ? 'مراجعة للاختبار' :
+                  doctorConfig.explanationStyle === 'practice_questions' ? 'أسئلة تدريبية' : 'مبسط للمبتدئين'
+                }
+              </span>
+            </div>
+          )}
+        </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white flex items-center gap-3">
               <span>اشرح لي درس اليوم</span>
               <span className="text-sm font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -2003,11 +2147,157 @@ ${analysisResult.summaryPoints.join('\n')}
 
                 <button
                   type="button"
+                  onClick={() => {
+                    setCurrentSlideIndex(0);
+                    setShowPresentationModal(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                  title="عرض سلايدات فيديو تعليمية تفاعلية مع قراءة صوتية كبديل متقدم وموثوق لإنتاج الفيديو"
+                >
+                  <Video className="w-4 h-4 text-amber-300" />
+                  <span>🎬 أنشئ شرح الفيديو (سلايدات تفاعلية)</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleDidNotUnderstand}
                   className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 border border-rose-200 dark:border-rose-900 transition-all cursor-pointer"
                 >
                   <HelpCircle className="w-4 h-4" />
                   <span>❓ لم أفهم</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Smart Doctor Banner if configured */}
+            {analysisResult.smartDoctorConfig?.doctorName && (
+              <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-indigo-900 dark:text-indigo-200">
+                      🎓 نمط الشرح: د. {analysisResult.smartDoctorConfig.doctorName} ({analysisResult.smartDoctorConfig.university || student.university})
+                    </h4>
+                    <p className="text-slate-600 dark:text-slate-400 mt-0.5">
+                      ⚠️ الشرح تعليمي مولد بالذكاء الاصطناعي وفق المعايير الأكاديمية وليس تسجيلاً رسمياً صادراً عن الدكتور المذكور.
+                    </p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 font-black self-start sm:self-auto shrink-0">
+                  {analysisResult.smartDoctorConfig.explanationStyle === 'university_detailed' ? 'جامعي مفصل' : analysisResult.smartDoctorConfig.explanationStyle === 'step_by_step_problems' ? 'مسائل خطوة بخطوة' : analysisResult.smartDoctorConfig.explanationStyle === 'formulas_derivation' ? 'قوانين ومعادلات' : 'مبسط'}
+                </span>
+              </div>
+            )}
+
+            {/* Serway Reference Retrieval & Citation Banner */}
+            {(analysisResult.serwayCitations && analysisResult.serwayCitations.length > 0) ? (
+              <div className="p-4 rounded-2xl bg-blue-50/90 dark:bg-slate-800/90 border-2 border-blue-300 dark:border-blue-700 space-y-3 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 text-blue-900 dark:text-blue-200">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm">
+                        📘 استرجاع موثق من مرجع: Physics for Scientists and Engineers — Serway
+                      </h4>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                        تم فحص الكتاب واستخراج مقاطع مطابقة بدقة لدعم الشرح بالقوانين والصفحات المعتمدة
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-600 text-white text-[11px] font-black self-start sm:self-auto">
+                    {analysisResult.serwayCitations.length} مقتطفات مسترجعة
+                  </span>
+                </div>
+
+                {/* Excerpt Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                  {analysisResult.serwayCitations.map((c, i) => (
+                    <div key={i} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/60 text-xs space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                        <span className="truncate max-w-[70%]">📖 {c.chapterTitle || 'فصل فيزيائي'}</span>
+                        {c.pageNumber ? (
+                          <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 font-mono text-blue-700 dark:text-blue-300">
+                            ص {c.pageNumber}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">قسم موثق</span>
+                        )}
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 font-mono text-[11px] leading-relaxed line-clamp-3 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                        "{c.snippet}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Source distinctions guide */}
+                <div className="pt-2 border-t border-blue-200/60 dark:border-slate-700 flex flex-wrap items-center gap-3 text-[11px] text-slate-600 dark:text-slate-400">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">التمييز بين المصادر:</span>
+                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> مخرجات ملف الطالب
+                  </span>
+                  <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" /> مرجع Serway الموثق
+                  </span>
+                  <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-purple-500" /> أمثلة الذكاء الاصطناعي الإضافية
+                  </span>
+                </div>
+              </div>
+            ) : analysisResult.usedSerwayReference ? (
+              <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs flex items-center justify-between gap-3 text-blue-900 dark:text-blue-200">
+                <span className="font-bold flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-blue-600" />
+                  تم مطابقة محتوى الدرس مع موضوعات مرجع Serway القياسية لهندسة الميكاترونكس
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 font-bold">
+                  Physics for Scientists & Engineers
+                </span>
+              </div>
+            ) : null}
+
+            {/* Quick Connected Simulators for Mechatronics */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-2.5">
+              <span className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-amber-500" />
+                <span>محاكيات وأدوات مرتبطة بمحتوى هذا الدرس:</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTool('formulas')}
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                >
+                  <Scale className="w-3.5 h-3.5 text-blue-600" />
+                  <span>📐 فاحص القوانين والحركة</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTool('circuits')}
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>⚡ مختبر الدوائر</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTool('units')}
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                >
+                  <Ruler className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>📏 محول الوحدات SI</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigateToTool('arduino')}
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-cyan-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
+                >
+                  <Binary className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>🤖 محاكي Arduino</span>
                 </button>
               </div>
             </div>
@@ -3179,6 +3469,468 @@ ${analysisResult.summaryPoints.map((s) => `- ${s}`).join('\n')}
           } as any}
         />
       )}
+
+      {/* 7. MODAL: Smart Doctor Configuration (إعدادات الدكتور الذكي) */}
+      {showDoctorModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-4">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-indigo-950/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900 dark:text-white">
+                    🎓 خدمة «الدكتور الذكي»
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    تخصيص أسلوب المحاضرة الجامعية وفق دكاترة ومناهج الميكاترونكس
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDoctorModal(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5 text-right dir-rtl">
+              {/* Disclaimer Notice Banner */}
+              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong className="block font-bold mb-0.5">تنبيه أمانة علمية:</strong>
+                  اسم الدكتور هو حقل لتحديد الأسلوب الأكاديمي المطلوب، والشرح تعليمي مولد بالذكاء الاصطناعي وفق المناهج الهندسية وليس تسجيلاً رسمياً أو صوتياً صادراً عن ذلك الدكتور.
+                </div>
+              </div>
+
+              {/* Doctor Name Field & Quick Suggestions */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  اسم الدكتور أو المحاضر:
+                </label>
+                <input
+                  type="text"
+                  value={doctorConfig.doctorName}
+                  onChange={(e) => setDoctorConfig({ ...doctorConfig, doctorName: e.target.value })}
+                  placeholder="مثال: د. عبدالسلام الحكيمي أو د. محمد الخولاني..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400 font-bold">اقتراحات سريعة:</span>
+                  {[
+                    'د. عبدالله الشامي',
+                    'د. محمد الخولاني',
+                    'د. عبدالسلام الحكيمي',
+                    'د. سامي القدسي',
+                    'د. طارق الحبيشي',
+                  ].map((doc) => (
+                    <button
+                      key={doc}
+                      type="button"
+                      onClick={() => setDoctorConfig({ ...doctorConfig, doctorName: doc })}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold hover:bg-indigo-100 transition-colors"
+                    >
+                      {doc}
+                    </button>
+                  ))}
+                  {doctorConfig.doctorName && (
+                    <button
+                      type="button"
+                      onClick={() => setDoctorConfig({ ...doctorConfig, doctorName: '' })}
+                      className="px-2 py-1 rounded-lg text-rose-500 text-[11px] hover:bg-rose-50"
+                    >
+                      مسح
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* University & Level */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    الجامعة:
+                  </label>
+                  <input
+                    type="text"
+                    value={doctorConfig.university}
+                    onChange={(e) => setDoctorConfig({ ...doctorConfig, university: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    المستوى الدراسي:
+                  </label>
+                  <select
+                    value={doctorConfig.studyLevel}
+                    onChange={(e) => setDoctorConfig({ ...doctorConfig, studyLevel: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs outline-none"
+                  >
+                    <option value="السنة الأولى">السنة الأولى (Freshman)</option>
+                    <option value="السنة الثانية">السنة الثانية (Sophomore)</option>
+                    <option value="السنة الثالثة">السنة الثالثة (Junior)</option>
+                    <option value="السنة الرابعة">السنة الرابعة (Senior)</option>
+                    <option value="السنة الخامسة">السنة الخامسة (Graduation)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Reference Selection */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  المرجع المطلوب:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDoctorConfig({ ...doctorConfig, referenceSource: 'serway' })}
+                    className={`p-3 rounded-xl border-2 text-right transition-all text-xs font-bold cursor-pointer ${
+                      doctorConfig.referenceSource === 'serway'
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    📘 مرجع Serway للفيزياء
+                    <span className="block text-[10px] text-slate-400 font-normal mt-0.5">Physics for Scientists & Engineers</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDoctorConfig({ ...doctorConfig, referenceSource: 'student_file' })}
+                    className={`p-3 rounded-xl border-2 text-right transition-all text-xs font-bold cursor-pointer ${
+                      doctorConfig.referenceSource === 'student_file'
+                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    📄 ملف يرفعه الطالب
+                    <span className="block text-[10px] text-slate-400 font-normal mt-0.5">ملزمة أو سلايدات المادة</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDoctorConfig({ ...doctorConfig, referenceSource: 'other' })}
+                    className={`p-3 rounded-xl border-2 text-right transition-all text-xs font-bold cursor-pointer ${
+                      doctorConfig.referenceSource === 'other'
+                        ? 'border-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    🌐 مصادر تعليمية أخرى
+                    <span className="block text-[10px] text-slate-400 font-normal mt-0.5">المعرفة الهندسية الشاملة</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Explanation Style Buttons */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  خيارات أسلوب الشرح:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'simplified_beginner' as const, label: '🟢 شرح مبسط للمبتدئين' },
+                    { id: 'university_detailed' as const, label: '🔵 شرح جامعي مفصل' },
+                    { id: 'formulas_derivation' as const, label: '📐 شرح القوانين' },
+                    { id: 'step_by_step_problems' as const, label: '🧮 حل المسائل خطوة بخطوة' },
+                    { id: 'diagrams_visual' as const, label: '🖼️ شرح بالرسومات' },
+                    { id: 'practical_applications' as const, label: '🔬 أمثلة تطبيقية' },
+                    { id: 'exam_review' as const, label: '📑 مراجعة للاختبار' },
+                    { id: 'practice_questions' as const, label: '📝 أسئلة تدريبية' },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setDoctorConfig({ ...doctorConfig, explanationStyle: s.id })}
+                      className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                        doctorConfig.explanationStyle === s.id
+                          ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duration choice */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  مدة الشرح المطلوبة:
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    { val: 5 as const, label: '⚡ 5 دقائق (مكثف سريع)' },
+                    { val: 15 as const, label: '⏱️ 15 دقيقة (شامل ومعتدل)' },
+                    { val: 30 as const, label: '📖 30 دقيقة (محاضرة كاملة)' },
+                  ].map((dur) => (
+                    <button
+                      key={dur.val}
+                      type="button"
+                      onClick={() => setDoctorConfig({ ...doctorConfig, durationMinutes: dur.val })}
+                      className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        doctorConfig.durationMinutes === dur.val
+                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {dur.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                سيتم تفعيل هذه الإعدادات تلقائياً عند طلب الشرح
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowDoctorModal(false)}
+                className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs transition-all cursor-pointer shadow-md"
+              >
+                حفظ الإعدادات وتأكيد
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. MODAL: Educational Video Presentation Slideshow (سلايدات الفيديو التفاعلية) */}
+      {showPresentationModal && analysisResult && (() => {
+        const presentation = analysisResult.educationalPresentation || {
+          id: 'pres-' + analysisResult.id,
+          lessonTitle: analysisResult.lessonTitle,
+          totalDurationSeconds: 300,
+          isGeneratedAlternative: true,
+          disclaimer: 'عرض سلايدات تعليمية تفاعلية مولدة بالذكاء الاصطناعي',
+          slides: [
+            {
+              slideNumber: 1,
+              title: `مقدمة الدرس: ${analysisResult.lessonTitle}`,
+              type: 'concept' as const,
+              bullets: [analysisResult.simpleIdea, 'المجال: هندسة الميكاترونكس والفيزياء العامة'],
+              audioNarrationScript: `مرحباً بكم في شرح درس ${analysisResult.lessonTitle}. الفكرة الأساسية ببساطة هي: ${analysisResult.simpleIdea}.`,
+            },
+            {
+              slideNumber: 2,
+              title: 'أهم المفاهيم الهندسية',
+              type: 'concept' as const,
+              bullets: (analysisResult.coreTakeaways || []).slice(0, 4),
+              audioNarrationScript: 'نتناول الآن المفاهيم الهندسية الأساسية التي يقوم عليها هذا الدرس، ونربطها بتطبيقات الأتمتة والروبوتات.',
+            },
+            {
+              slideNumber: 3,
+              title: 'القوانين والمعادلات والوحدات',
+              type: 'formula' as const,
+              bullets: (analysisResult.formulas || []).slice(0, 3).map((f) => `${f.equation}: ${f.meaning}`),
+              latexFormula: analysisResult.formulas?.[0]?.equation,
+              audioNarrationScript: `أهم قانون في هذا الدرس هو: ${analysisResult.formulas?.[0]?.equation || 'العلاقة الفيزيائية الموضحة'}.`,
+            },
+            {
+              slideNumber: 4,
+              title: 'مسألة تطبيقية محلولة',
+              type: 'example' as const,
+              bullets: [
+                analysisResult.solvedExample?.problem || 'مسألة تطبيقية على المفهوم',
+                `النتيجة النهائية: ${analysisResult.solvedExample?.finalAnswer || 'حساب القيمة'}`
+              ],
+              audioNarrationScript: 'دعونا ننتقل لحل المسألة التطبيقية خطوة بخطوة للوصول إلى النتيجة الصحيحة مع مراعاة وحدات القياس.',
+            },
+            {
+              slideNumber: 5,
+              title: 'الخلاصة والأخطاء الشائعة',
+              type: 'summary' as const,
+              bullets: [
+                ...(analysisResult.summaryPoints || []).slice(0, 2),
+                ...(analysisResult.commonMistakes || []).slice(0, 2).map((m) => `خطأ شائع: ${m.mistake}`)
+              ],
+              audioNarrationScript: `في الختام، تذكروا دائماً مراجعة الوحدات والمعادلات بدقة. بالتوفيق في دراستكم!`,
+            }
+          ]
+        };
+
+        const slides = presentation.slides || [];
+        const activeSlide = slides[currentSlideIndex] || slides[0];
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div className="bg-slate-900 text-white rounded-3xl max-w-4xl w-full flex flex-col shadow-2xl border border-slate-700 overflow-hidden my-auto">
+              
+              {/* Header Bar */}
+              <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/30">
+                    <Presentation className="w-5 h-5 text-amber-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm sm:text-base text-white flex items-center gap-2">
+                      <span>🎬 عرض سلايدات الفيديو والشرح الصوتي</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-900/80 text-purple-300 font-mono">
+                        {currentSlideIndex + 1} / {slides.length}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 truncate max-w-md">
+                      {presentation.lessonTitle}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopSpeaking();
+                      setShowPresentationModal(false);
+                    }}
+                    className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Slide Canvas */}
+              <div className="p-6 sm:p-10 min-h-[380px] sm:min-h-[440px] flex flex-col justify-between bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 border-b border-slate-800 text-right dir-rtl">
+                <div className="space-y-6">
+                  {/* Slide Title */}
+                  <div className="space-y-2 border-b border-slate-800/80 pb-4">
+                    <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+                      شريحة تعليمية رقم {activeSlide?.slideNumber || currentSlideIndex + 1}
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                      {activeSlide?.title}
+                    </h2>
+                  </div>
+
+                  {/* Key Formula Box if available */}
+                  {activeSlide?.latexFormula && (
+                    <div className="p-4 rounded-2xl bg-indigo-950/70 border-2 border-indigo-500/50 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+                      <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                        <Scale className="w-4 h-4 text-amber-400" />
+                        القانون الأساسي:
+                      </span>
+                      <span className="font-mono text-base sm:text-lg font-black text-amber-300 tracking-wide dir-ltr">
+                        {activeSlide.latexFormula}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Bullet Points */}
+                  <div className="space-y-2.5">
+                    {activeSlide?.bullets?.map((pt, idx) => (
+                      <div key={idx} className="flex items-start gap-3 text-sm text-slate-200 leading-relaxed">
+                        <div className="w-2 h-2 rounded-full bg-indigo-400 mt-2 shrink-0" />
+                        <span>{pt}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Narration Script Audio Player */}
+                <div className="mt-8 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => speakSlideText(activeSlide?.audioNarrationScript || activeSlide?.title || '')}
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white transition-all cursor-pointer shadow-md ${
+                        isSpeakingSlide
+                          ? 'bg-rose-600 hover:bg-rose-700 animate-pulse'
+                          : 'bg-indigo-600 hover:bg-indigo-500'
+                      }`}
+                      title={isSpeakingSlide ? 'إيقاف الصوت' : 'تشغيل الصوت وقراءة الشريحة'}
+                    >
+                      {isSpeakingSlide ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                    </button>
+                    <div>
+                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                        {isSpeakingSlide ? 'جاري القراءة الصوتية للشريحة...' : 'نص التعليق الصوتي (Voiceover):'}
+                      </span>
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">
+                        {activeSlide?.audioNarrationScript || 'شرح صوتي تفاعلي للشريحة'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {isSpeakingSlide && (
+                    <button
+                      type="button"
+                      onClick={stopSpeaking}
+                      className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold transition-all"
+                    >
+                      إيقاف ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Navigation Footer */}
+              <div className="p-4 sm:p-5 bg-slate-950 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  disabled={currentSlideIndex === 0}
+                  onClick={() => {
+                    stopSpeaking();
+                    setCurrentSlideIndex((prev) => Math.max(0, prev - 1));
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    currentSlideIndex === 0
+                      ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                      : 'bg-slate-800 hover:bg-slate-700 text-white cursor-pointer'
+                  }`}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  <span>الشريحة السابقة</span>
+                </button>
+
+                {/* Dots indicator */}
+                <div className="flex items-center gap-1.5">
+                  {slides.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      type="button"
+                      onClick={() => {
+                        stopSpeaking();
+                        setCurrentSlideIndex(dotIdx);
+                      }}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${
+                        currentSlideIndex === dotIdx
+                          ? 'w-6 bg-indigo-500'
+                          : 'w-2 bg-slate-700 hover:bg-slate-500'
+                      }`}
+                      title={`انتقل للشريحة ${dotIdx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={currentSlideIndex >= slides.length - 1}
+                  onClick={() => {
+                    stopSpeaking();
+                    setCurrentSlideIndex((prev) => Math.min(slides.length - 1, prev + 1));
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    currentSlideIndex >= slides.length - 1
+                      ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer shadow-md'
+                  }`}
+                >
+                  <span>الشريحة التالية</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

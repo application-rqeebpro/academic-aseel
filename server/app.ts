@@ -18,6 +18,26 @@ import {
   generateSmartTemplateFallback,
 } from './projectLabService';
 import { db, normalizePhone, convertArabicDigitsToEnglish, DBUser, DBSubscription, DBActivationCode, DBSubscriptionRequest } from './db';
+import {
+  getAllReferenceBooks,
+  getReferenceBookById,
+  updateReferenceBook,
+  deleteReferenceBook,
+  processBookUpload,
+  searchBookChunks,
+  getBookChunks,
+  SERWAY_BOOK_ID,
+  SERWAY_PHYSICS_TOPICS,
+  DEFAULT_SERWAY_BOOK,
+} from './referenceBookService';
+import {
+  getActiveSpecialistDoctors,
+  updateDoctor,
+  getSavedLessons,
+  saveLesson,
+  deleteLesson,
+  generateSmartDoctorLesson,
+} from './smartDoctorService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mct_jwt_secret_mechatronics_academy_7829';
 
@@ -1181,6 +1201,8 @@ router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
       textContent,
       imageBase64,
       pdfPageChoice,
+      useSerwayReference,
+      doctorConfig,
     } = req.body;
 
     const actualFileData = fileData || imageBase64;
@@ -1205,6 +1227,8 @@ router.post('/explain-lesson', async (req: AuthenticatedRequest, res) => {
       studentMajor: studentMajor || user?.major || 'هندسة الميكاترونكس',
       studentId: studentId || user?.id,
       pdfPageChoice,
+      useSerwayReference: Boolean(useSerwayReference),
+      doctorConfig,
     });
 
     if (user?.id) {
@@ -2816,6 +2840,190 @@ router.post('/admin/settings', requireAuth, requireAdmin, (req, res) => {
   });
 
   res.json({ success: true, settings: updated });
+});
+
+// ==========================================
+// 📚 ACADEMIC REFERENCES & SERWAY SYSTEM ROUTES
+// ==========================================
+
+// 1. Get all reference books (public/students)
+router.get('/references', (req, res) => {
+  try {
+    const books = getAllReferenceBooks();
+    res.json({ success: true, books });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب قائمة الكتب والمراجع', details: err?.message });
+  }
+});
+
+// 2. Get specific reference book details
+router.get('/references/:id', (req, res) => {
+  try {
+    const book = getReferenceBookById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ error: 'المرجع المطلوب غير موجود.' });
+    }
+    res.json({ success: true, book });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب تفاصيل المرجع', details: err?.message });
+  }
+});
+
+// 3. Search inside reference book chunks using RAG retrieval
+router.get('/references/:id/search', (req, res) => {
+  try {
+    const { q, limit } = req.query;
+    const queryStr = String(q || '');
+    const limitNum = limit ? parseInt(String(limit), 10) : 5;
+    const result = searchBookChunks(req.params.id, queryStr, limitNum);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر البحث داخل الكتاب', details: err?.message });
+  }
+});
+
+// 4. Admin upload PDF file for a reference book
+router.post('/references/:id/upload', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fileBase64, fileName, fileSize } = req.body;
+    if (!fileBase64) {
+      return res.status(400).json({ error: 'لم يتم توفير ملف PDF للرفع.' });
+    }
+
+    let cleanBase64 = fileBase64;
+    if (cleanBase64.includes(',')) {
+      cleanBase64 = cleanBase64.split(',')[1];
+    }
+
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const result = await processBookUpload(id, buffer, fileName || 'Serway_Physics.pdf', fileSize || buffer.length);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || 'فشلت معالجة وفهرسة ملف الكتاب.' });
+  }
+});
+
+// 5. Admin update book metadata (title, edition, authors, accessRole)
+router.put('/references/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const updated = updateReferenceBook(id, updates);
+    if (!updated) {
+      return res.status(404).json({ error: 'المرجع غير موجود.' });
+    }
+    res.json({ success: true, book: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر تحديث بيانات المرجع.', details: err?.message });
+  }
+});
+
+// 6. Admin delete book (with confirmation)
+router.delete('/references/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = deleteReferenceBook(id);
+    res.json({ success: true, deleted, message: 'تم تحديث حالة المرجع بنجاح.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر حذف المرجع.', details: err?.message });
+  }
+});
+
+// 7. Admin re-index book chunks
+router.post('/references/:id/reindex', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const book = getReferenceBookById(id);
+    if (!book) return res.status(404).json({ error: 'المرجع غير موجود.' });
+    const chunks = getBookChunks(id);
+    res.json({ success: true, chunksCount: chunks.length, message: 'تم تحديث فهرسة الكتاب بنجاح.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر إعادة الفهرسة.', details: err?.message });
+  }
+});
+
+// 8. Get standard physics topics list
+router.get('/physics/topics', (req, res) => {
+  res.json({ success: true, topics: SERWAY_PHYSICS_TOPICS });
+});
+
+// ==========================================================
+// 🎓 SMART MECHATRONICS DOCTOR (دكتور الميكاترونكس الذكي) API
+// ==========================================================
+
+// 1. Get all 20 specialist doctors
+router.get('/smart-doctor/doctors', (req, res) => {
+  try {
+    const doctors = getActiveSpecialistDoctors();
+    res.json({ success: true, doctors });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب قائمة الدكاترة التخصصيين.', details: err?.message });
+  }
+});
+
+// 2. Admin update doctor details
+router.put('/smart-doctor/doctors/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = updateDoctor(id, req.body);
+    res.json({ success: true, doctor: updated, message: 'تم تحديث بيانات الدكتور التخصصي بنجاح.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر تحديث بيانات الدكتور.', details: err?.message });
+  }
+});
+
+// 3. Generate a structured anime blackboard lesson
+router.post('/smart-doctor/generate', async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const studentId = authReq.user?.id || (req.body.studentId as string);
+    const lesson = await generateSmartDoctorLesson({
+      ...req.body,
+      studentId,
+    });
+    res.json({ success: true, lesson });
+  } catch (err: any) {
+    console.error('Smart doctor generate error:', err);
+    res.status(500).json({ error: 'تعذر إعداد درس الدكتور الذكي.', details: err?.message });
+  }
+});
+
+// 4. Get saved lessons
+router.get('/smart-doctor/lessons', (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const studentId = (req.query.studentId as string) || authReq.user?.id;
+    const lessons = getSavedLessons(studentId);
+    res.json({ success: true, lessons });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب الدروس المحفوظة.', details: err?.message });
+  }
+});
+
+// 5. Save a lesson
+router.post('/smart-doctor/lessons', (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const lessonData = {
+      ...req.body,
+      studentId: req.body.studentId || authReq.user?.id,
+    };
+    const saved = saveLesson(lessonData);
+    res.json({ success: true, lesson: saved });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر حفظ الدرس.', details: err?.message });
+  }
+});
+
+// 6. Delete a saved lesson
+router.delete('/smart-doctor/lessons/:id', (req, res) => {
+  try {
+    const ok = deleteLesson(req.params.id);
+    res.json({ success: ok, message: ok ? 'تم حذف الدرس.' : 'الدرس غير موجود.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر حذف الدرس.', details: err?.message });
+  }
 });
 
 // Mount router on /api and root fallback for serverless platforms like Vercel

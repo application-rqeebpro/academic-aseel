@@ -26,7 +26,8 @@ import {
   Sliders,
   Sparkle,
   Binary,
-  KeyRound
+  KeyRound,
+  Wrench
 } from 'lucide-react';
 import { Subject } from '../types';
 
@@ -35,6 +36,9 @@ interface WelcomeViewProps {
   onLogin: () => void;
   onOpenActivation?: () => void;
   onOpenAdmin?: () => void;
+  onOpenVideos?: () => void;
+  onOpenSmartDoctor?: () => void;
+  onExploreAsGuest?: () => void;
   subjects?: Subject[];
   monthlyPriceUSD?: number;
   yearlyPriceUSD?: number;
@@ -45,11 +49,15 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
   onLogin,
   onOpenActivation,
   onOpenAdmin,
+  onOpenVideos,
+  onOpenSmartDoctor,
+  onExploreAsGuest,
   subjects = [],
   monthlyPriceUSD = 20,
   yearlyPriceUSD = 200,
 }) => {
-  const [activePreviewTab, setActivePreviewTab] = useState<'arduino' | 'explain' | 'assignments' | 'calculators' | 'curriculum'>('arduino');
+  const [activePreviewTab, setActivePreviewTab] = useState<'videos' | 'smart_doctor' | 'lab' | 'arduino' | 'explain' | 'assignments' | 'scientific_calc' | 'calculators' | 'curriculum'>('videos');
+  const [previewVideoId, setPreviewVideoId] = useState<'b7Jzb8x7D_Q' | '8jB6hDUqN-g' | 'z3_zM97R-jI'>('b7Jzb8x7D_Q');
 
   return (
     <div className="py-6 px-3 sm:px-6 lg:px-8 space-y-12 sm:space-y-16 max-w-6xl mx-auto">
@@ -76,7 +84,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         <div className="space-y-4 max-w-3xl mx-auto px-2">
           {/* Official Emblem Logo */}
           <div className="flex justify-center my-1 sm:my-2">
-            <AcademyLogo variant="badge" size="lg" showSubtitle={false} className="shadow-xl shadow-blue-500/10 hover:scale-105 transition-transform border-2 border-blue-200/80 dark:border-blue-800/80 max-w-[220px] sm:max-w-xs py-3 px-5 sm:py-4 sm:px-8" />
+            <AcademyLogo variant="badge" size="lg" showSubtitle={false} onAdminTrigger={onOpenAdmin} className="shadow-xl shadow-blue-500/10 hover:scale-105 transition-transform border-2 border-blue-200/80 dark:border-blue-800/80 max-w-[220px] sm:max-w-xs py-3 px-5 sm:py-4 sm:px-8" />
           </div>
 
           <div className="inline-block px-4 py-1.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60 text-blue-700 dark:text-blue-300 font-extrabold text-sm sm:text-lg border border-blue-200/80 dark:border-blue-800/80 shadow-xs">
@@ -99,13 +107,23 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
             <ArrowLeft className="w-4 h-4 shrink-0 group-hover:-translate-x-1 transition-transform" />
           </button>
 
+          {onOpenVideos && (
+            <button
+              onClick={onOpenVideos}
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm sm:text-base transition-all cursor-pointer shadow-md shadow-red-500/20 active:scale-[0.98]"
+            >
+              <Play className="w-4 h-4 fill-white shrink-0" />
+              <span>فيديوهات الشرح 🎬</span>
+            </button>
+          )}
+
           {onOpenActivation && (
             <button
               onClick={onOpenActivation}
               className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-2 border-amber-300 dark:border-amber-700 font-extrabold text-sm sm:text-base transition-all cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <KeyRound className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>تفعيل كود الاشتراك</span>
+              <span>تفعيل الكود</span>
             </button>
           )}
 
@@ -117,6 +135,19 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
             <span>تسجيل الدخول</span>
           </button>
         </div>
+
+        {/* Free Guest Exploration Banner */}
+        {onExploreAsGuest && (
+          <div className="pt-2 max-w-xl mx-auto">
+            <button
+              onClick={onExploreAsGuest}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-2 border-emerald-300/80 dark:border-emerald-700/80 font-extrabold text-xs sm:text-sm transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>🚀 الدخول السريع كطالب زائر — استكشف الدروس والمحاكيات والفيديوهات مجانًا</span>
+            </button>
+          </div>
+        )}
 
         {/* Quick Stats Highlights */}
         <div className="pt-4 sm:pt-6 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 max-w-4xl mx-auto px-1">
@@ -158,7 +189,11 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
         {/* Interactive Feature Tabs */}
         <div className="flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-none">
           {[
+            { id: 'videos', label: '🎬 فيديوهات الشرح المعتمدة', color: 'border-red-500 text-red-600 dark:text-red-400' },
+            { id: 'smart_doctor', label: '🎓 دكتور الميكاترونكس (سبورة)', color: 'border-purple-500 text-purple-600 dark:text-purple-400' },
+            { id: 'lab', label: '🔧 مختبر المشاريع الذكي', color: 'border-indigo-500 text-indigo-600 dark:text-indigo-400' },
             { id: 'arduino', label: '🤖 محاكي Arduino', color: 'border-cyan-500 text-cyan-600 dark:text-cyan-400' },
+            { id: 'scientific_calc', label: '🧮 الحاسبة العلمية', color: 'border-purple-500 text-purple-600 dark:text-purple-400' },
             { id: 'explain', label: '📷 اشرح لي درسي AI', color: 'border-blue-500 text-blue-600 dark:text-blue-400' },
             { id: 'assignments', label: '🎓 منشئ التكليفات', color: 'border-emerald-500 text-emerald-600 dark:text-emerald-400' },
             { id: 'calculators', label: '⚡ الحاسبات والأبعاد', color: 'border-amber-500 text-amber-600 dark:text-amber-400' },
@@ -180,6 +215,181 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
 
         {/* Dynamic Feature Preview Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-xl transition-all">
+          {activePreviewTab === 'videos' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center font-bold">
+                    <Play className="w-6 h-6 fill-red-600 dark:fill-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      مكتبة فيديوهات الشرح المعتمدة (مرجع Serway ومفردات الميكاترونكس)
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-600 text-white font-extrabold">متاح مجانًا</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      شاهد الشرح المرئي بدقة عالية مع تحليل القوانين، محاور الفيديو (Timestamps)، ومطابقة فصول مرجع Serway الدولي.
+                    </p>
+                  </div>
+                </div>
+                {onOpenVideos && (
+                  <button
+                    onClick={onOpenVideos}
+                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+                  >
+                    <span>فتح مكتبة الفيديوهات الشاملة 🎬</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Topic Selectors */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-bold text-slate-500 dark:text-slate-400">اختر موضوع المعاينة:</span>
+                {[
+                  { id: 'b7Jzb8x7D_Q', label: '📘 فيزياء 1: المتجهات وتحليل القوى (Serway Ch 3)' },
+                  { id: '8jB6hDUqN-g', label: '⚡ دوائر كهربائية: الجهد والتيار وقانون أوم' },
+                  { id: 'z3_zM97R-jI', label: '🤖 برمجة C++ للمتحكمات والأردوينو (Embedded)' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setPreviewVideoId(item.id as any)}
+                    className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                      previewVideoId === item.id
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Responsive 16:9 Video Embed */}
+              <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black shadow-2xl border border-slate-800">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${previewVideoId}?rel=0`}
+                  title="فيديو شرح أكاديمي"
+                  className="absolute inset-0 w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
+          {activePreviewTab === 'smart_doctor' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      دكتور الميكاترونكس الذكي — فيديوهات كرتونية تفاعلية على السبورة
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-600 text-white font-extrabold">20 دكتوراً تخصصياً</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      شاهد دكتورك الكرتوني بأسلوب Anime يشرح على سبورة خضراء حقيقية، مع كتابة تدريجية بالطباشير، صوت عربي واضح، وتجارب هندسية تفاعلية.
+                    </p>
+                  </div>
+                </div>
+
+                {onOpenSmartDoctor && (
+                  <button
+                    onClick={onOpenSmartDoctor}
+                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold text-xs shadow-md shadow-purple-500/25 cursor-pointer shrink-0 transition-transform hover:scale-105"
+                  >
+                    دخول قاعة الدكتور الذكي 🎓
+                  </button>
+                )}
+              </div>
+
+              {/* Doctors Sample Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 space-y-2">
+                  <span className="font-bold text-purple-700 dark:text-purple-300 block text-sm">📘 د. رامي المهدي</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 font-semibold inline-block">
+                    دكتور الفيزياء الهندسية ومرجع Serway
+                  </span>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                    شرح المتجهات وقوانين نيوتن وحركة الأجسام مستنداً إلى فصول مرجع Serway الدولي مع رسم مخططات تفاعلية.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 space-y-2">
+                  <span className="font-bold text-blue-700 dark:text-blue-300 block text-sm">⚡ د. طارق الشميري</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 font-semibold inline-block">
+                    دكتور الدوائر الكهربائية والإلكترونيات
+                  </span>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                    قانون أوم، مجزئ الجهد، وقوانين كيرشوف مع محاكاة لدائرة كهربائية حية بمتحكمات السحب والإفلات.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 space-y-2">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300 block text-sm">🤖 د. عمار القدسي</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-semibold inline-block">
+                    دكتور الروبوتات والذراع الروبوتية
+                  </span>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-[11px]">
+                    كينماتيكا الذراع الروبوتية ذات درجتي حرية (2-DOF)، زوايا المفاصل، وتطبيقات الأتمتة الصناعية.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activePreviewTab === 'lab' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                    <Wrench className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      مختبر المشاريع الهندسية الذكي (Smart Project Lab)
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-600 text-white font-extrabold">13 مرحلة متكاملة</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      «ماذا تريد أن تصنع؟» اكتب فكرة مشروعك بحرية واحصل فوراً على المخطط والقطع والكود و8 رسومات هندسية ومحاكاة برمجية حية.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={onRegister}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm"
+                >
+                  ابدأ مشروعك الآن
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Zap className="w-4 h-4 text-indigo-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">فحص توافق الأرجل 100%</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">جدول تفصيلي يربط كل طرف بالمنفذ الرقمي أو التماثلي أو الـ PWM بدون أي تعارض.</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Layers className="w-4 h-4 text-indigo-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">8 رسومات توضيحية احترافية</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">مخطط كتل، توزيع الشاسيه، حساسات، مسارات الأسلاك، وتوزيع التغذية بدقة.</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Bot className="w-4 h-4 text-indigo-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">كود برمجي مشروح سطرًا بسطر</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">كود Arduino C++ جاهز للرفع على اللوحة مع توضيح المكتبات وخطوات المعايرة.</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Play className="w-4 h-4 text-indigo-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">محاكاة تفاعلية وتجربة حية</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">اختبر تفادي العوائق للمركبة أو حركة الذراع أو نظام المرور مباشرة داخل الموقع.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activePreviewTab === 'arduino' && (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -338,6 +548,56 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
                   <FileText className="w-4 h-4 text-emerald-600" />
                   <span className="font-bold block text-slate-900 dark:text-white">تصدير PDF طباعة</span>
                   <p className="text-slate-500 dark:text-slate-400 text-[11px]">تنزيل الملف بصيغة PDF منسقة ومجهزة للتسليم مباشرة.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activePreviewTab === 'scientific_calc' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                    <Calculator className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      الحاسبة العلمية الهندسية المتطورة
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-600 text-white font-extrabold">الكسور والأعداد المركبة</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      حاسبة علمية متكاملة مصممة لطلاب الهندسة: حسابات الكسور، الأعداد التخيلية والمركبة (i / ت)، الدوال المثلثية (DEG/RAD/GRAD)، وسجل عمليات محلي.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={onRegister}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm"
+                >
+                  جرب الحاسبة الآن
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Binary className="w-4 h-4 text-purple-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">الأعداد المركبة (a + bi)</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">جمع وطرح وضرب وقسمة وقوى الأعداد التخيلية مع التحويل بين Cartesian و Polar.</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Scale className="w-4 h-4 text-purple-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">نظام الكسور الدقيق</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">إدخال البسط والمقام بصرياً، وإجراء العمليات الدقيقة والتحويل الفوري بين الكسر والعدد العشري.</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <Activity className="w-4 h-4 text-purple-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">الزوايا والدوال المثلثية</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">أوضاع DEG و RAD و GRAD مع حسابات sin, cos, tan, المعكوسات، اللوغاريتمات، والجذور النونية.</p>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <FileText className="w-4 h-4 text-purple-600" />
+                  <span className="font-bold block text-slate-900 dark:text-white">سجل العمليات والنسخ</span>
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px]">حفظ العمليات الحسابية السابقة، نسخ النتائج بضغطة زر لاستخدامها في التكليفات والامتحانات.</p>
                 </div>
               </div>
             </div>
