@@ -66,6 +66,11 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
   const [customAvatarStyle, setCustomAvatarStyle] = useState<'classic_professor' | 'young_professor' | 'glasses_expert' | 'female_expert'>('classic_professor');
   const [customBoardTheme, setCustomBoardTheme] = useState<'chalkboard_green' | 'dark_slate' | 'whiteboard'>('chalkboard_green');
 
+  // Custom Doctor Photo or Anime Avatar Choice
+  const [doctorAvatarType, setDoctorAvatarType] = useState<'anime' | 'photo'>('anime');
+  const [customDoctorPhotoUrl, setCustomDoctorPhotoUrl] = useState<string>('');
+  const [uploadedDoctorPhotoName, setUploadedDoctorPhotoName] = useState<string>('');
+
   // Form setup inputs
   const [lessonTitle, setLessonTitle] = useState<string>(initialTopic || 'تحليل المتجهات والمركبات السينية والصادية');
   const [studyLevel, setStudyLevel] = useState<string>(student?.studyLevel || 'السنة الأولى');
@@ -74,9 +79,11 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
   const [displayMode, setDisplayMode] = useState<'anime_board' | 'board_only' | 'simulation_focus' | 'solved_examples' | 'student_file'>('anime_board');
   const [useSerway, setUseSerway] = useState<boolean>(true);
   
-  // File upload state for student's custom lecture
+  // File / Image upload state for student's custom lecture
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [uploadedFileText, setUploadedFileText] = useState<string>('');
+  const [uploadedFilePreview, setUploadedFilePreview] = useState<string | null>(null);
+  const [uploadedFileType, setUploadedFileType] = useState<'image' | 'file' | null>(null);
 
   // Generation status
   const [isGenerating, setIsGenerating] = useState(false);
@@ -117,12 +124,14 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
         englishSpecialty: 'Custom Subject',
         university: customUniversityName.trim() || 'جامعتك الحالية',
         avatarStyle: avatarStyleMapped,
+        avatarType: doctorAvatarType,
+        photoUrl: doctorAvatarType === 'photo' ? customDoctorPhotoUrl : undefined,
         coatColor: '#1e3a8a',
         hairColor: '#1e293b',
         accentColor: '#3b82f6',
-        voiceGender: avatarStyleMapped === 'female_engineer' ? 'female' as const : 'male' as const,
-        voicePitch: avatarStyleMapped === 'female_engineer' ? 1.2 : 1.0,
-        voiceRate: 0.95,
+        voiceGender: 'male' as const,
+        voicePitch: 0.88,
+        voiceRate: 0.90,
         boardTheme: boardThemeMapped,
         bio: `دكتورك الجامعي المخصص لمادة ${customSubjectName || 'التخصص'} بقسم ${customMajorName || 'الميكاترونكس'} في ${customUniversityName || 'جامعتك'}.`,
         suggestedTopics: ['مفاهيم الشرح والمبادئ الأساسية', 'حل مسائل الاختبارات وحلقات البحث'],
@@ -142,6 +151,8 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
       name: finalDocName,
       specialty: finalSubject,
       university: finalUniversity,
+      avatarType: doctorAvatarType,
+      photoUrl: doctorAvatarType === 'photo' ? customDoctorPhotoUrl : baseDoc.photoUrl,
       bio: hasCustomDoctorName
         ? `شرح مخصص لمادة ${finalSubject} بقسم ${customMajorName.trim() || 'الميكاترونكس'} في ${finalUniversity} مع الدكتور ${finalDocName}.`
         : baseDoc.bio,
@@ -156,6 +167,8 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
     customUniversityName,
     customAvatarStyle,
     customBoardTheme,
+    doctorAvatarType,
+    customDoctorPhotoUrl,
   ]);
 
   // Fetch doctors and saved lessons on mount
@@ -222,18 +235,48 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
     });
   }, [doctors, searchDoctorQuery, selectedCategory]);
 
-  // Handle file upload
+  // Handle Doctor Photo Upload
+  const handleDoctorPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadedDoctorPhotoName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setCustomDoctorPhotoUrl(dataUrl);
+        setDoctorAvatarType('photo');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle Lesson Material File/Image Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadedFileName(file.name);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      setUploadedFileText(content || '');
-    };
-    reader.readAsText(file);
+    if (file.type.startsWith('image/')) {
+      setUploadedFileType('image');
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setUploadedFilePreview(dataUrl || null);
+        setUploadedFileText(`[مرفق صورة توضيحية لدرس المحاضرة: ${file.name}]`);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setUploadedFileType('file');
+      setUploadedFilePreview(null);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        setUploadedFileText(content || '');
+      };
+      reader.readAsText(file);
+    }
   };
 
   // Generate Lesson Action
@@ -534,13 +577,13 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
               })}
             </div>
 
-            {/* Academic Info Inputs Panel (Always Available for All Doctors) */}
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-indigo-500/10 border-2 border-amber-500/40 shadow-lg space-y-4">
+            {/* Academic Info Inputs & Doctor Customization Panel */}
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-indigo-500/10 border-2 border-amber-500/40 shadow-lg space-y-6">
               <div className="flex items-center justify-between border-b border-amber-500/20 pb-3">
                 <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
                   <GraduationCap className="w-5 h-5 text-amber-600" />
                   <h3 className="text-base font-black">
-                    البيانات الأكاديمية للدكتور والمادة (أدخل اسم دكتورك الحقيقي في جامعتك)
+                    بيانات الدكتور والمادة والشخصية (اكتب اسم دكتورك الحقيقي واختر صورته)
                   </h3>
                 </div>
                 <span className="text-xs bg-amber-500/20 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full font-bold">
@@ -548,6 +591,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                 </span>
               </div>
 
+              {/* Basic Academic Info Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs sm:text-sm">
                 {/* Doctor Name */}
                 <div className="space-y-1.5">
@@ -561,7 +605,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                     placeholder="مثال: د. عبد السلام المقطري"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-amber-500"
                   />
-                  <span className="text-[10px] text-slate-500 block">اكتب اسم دكتورك في الجامعة ليظهر بالشرح</span>
+                  <span className="text-[10px] text-slate-500 block">اكتب اسم دكتورك ليظهر في القاعة والسبورة</span>
                 </div>
 
                 {/* Subject Name */}
@@ -610,42 +654,146 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                 </div>
               </div>
 
-              {(isCustomDoctorMode || selectedDoctorId === 'custom-doctor') && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs border-t border-amber-500/20 mt-2">
-                  {/* Doctor Avatar Style */}
-                  <div className="space-y-1.5">
-                    <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                      المظهر الكرتوني للدكتور (Anime Avatar):
-                    </label>
-                    <select
-                      value={customAvatarStyle}
-                      onChange={(e) => setCustomAvatarStyle(e.target.value as any)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white"
-                    >
-                      <option value="classic_professor">دكتور أستاذ خبير ببدلة رسمية (Classic Professor)</option>
-                      <option value="young_professor">دكتور أستاذ شاب ونظارة ذكية (Young Professor)</option>
-                      <option value="glasses_expert">دكتور خبير بنظارات طبية ومختبر (Glasses Expert)</option>
-                      <option value="female_expert">دكتورة مهندسة متخصصة (Female Expert)</option>
-                    </select>
-                  </div>
+              {/* Doctor Avatar / Photo Selection Mode */}
+              <div className="pt-4 border-t border-amber-500/20 space-y-4 text-xs">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <label className="font-black text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-amber-600" />
+                    <span>اختر تجسيد مظهر الدكتور أثناء الشرح:</span>
+                  </label>
 
-                  {/* Board Theme */}
-                  <div className="space-y-1.5">
-                    <label className="font-extrabold text-slate-900 dark:text-slate-100 block">
-                      لون وثيم سبورة الشرح:
-                    </label>
-                    <select
-                      value={customBoardTheme}
-                      onChange={(e) => setCustomBoardTheme(e.target.value as any)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 font-bold text-slate-900 dark:text-white"
+                  <div className="flex items-center gap-2 bg-amber-500/10 p-1 rounded-2xl border border-amber-300 dark:border-amber-700">
+                    <button
+                      type="button"
+                      onClick={() => setDoctorAvatarType('anime')}
+                      className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        doctorAvatarType === 'anime'
+                          ? 'bg-amber-500 text-slate-950 shadow-sm'
+                          : 'text-slate-700 dark:text-slate-300 hover:text-amber-600'
+                      }`}
                     >
-                      <option value="chalkboard_green">سبورة خضراء تقليدية (Green Chalkboard)</option>
-                      <option value="dark_slate">سبورة سوداء داكنة هادئة (Dark Slate)</option>
-                      <option value="whiteboard">سبورة بيضاء تفاعلية حديثة (Modern Whiteboard)</option>
-                    </select>
+                      <span>🎨 رسم كرتوني Anime</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDoctorAvatarType('photo')}
+                      className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        doctorAvatarType === 'photo'
+                          ? 'bg-amber-500 text-slate-950 shadow-sm'
+                          : 'text-slate-700 dark:text-slate-300 hover:text-amber-600'
+                      }`}
+                    >
+                      <span>📸 صورة الدكتور الحقيقية</span>
+                    </button>
                   </div>
                 </div>
-              )}
+
+                {/* Option A: Anime Avatar Selection */}
+                {doctorAvatarType === 'anime' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-amber-200 dark:border-amber-800">
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-800 dark:text-slate-200 block">
+                        الشخصية الكرتونية:
+                      </label>
+                      <select
+                        value={customAvatarStyle}
+                        onChange={(e) => setCustomAvatarStyle(e.target.value as any)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold"
+                      >
+                        <option value="classic_professor">أستاذ خبير ببدلة أكاديمية (Classic Professor)</option>
+                        <option value="young_professor">أستاذ شاب ونظارة تفاعلية (Young Professor)</option>
+                        <option value="glasses_expert">خبير ميكاترونكس بنظارات (Glasses Expert)</option>
+                        <option value="female_expert">دكتورة مهندسة متخصصة (Female Expert)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-800 dark:text-slate-200 block">
+                        لون وثيم السبورة:
+                      </label>
+                      <select
+                        value={customBoardTheme}
+                        onChange={(e) => setCustomBoardTheme(e.target.value as any)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold"
+                      >
+                        <option value="chalkboard_green">سبورة خضراء تقليدية (Green Chalkboard)</option>
+                        <option value="dark_slate">سبورة سوداء داكنة هادئة (Dark Slate)</option>
+                        <option value="whiteboard">سبورة بيضاء تفاعلية حديثة (Modern Whiteboard)</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                      <div className="w-12 h-14 shrink-0 rounded-xl bg-slate-900 flex items-center justify-center overflow-hidden">
+                        <AnimeDoctorAvatar doctor={selectedDoctor} isSpeaking={false} size="sm" className="scale-75" />
+                      </div>
+                      <div className="text-[11px]">
+                        <span className="font-black text-amber-900 dark:text-amber-200 block">معاينة الرسم الكرتوني</span>
+                        <span className="text-slate-500">{selectedDoctor.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Option B: Doctor Real Photo Upload */}
+                {doctorAvatarType === 'photo' && (
+                  <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-amber-200 dark:border-amber-800 space-y-3">
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      {/* Photo Upload Input Button */}
+                      <div className="flex-1 space-y-2 w-full">
+                        <label className="font-bold text-slate-900 dark:text-white block">
+                          قم برفع صورة لدكتورك المحاضر من جهازك:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            id="doctor-photo-upload"
+                            accept="image/*"
+                            onChange={handleDoctorPhotoUpload}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="doctor-photo-upload"
+                            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black flex items-center gap-2 cursor-pointer shadow-sm transition"
+                          >
+                            <Upload className="w-4 h-4" />
+                            <span>{uploadedDoctorPhotoName ? 'تغيير الصورة المرفوعة' : 'اختر صورة من جهازك'}</span>
+                          </label>
+
+                          <span className="text-xs text-slate-500">أو أدخل رابط صورة مباشر:</span>
+                        </div>
+
+                        <input
+                          type="text"
+                          value={customDoctorPhotoUrl}
+                          onChange={(e) => {
+                            setCustomDoctorPhotoUrl(e.target.value);
+                            setDoctorAvatarType('photo');
+                          }}
+                          placeholder="https://example.com/doctor-photo.jpg"
+                          className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold"
+                        />
+                      </div>
+
+                      {/* Photo Preview Thumbnail */}
+                      <div className="w-24 h-28 shrink-0 rounded-2xl bg-slate-900 border-2 border-amber-400 overflow-hidden relative shadow-md flex items-center justify-center">
+                        {customDoctorPhotoUrl ? (
+                          <img
+                            src={customDoctorPhotoUrl}
+                            alt="معاينة صورة الدكتور"
+                            className="w-full h-full object-cover object-top"
+                          />
+                        ) : (
+                          <div className="text-center text-slate-400 p-2 text-[10px]">
+                            <span>لا توجد صورة</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
             </div>
           </div>
 
@@ -794,30 +942,51 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                   </p>
                 </div>
 
-                {/* Optional Custom Student File Upload */}
+                {/* Optional Custom Student File / Image Upload */}
                 <div className="space-y-1.5">
                   <label className="font-extrabold text-slate-900 dark:text-white block">
-                    (اختياري) رفع ملف أو نص المحاضرة للشرح:
+                    (اختياري) إرفاق صورة أو ملف الدرس للشرح:
                   </label>
-                  <div className="p-3 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-center space-y-2">
+                  <div className="p-3.5 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/40 dark:bg-indigo-950/20 text-center space-y-2.5">
                     <input
                       type="file"
                       id="doctor-file"
-                      accept=".txt,.pdf,.md,.doc"
+                      accept="image/*,.txt,.pdf,.md,.doc,.docx"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
                     <label
                       htmlFor="doctor-file"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white cursor-pointer shadow-sm transition"
                     >
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{uploadedFileName ? 'تغيير الملف' : 'رفع ملف PDF أو نص المحاضرة'}</span>
+                      <Upload className="w-4 h-4" />
+                      <span>{uploadedFileName ? 'تغيير الملف أو الصورة' : 'إرفاق صورة المحاضرة أو ملف PDF'}</span>
                     </label>
-                    {uploadedFileName && (
-                      <p className="text-[11px] text-emerald-600 font-bold truncate">
-                        ✓ تم اختيار: {uploadedFileName}
-                      </p>
+
+                    {/* Image Preview Thumbnail if an image was uploaded */}
+                    {uploadedFileType === 'image' && uploadedFilePreview && (
+                      <div className="flex items-center justify-center gap-3 pt-1">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-indigo-400 shadow-md bg-slate-900 shrink-0 relative">
+                          <img
+                            src={uploadedFilePreview}
+                            alt="معاينة صورة المحاضرة"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="text-right text-xs">
+                          <span className="font-bold text-indigo-700 dark:text-indigo-300 block">✓ تم إرفاق صورة الدرس:</span>
+                          <span className="text-[11px] text-slate-500 font-mono block truncate max-w-[180px]">{uploadedFileName}</span>
+                          <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">سيتم تحليل الصورة وشرح مسائلها على السبورة</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Document File details if a document was uploaded */}
+                    {uploadedFileType === 'file' && uploadedFileName && (
+                      <div className="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1.5 pt-1">
+                        <FileText className="w-4 h-4" />
+                        <span>تم اختيار المستند: {uploadedFileName}</span>
+                      </div>
                     )}
                   </div>
                 </div>

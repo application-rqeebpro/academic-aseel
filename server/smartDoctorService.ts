@@ -541,9 +541,9 @@ export async function generateSmartDoctorLesson(params: {
         university: uniName,
         suggestedTopics: ['مفاهيم الشرح والمبادئ الأساسية', 'حل مسائل الاختبارات وحلقات البحث'],
         boardTheme: c.boardTheme || 'chalkboard_green',
-        voiceGender: c.avatarStyle === 'female_engineer' ? 'female' : 'male',
-        voicePitch: c.avatarStyle === 'female_engineer' ? 1.2 : 1.0,
-        voiceRate: 0.95,
+        voiceGender: 'male',
+        voicePitch: 0.92,
+        voiceRate: 0.93,
       };
     }
   } else {

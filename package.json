@@ -12,7 +12,7 @@
     "build:vercel": "esbuild server/app.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
-    "clean": "rm -rf dist api/index.js server.js",
+    "clean": "rm -rf dist build api/index.js server.js node_modules",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

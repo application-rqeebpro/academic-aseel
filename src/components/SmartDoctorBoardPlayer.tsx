@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { SpecialistDoctor, DoctorLessonScene, SmartDoctorGeneratedLesson } from '../data/smartDoctorData';
 import { AnimeDoctorAvatar } from './AnimeDoctorAvatar';
 import { SmartBoardDiagram } from './SmartBoardDiagram';
+import { cleanArabicSpokenScript, getBestMaleArabicVoice } from '../utils/arabicVoiceCleaner';
 import { 
   Play, 
   Pause, 
@@ -26,7 +27,8 @@ import {
   MessageSquare,
   Sliders,
   Video,
-  FileText
+  FileText,
+  Captions
 } from 'lucide-react';
 
 interface SmartDoctorBoardPlayerProps {
@@ -58,6 +60,9 @@ export const SmartDoctorBoardPlayer: React.FC<SmartDoctorBoardPlayerProps> = ({
   const [activeBoardTheme, setActiveBoardTheme] = useState<'chalkboard_green' | 'blackboard_dark' | 'whiteboard_academic' | 'blueprint_cyan'>(
     doctor.boardTheme || 'chalkboard_green'
   );
+  // Subtitles / Synchronized CC state
+  const [showSubtitles, setShowSubtitles] = useState<boolean>(true);
+  const [subtitleFontSize, setSubtitleFontSize] = useState<'sm' | 'md' | 'lg'>('md');
 
   // Student Interaction Modals / Drawer
   const [showDidntUnderstandModal, setShowDidntUnderstandModal] = useState(false);
@@ -84,7 +89,7 @@ export const SmartDoctorBoardPlayer: React.FC<SmartDoctorBoardPlayerProps> = ({
   // ==========================================================
   // ARABIC TEXT TO SPEECH (Web Speech Synthesis Engine)
   // ==========================================================
-  const speakText = (text: string) => {
+  const speakText = (rawText: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
 
@@ -93,18 +98,20 @@ export const SmartDoctorBoardPlayer: React.FC<SmartDoctorBoardPlayerProps> = ({
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Clean text: convert all technical symbols, formulas, and foreign terms to unbroken, fluent Arabic
+    const cleanedText = cleanArabicSpokenScript(rawText);
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
+    
     utterance.lang = 'ar-SA';
-    utterance.rate = (doctor.voiceRate || 0.95) * playbackSpeed;
-    utterance.pitch = doctor.voicePitch || 1.0;
+    // Set steady, clear male academic rate and pitch (forcing deep natural male tone 0.88, avoiding high-pitched robotic synthetic frequencies)
+    const baseRate = doctor.voiceRate ? Math.min(doctor.voiceRate, 0.92) : 0.88;
+    utterance.rate = Math.max(0.80, Math.min(1.15, baseRate * playbackSpeed));
+    utterance.pitch = 0.88; // Deep, calm, natural male professor tone
 
-    // Pick best Arabic voice
-    const voices = window.speechSynthesis.getVoices();
-    const arabicVoice = voices.find(
-      (v) => v.lang.startsWith('ar') || v.name.toLowerCase().includes('arabic')
-    );
-    if (arabicVoice) {
-      utterance.voice = arabicVoice;
+    // Pick best male Arabic voice from browser
+    const maleArabicVoice = getBestMaleArabicVoice();
+    if (maleArabicVoice) {
+      utterance.voice = maleArabicVoice;
     }
 
     utterance.onstart = () => {
@@ -483,154 +490,242 @@ export const SmartDoctorBoardPlayer: React.FC<SmartDoctorBoardPlayerProps> = ({
           </div>
 
           {/* Chalk dust shelf at bottom of blackboard */}
-          <div className="mt-4 pt-2 border-t-2 border-current/20 flex items-center justify-between text-[11px] opacity-75">
+          <div className="mt-4 pt-2 border-t-2 border-current/20 flex items-center justify-between text-[11px] opacity-75 pb-20">
             <span className="font-mono">محرك دكتور الميكاترونكس الذكي • {doctor.university}</span>
             <span>السبورة الأكاديمية التفاعلية</span>
+          </div>
+
+          {/* Live Synchronized CC Subtitles Overlay Banner */}
+          {showSubtitles && currentScene && (
+            <div className="absolute bottom-28 inset-x-3 sm:inset-x-12 z-20 flex justify-center pointer-events-none px-2 transition-all duration-300">
+              <div className="max-w-3xl w-full bg-slate-950/95 backdrop-blur-md border border-amber-400/50 shadow-2xl rounded-2xl p-3 sm:p-4 text-center space-y-1.5 transform transition-all">
+                <div className="flex items-center justify-between text-[10px] text-amber-300 font-bold border-b border-slate-800 pb-1 mb-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-black">CC الترجمة المصاحبة الحية</span>
+                    <span className="text-slate-200">• {doctor.name}</span>
+                  </span>
+                  <span className="text-slate-400 font-mono">المشهد {currentSceneIdx + 1} من {lesson.scenes.length}</span>
+                </div>
+                <p className={`font-black text-amber-100 leading-relaxed drop-shadow-md transition-all ${
+                  subtitleFontSize === 'sm' ? 'text-xs sm:text-sm' : subtitleFontSize === 'lg' ? 'text-base sm:text-xl' : 'text-sm sm:text-lg'
+                }`}>
+                  "{currentScene.doctorSpokenScript}"
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Persistent Video Player Control Overlay on Blackboard */}
+          <div className="absolute bottom-3 inset-x-3 sm:inset-x-6 z-30 p-3 sm:p-4 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-700/80 shadow-2xl text-white space-y-3">
+            
+            {/* Scrubber Timeline Bar */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-300 font-mono">
+                <span className="font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>المشهد {currentSceneIdx + 1} من {lesson.scenes.length}: {currentScene.sceneTitle}</span>
+                </span>
+                <span>{Math.round(((currentSceneIdx + 1) / lesson.scenes.length) * 100)}% أكملت</span>
+              </div>
+
+              <div className="grid grid-cols-12 gap-1.5 h-2">
+                {lesson.scenes.map((sc, i) => (
+                  <button
+                    key={sc.sceneNumber}
+                    onClick={() => setCurrentSceneIdx(i)}
+                    style={{ gridColumn: `span ${Math.max(1, Math.floor(12 / lesson.scenes.length))}` }}
+                    className={`h-full rounded-full transition-all cursor-pointer ${
+                      i === currentSceneIdx
+                        ? 'bg-amber-400 shadow-lg ring-2 ring-amber-400/50 scale-105'
+                        : i < currentSceneIdx
+                        ? 'bg-blue-500'
+                        : 'bg-slate-700/80 hover:bg-slate-600'
+                    }`}
+                    title={sc.sceneTitle}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Persistent Control Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+              
+              {/* Media Player Controls */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrevScene}
+                  disabled={currentSceneIdx === 0}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white transition cursor-pointer"
+                  title="المشهد السابق"
+                >
+                  <SkipForward className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="p-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-black shadow-xl shadow-blue-500/40 transition transform active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  title={isPlaying ? 'إيقاف مؤقت' : 'تشغيل الفيديو'}
+                >
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
+                  <span className="hidden sm:inline font-extrabold text-xs">{isPlaying ? 'إيقاف' : 'تشغيل'}</span>
+                </button>
+
+                <button
+                  onClick={handleNextScene}
+                  disabled={currentSceneIdx === lesson.scenes.length - 1}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white transition cursor-pointer"
+                  title="المشهد التالي"
+                >
+                  <SkipBack className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={handleReplayScene}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                  title="إعادة المشهد"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
+                {/* Volume & Mute */}
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                  title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
+                >
+                  {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                </button>
+
+                {/* CC Subtitles Toggle */}
+                <button
+                  onClick={() => setShowSubtitles(!showSubtitles)}
+                  className={`px-2.5 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1 font-bold ${
+                    showSubtitles
+                      ? 'bg-amber-400 text-slate-950 font-black shadow-md ring-2 ring-amber-300/60'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                  title={showSubtitles ? 'إخفاء الترجمة المصاحبة' : 'تفعيل الترجمة المصاحبة (CC)'}
+                >
+                  <Captions className="w-4 h-4" />
+                  <span className="text-[10px] font-black">CC</span>
+                </button>
+
+                {/* Subtitle Font Size Picker */}
+                {showSubtitles && (
+                  <div className="hidden sm:flex items-center bg-slate-800/90 rounded-xl p-0.5 text-[10px] font-bold text-slate-300 border border-slate-700">
+                    {(['sm', 'md', 'lg'] as const).map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSubtitleFontSize(size)}
+                        className={`px-2 py-0.5 rounded-lg transition cursor-pointer ${
+                          subtitleFontSize === size ? 'bg-amber-400 text-slate-950 font-black' : 'hover:text-white'
+                        }`}
+                        title={`حجم خط الترجمة: ${size === 'sm' ? 'صغير' : size === 'md' ? 'متوسط' : 'كبير'}`}
+                      >
+                        {size === 'sm' ? 'خط صغير' : size === 'md' ? 'متوسط' : 'خط كبير'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Playback Speed Selectors */}
+                <div className="flex items-center bg-slate-800/90 rounded-xl p-0.5 text-xs font-bold text-slate-300 border border-slate-700">
+                  {[0.75, 1, 1.25, 1.5].map((spd) => (
+                    <button
+                      key={spd}
+                      onClick={() => setPlaybackSpeed(spd)}
+                      className={`px-2 py-0.5 rounded-lg transition cursor-pointer ${
+                        playbackSpeed === spd ? 'bg-blue-600 text-white shadow-xs' : 'hover:text-white'
+                      }`}
+                    >
+                      {spd}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fullscreen & Board Themes */}
+              <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-1 bg-slate-800/90 p-0.5 rounded-xl border border-slate-700 text-[10px] font-bold">
+                  {[
+                    { id: 'chalkboard_green', label: 'خضراء' },
+                    { id: 'blackboard_dark', label: 'سوداء' },
+                    { id: 'whiteboard_academic', label: 'بيضاء' },
+                    { id: 'blueprint_cyan', label: 'مخطط' },
+                  ].map((th) => (
+                    <button
+                      key={th.id}
+                      onClick={() => setActiveBoardTheme(th.id as any)}
+                      className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                        activeBoardTheme === th.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {th.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={toggleFullscreen}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
+                  title={isFullscreen ? 'تصغير' : 'تكبير الشاشة'}
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+              </div>
+
+            </div>
+
           </div>
 
         </div>
       </div>
 
-      {/* ======================================================== */}
-      {/* 3. MEDIA CONTROLLER & TIMELINE BAR */}
-      {/* ======================================================== */}
-      <div className="bg-slate-900 p-4 sm:p-5 text-white border-t border-slate-800 space-y-4">
-        
-        {/* Timeline Slider with scene segments */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>المشهد {currentSceneIdx + 1} من {lesson.scenes.length}</span>
-            <span>{Math.round(((currentSceneIdx + 1) / lesson.scenes.length) * 100)}%</span>
-          </div>
-          <div className="grid grid-cols-12 gap-1.5 h-2">
-            {lesson.scenes.map((sc, i) => (
-              <button
-                key={sc.sceneNumber}
-                onClick={() => setCurrentSceneIdx(i)}
-                style={{ gridColumn: `span ${Math.max(1, Math.floor(12 / lesson.scenes.length))}` }}
-                className={`h-full rounded-full transition-all cursor-pointer ${
-                  i === currentSceneIdx
-                    ? 'bg-amber-400 shadow-md ring-2 ring-amber-400/40'
-                    : i < currentSceneIdx
-                    ? 'bg-blue-600'
-                    : 'bg-slate-700 hover:bg-slate-600'
-                }`}
-                title={sc.sceneTitle}
-              />
-            ))}
-          </div>
+      {/* Student Engagement Action Buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-900 border-t border-slate-800">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              setDidntUnderstandScene(currentScene.sceneNumber);
+              setShowDidntUnderstandModal(true);
+            }}
+            className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-xs font-black transition cursor-pointer flex items-center gap-1.5"
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span>لم أفهم، أعد الشرح 🔄</span>
+          </button>
+
+          <button
+            onClick={() => setShowQuizModal(true)}
+            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-md"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>اختبرني في الدرس 🎯</span>
+          </button>
+
+          <button
+            onClick={handleSaveToggle}
+            className={`px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+              savedLocal
+                ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+            }`}
+          >
+            <Bookmark className="w-4 h-4" />
+            <span>{savedLocal ? 'محفوظ في مكتبتي' : 'حفظ الدرس'}</span>
+          </button>
+
+          <button
+            onClick={handleRecordVideo}
+            disabled={isRecordingVideo}
+            className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+            title="تصدير الشرح كملخص / فيديو مرئي"
+          >
+            <Video className="w-4 h-4" />
+            <span>{isRecordingVideo ? `جاري التصدير (${recordProgress}%)...` : 'تصدير الفيديو'}</span>
+          </button>
         </div>
-
-        {/* Playback Buttons Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          
-          {/* Main Controls: Previous, Play/Pause, Next, Replay */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrevScene}
-              disabled={currentSceneIdx === 0}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white transition cursor-pointer"
-              title="المشهد السابق"
-            >
-              <SkipForward className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black shadow-lg shadow-blue-500/30 transition transform active:scale-95 cursor-pointer"
-              title={isPlaying ? 'إيقاف مؤقت' : 'تشغيل الشرح'}
-            >
-              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-white" />}
-            </button>
-
-            <button
-              onClick={handleNextScene}
-              disabled={currentSceneIdx === lesson.scenes.length - 1}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white transition cursor-pointer"
-              title="المشهد التالي"
-            >
-              <SkipBack className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={handleReplayScene}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
-              title="إعادة نطق المشهد الحالي"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-
-            {/* Mute button */}
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
-              title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
-            >
-              {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-            </button>
-
-            {/* Speed toggle */}
-            <div className="flex items-center bg-slate-800 rounded-xl p-0.5 text-xs font-bold text-slate-300">
-              {[1, 1.25, 1.5].map((spd) => (
-                <button
-                  key={spd}
-                  onClick={() => setPlaybackSpeed(spd)}
-                  className={`px-2 py-1 rounded-lg transition cursor-pointer ${
-                    playbackSpeed === spd ? 'bg-blue-600 text-white' : 'hover:text-white'
-                  }`}
-                >
-                  {spd}x
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Student Engagement Action Buttons (لم أفهم، اشرح بطريقة أبسط، اختبرني) */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => {
-                setDidntUnderstandScene(currentScene.sceneNumber);
-                setShowDidntUnderstandModal(true);
-              }}
-              className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 text-xs font-black transition cursor-pointer flex items-center gap-1.5"
-            >
-              <HelpCircle className="w-4 h-4" />
-              <span>لم أفهم، أعد الشرح 🔄</span>
-            </button>
-
-            <button
-              onClick={() => setShowQuizModal(true)}
-              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition cursor-pointer flex items-center gap-1.5 shadow-md"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>اختبرني في الدرس 🎯</span>
-            </button>
-
-            <button
-              onClick={handleSaveToggle}
-              className={`px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
-                savedLocal
-                  ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
-              }`}
-            >
-              <Bookmark className="w-4 h-4" />
-              <span>{savedLocal ? 'محفوظ في مكتبتي' : 'حفظ الدرس'}</span>
-            </button>
-
-            <button
-              onClick={handleRecordVideo}
-              disabled={isRecordingVideo}
-              className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
-              title="تصدير الشرح كملخص / فيديو مرئي"
-            >
-              <Video className="w-4 h-4" />
-              <span>{isRecordingVideo ? `جاري التصدير (${recordProgress}%)...` : 'تصدير الفيديو'}</span>
-            </button>
-          </div>
-
-        </div>
-
       </div>
 
       {/* ======================================================== */}

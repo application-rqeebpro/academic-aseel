@@ -66,6 +66,52 @@ export const AnimeDoctorAvatar: React.FC<AnimeDoctorAvatarProps> = ({
   // Head tilt based on action
   const headRotate = isPointing ? '-6deg' : '0deg';
 
+  // If doctor has custom uploaded photo
+  if (doctor.avatarType === 'photo' && doctor.photoUrl) {
+    return (
+      <div className={`relative select-none transition-all duration-300 flex flex-col items-center justify-end ${sizeClasses} ${className}`}>
+        <div className="relative w-full h-full rounded-3xl overflow-hidden border-4 border-amber-400/80 shadow-2xl bg-slate-900 group">
+          <img
+            src={doctor.photoUrl}
+            alt={doctor.name}
+            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+          
+          <div className="absolute bottom-2 inset-x-2 p-2 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-amber-400/50 text-center text-white">
+            <span className="block text-xs font-black text-amber-300 truncate">
+              {doctor.name}
+            </span>
+            <span className="block text-[9px] text-slate-300 truncate font-semibold">
+              {doctor.title || doctor.specialty}
+            </span>
+          </div>
+
+          {/* Academic Badge Tag */}
+          <div className="absolute top-2 right-2 bg-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow-md border border-amber-300">
+            🎓 دكتور المحاضرة
+          </div>
+
+          {/* Speaking Indicator */}
+          {isSpeaking && (
+            <div className="absolute top-2 left-2 bg-emerald-500 text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+              <span>يشرح...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Floating Speaking Pill */}
+        {isSpeaking && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-lg border border-blue-400 flex items-center gap-1.5 animate-bounce z-20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>يتحدث الآن...</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`relative select-none transition-all duration-300 ${sizeClasses} ${className}`}>
       <svg
