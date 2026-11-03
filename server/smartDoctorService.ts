@@ -652,9 +652,8 @@ ${params.studentFileContent ? `[محتوى ملف الطالب المرفوع]:\
   "summaryNotes": ["نقطة ملخصة 1", "نقطة ملخصة 2"]
 }`;
 
-    // Use gemini-4-argon or gemini-3.8-flash for engineering reasoning
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+    const { callGeminiWithResilience } = await import('./explainService');
+    const cascadeResult = await callGeminiWithResilience(ai, {
       contents: prompt,
       config: {
         temperature: 0.3,
@@ -662,7 +661,7 @@ ${params.studentFileContent ? `[محتوى ملف الطالب المرفوع]:\
       },
     });
 
-    const text = response.text || '';
+    const text = cascadeResult.text || '';
     const parsed = safeExtractJson(text);
 
     if (parsed && Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
