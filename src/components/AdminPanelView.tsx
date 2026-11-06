@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ActivationCode, StudentProfile, Subject, AdminSettings, ReferenceBook } from '../types';
+import { ActivationCode, StudentProfile, Subject, AdminSettings, ReferenceBook, EducationalVideo } from '../types';
 import { SpecialistDoctor, SmartDoctorGeneratedLesson, SPECIALIST_DOCTORS } from '../data/smartDoctorData';
 import { 
   ShieldCheck, 
@@ -38,6 +38,7 @@ import {
   Phone,
   User,
   Upload,
+  Video,
 } from 'lucide-react';
 
 interface AdminPanelViewProps {
@@ -1385,6 +1386,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                 { id: 'codes', label: 'أكواد التفعيل', icon: KeyRound, count: stats.activeCodes || null },
                 { id: 'references', label: 'إدارة الكتب والمراجع', icon: Book, count: null },
                 { id: 'smart-doctors', label: 'دكاترة الميكاترونكس (20)', icon: GraduationCap, count: adminDoctors.length || 20 },
+                { id: 'videos', label: '🎥 مكتبة الفيديوهات', icon: Video, count: null },
                 { id: 'content', label: 'المناهج والدروس', icon: BookOpen, count: null },
                 { id: 'settings', label: 'إعدادات المنصة', icon: Settings, count: null },
                 { id: 'guide', label: 'دليل الأمان والنشر', icon: HelpCircle, count: null },

@@ -28,6 +28,7 @@ import { ExamModal } from './components/ExamModal';
 import { PersonalizedLearningPathView } from './components/PersonalizedLearningPathView';
 import { ReferencesLibraryView } from './components/ReferencesLibraryView';
 import { ExplanationVideosView } from './components/ExplanationVideosView';
+import { EducationalVideoLibraryView } from './components/EducationalVideoLibraryView';
 import { SmartDoctorView } from './components/SmartDoctorView';
 import { PlatformGuideModal } from './components/PlatformGuideModal';
 import { Loader2 } from 'lucide-react';
@@ -593,12 +594,15 @@ export default function App() {
                   />
                 )}
 
-                {/* 1.4 Explanation Videos Tab */}
+                {/* 1.4 Educational Video Library Tab */}
                 {activeTab === 'videos' && (
-                  <ExplanationVideosView
-                    onBack={() => setActiveTab('dashboard')}
-                    onOpenAiWithTopic={(topic) => handleOpenAiWithTopic(topic)}
-                    onOpenSerwayReference={() => setActiveTab('references')}
+                  <EducationalVideoLibraryView
+                    student={student}
+                    onNavigateToTab={(tab) => {
+                      if (['lab', 'circuits', 'arduino', 'dashboard', 'subjects'].includes(tab)) {
+                        setActiveTab(tab as any);
+                      }
+                    }}
                   />
                 )}
 

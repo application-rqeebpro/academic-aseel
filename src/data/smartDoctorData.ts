@@ -16,7 +16,8 @@ export interface SpecialistDoctor {
   voicePitch: number;
   voiceRate: number;
   photoUrl?: string;
-  avatarType?: 'anime' | 'photo';
+  avatarType?: 'anime' | 'photo' | 'icon';
+  iconSymbol?: string;
 }
 
 export const SPECIALIST_DOCTORS: SpecialistDoctor[] = [

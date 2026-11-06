@@ -38,6 +38,7 @@ import {
   deleteLesson,
   generateSmartDoctorLesson,
 } from './smartDoctorService';
+import { videoService } from './videoService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mct_jwt_secret_mechatronics_academy_7829';
 
@@ -3023,6 +3024,151 @@ router.delete('/smart-doctor/lessons/:id', (req, res) => {
     res.json({ success: ok, message: ok ? 'تم حذف الدرس.' : 'الدرس غير موجود.' });
   } catch (err: any) {
     res.status(500).json({ error: 'تعذر حذف الدرس.', details: err?.message });
+  }
+});
+
+// ==========================================================
+// 🎥 EDUCATIONAL VIDEO LIBRARY (مكتبة الفيديوهات التعليمية) API
+// ==========================================================
+
+// 1. Get/Search Videos
+router.get('/videos', (req, res) => {
+  try {
+    const { query, subject, topic, level, university, platform, isYemeniOnly, isBestOnly, status } = req.query;
+    const videos = videoService.getVideos({
+      query: query as string,
+      subject: subject as string,
+      topic: topic as string,
+      level: level as string,
+      university: university as string,
+      platform: platform as string,
+      isYemeniOnly: isYemeniOnly === 'true',
+      isBestOnly: isBestOnly === 'true',
+      status: status as string,
+    });
+    res.json({ success: true, videos, count: videos.length });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب الفيديوهات التعليمية.', details: err?.message });
+  }
+});
+
+// 2. Admin Analytics
+router.get('/videos/analytics', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const analytics = videoService.getAnalytics();
+    res.json({ success: true, analytics });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب إحصائيات مكتبة الفيديوهات.', details: err?.message });
+  }
+});
+
+// 3. Lecture Requests (Student submit & get)
+router.get('/videos/requests', (req, res) => {
+  try {
+    const requests = videoService.getRequests();
+    res.json({ success: true, requests });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب طلبات الشرح.', details: err?.message });
+  }
+});
+
+router.post('/videos/requests', (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const studentId = authReq.user?.id || req.body.studentId;
+    const studentName = authReq.user?.name || req.body.studentName;
+    const newReq = videoService.addRequest({
+      ...req.body,
+      studentId,
+      studentName,
+    });
+    res.json({ success: true, request: newReq, message: 'تم إرسال طلب الشرح بنجاح وسيقوم مالك الأكاديمية بإضافة الفيديو المناسب.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر إرسال طلب الشرح.', details: err?.message });
+  }
+});
+
+router.put('/videos/requests/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const updated = videoService.updateRequestStatus(req.params.id, req.body.status);
+    res.json({ success: true, request: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر تحديث حالة الطلب.', details: err?.message });
+  }
+});
+
+// 4. Add Video (Manual with Duplicate Check)
+router.post('/videos/add', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const result = videoService.addVideo(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error, existingVideo: result.video });
+    }
+    res.json({ success: true, video: result.video, message: 'تمت إضافة الفيديو إلى المكتبة بنجاح.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر إضافة الفيديو.', details: err?.message });
+  }
+});
+
+// 5. Batch Import URLs
+router.post('/videos/batch', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { urls } = req.body;
+    if (!Array.isArray(urls) || urls.length === 0) {
+      return res.status(400).json({ error: 'يرجى تزويد قائمة بروابط الفيديوهات.' });
+    }
+    const result = videoService.batchImportUrls(urls);
+    res.json({ success: true, result, message: `تم استيراد ${result.addedCount} فيديو بنجاح وإرسالها للمراجعة.` });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر استيراد الفيديوهات.', details: err?.message });
+  }
+});
+
+// 6. AI Extract Metadata
+router.post('/videos/ai-extract', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { url, rawText } = req.body;
+    if (!url) return res.status(400).json({ error: 'رابط الفيديو مطلوب.' });
+    const client = getGeminiClient();
+    const metadata = await videoService.extractVideoMetadataWithAi(client, url, rawText);
+    res.json({ success: true, metadata });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر استخراج البيانات بالذكاء الاصطناعي.', details: err?.message });
+  }
+});
+
+// 7. Get Video Details
+router.get('/videos/:id', (req, res) => {
+  try {
+    const video = videoService.getVideoById(req.params.id);
+    if (!video) return res.status(404).json({ error: 'الفيديو غير موجود.' });
+    // Suggest 4 related videos
+    const all = videoService.getVideos();
+    const related = all.filter((v) => v.id !== video.id && (v.subject === video.subject || v.topic === video.topic)).slice(0, 4);
+    res.json({ success: true, video, related });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر جلب تفاصيل الفيديو.', details: err?.message });
+  }
+});
+
+// 8. Update Video (Admin)
+router.put('/videos/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const updated = videoService.updateVideo(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'الفيديو غير موجود.' });
+    res.json({ success: true, video: updated, message: 'تم تحديث بيانات الفيديو بنجاح.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر تحديث الفيديو.', details: err?.message });
+  }
+});
+
+// 9. Delete Video (Admin)
+router.delete('/videos/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const ok = videoService.deleteVideo(req.params.id);
+    res.json({ success: ok, message: 'تم حذف الفيديو من المكتبة.' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'تعذر حذف الفيديو.', details: err?.message });
   }
 });
 

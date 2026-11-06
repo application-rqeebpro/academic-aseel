@@ -41,6 +41,8 @@ import {
   ProjectGalleryImage,
   StudentProfile,
 } from '../types';
+import { Mechatronics3DLabCanvas } from './Mechatronics3DLabCanvas';
+import { Mechatronics3DToolsBench } from './Mechatronics3DToolsBench';
 
 interface ProjectLabViewProps {
   student: StudentProfile | null;
@@ -228,6 +230,32 @@ export const ProjectLabView: React.FC<ProjectLabViewProps> = ({
   // Line Follower Sim
   const [lineLeftDetect, setLineLeftDetect] = useState<boolean>(true);
   const [lineRightDetect, setLineRightDetect] = useState<boolean>(true);
+
+  // Simulation Environment Mode Switcher (Hardware vs Digital vs Analog Signals vs 3D Tools Bench)
+  const [simEnvironmentMode, setSimEnvironmentMode] = useState<'hardware' | 'digital' | 'analog' | 'tools'>('hardware');
+  const [signalFreq, setSignalFreq] = useState<number>(50); // 50 Hz
+  const [pwmDutyCycle, setPwmDutyCycle] = useState<number>(65); // 65% PWM
+  const [analogNoiseLevel, setAnalogNoiseLevel] = useState<number>(5); // 5% noise
+  const [selectedBaudRate, setSelectedBaudRate] = useState<number>(9600);
+  const [serialPackets, setSerialPackets] = useState<Array<{ time: string; text: string; type: 'tx' | 'rx' }>>([
+    { time: '00:01.02', text: '[SYSTEM_INIT] ATmega328P Core Boot @ 16MHz', type: 'rx' },
+    { time: '00:01.45', text: '[PIN_INIT] D9 PWM Duty=65% | D10 Servo 50Hz | D12 Trig Pulse', type: 'rx' },
+    { time: '00:02.10', text: '[ADC_SENSE] A0 = 612 (3.0V) | A1 = 205 (1.0V) | VCC = 4.98V', type: 'rx' },
+    { time: '00:02.85', text: '[TELEMETRY] Sensor HC-SR04 Echo = 265µs -> Dist = 45cm', type: 'rx' },
+  ]);
+  const [customSerialTx, setCustomSerialTx] = useState<string>('');
+
+  const handleSendSerialCommand = () => {
+    if (!customSerialTx.trim()) return;
+    const now = new Date().toLocaleTimeString('ar-SA');
+    const cmd = customSerialTx.trim();
+    setSerialPackets((prev) => [
+      ...prev,
+      { time: now, text: `> ${cmd}`, type: 'tx' },
+      { time: now, text: `[ACK] Executed command: "${cmd}" -> Status 200 OK`, type: 'rx' },
+    ]);
+    setCustomSerialTx('');
+  };
 
   // Fetch presets and load default car project on initial mount
   useEffect(() => {
@@ -1298,288 +1326,722 @@ export const ProjectLabView: React.FC<ProjectLabViewProps> = ({
               </div>
 
               {/* DYNAMIC INTERACTIVE SIMULATOR (Section 9 & 11) */}
-              <div className="p-6 rounded-3xl bg-slate-950 text-white border-2 border-emerald-500/40 space-y-5 shadow-2xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-5 h-5 text-emerald-400" />
-                    <h4 className="font-black text-base text-emerald-300">
-                      محاكي المشروع التفاعلي (Interactive Simulation Sandbox)
-                    </h4>
+              <div className="p-6 rounded-3xl bg-slate-950 text-white border-2 border-emerald-500/40 space-y-6 shadow-2xl">
+                {/* Header & Simulation Environment Mode Switcher */}
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Sliders className="w-5 h-5 text-emerald-400" />
+                      <h4 className="font-black text-lg text-emerald-300">
+                        محاكي المشروع والتجارب العملية (Practical Engineering Simulation Sandbox)
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      اختر بيئة اختبار الإشارات والأجهزة لمعاينة السلوك البرمجي والكهربائي في الوقت الفعلي
+                    </p>
                   </div>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-                    حالة المحاكاة: {simRunning ? 'يعمل في الوقت الفعلي 🟢' : 'متوقف مؤقتاً ⏸️'}
-                  </span>
+
+                  {/* ENVIRONMENT MODE SWITCHER TABS */}
+                  <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 p-1.5 rounded-2xl border border-slate-800 shrink-0">
+                    <button
+                      onClick={() => setSimEnvironmentMode('hardware')}
+                      className={`px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        simEnvironmentMode === 'hardware'
+                          ? 'bg-emerald-500 text-slate-950 shadow-md ring-2 ring-emerald-400/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Bot className="w-4 h-4" />
+                      <span>🚦 العتاد والنظام الميداني</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSimEnvironmentMode('digital')}
+                      className={`px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        simEnvironmentMode === 'digital'
+                          ? 'bg-cyan-500 text-slate-950 shadow-md ring-2 ring-cyan-400/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <FileCode2 className="w-4 h-4" />
+                      <span>💻 الإشارات الرقمية و Serial</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSimEnvironmentMode('analog')}
+                      className={`px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        simEnvironmentMode === 'analog'
+                          ? 'bg-amber-500 text-slate-950 shadow-md ring-2 ring-amber-400/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>📉 الإشارات التماثلية والمخطط</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSimEnvironmentMode('tools')}
+                      className={`px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        simEnvironmentMode === 'tools'
+                          ? 'bg-purple-500 text-slate-950 shadow-md ring-2 ring-purple-400/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Wrench className="w-4 h-4" />
+                      <span>🔬 طاولة الأجهزة والقياس 3D</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* 1. OBSTACLE CAR SIMULATOR */}
-                {currentProject.category === 'arduino' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Interactive Controls */}
-                      <div className="space-y-3 bg-slate-900 p-4 rounded-2xl border border-slate-800">
-                        <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                          <span>مسافة العائق أمام الروبوت (HC-SR04):</span>
-                          <span className={`font-mono font-black text-sm ${obstacleDistance < 25 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                            {obstacleDistance} سم
-                          </span>
-                        </label>
-                        <input
-                          type="range"
-                          min="5"
-                          max="150"
-                          value={obstacleDistance}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setObstacleDistance(val);
-                            if (val <= 25) {
-                              setServoAngle(45); // Servo scans right
-                            } else {
-                              setServoAngle(0); // Servo centers
-                            }
-                          }}
-                          className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                        />
+                {/* ======================================================== */}
+                {/* MODE 1: PHYSICAL HARDWARE & FIELD SYSTEM ENVIRONMENT */}
+                {/* ======================================================== */}
+                {simEnvironmentMode === 'hardware' && (
+                  <div className="space-y-6 animate-fade-in">
+                    {/* INTERACTIVE 3D THREE.JS LAB CANVAS */}
+                    <Mechatronics3DLabCanvas
+                      project={currentProject}
+                      simRunning={simRunning}
+                      onToggleSim={() => setSimRunning(!simRunning)}
+                      trafficAIntensity={trafficAIntensity}
+                      trafficBIntensity={trafficBIntensity}
+                      isAmbulanceActive={isAmbulanceActive}
+                      droneThrottle={droneThrottle}
+                      dronePitch={dronePitch}
+                      droneRoll={droneRoll}
+                      droneYaw={droneYaw}
+                      armBase={armBase}
+                      armShoulder={armShoulder}
+                      armElbow={armElbow}
+                      armGrip={armGrip}
+                      simTemp={simTemp}
+                      obstacleDistance={obstacleDistance}
+                      servoAngle={servoAngle}
+                    />
 
-                        <div className="flex items-center gap-2 pt-2 text-xs">
+                    {/* 1. OBSTACLE CAR SIMULATOR */}
+                    {currentProject.category === 'arduino' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Interactive Controls */}
+                          <div className="space-y-3 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                            <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                              <span>مسافة العائق أمام الروبوت (HC-SR04):</span>
+                              <span className={`font-mono font-black text-sm ${obstacleDistance < 25 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                {obstacleDistance} سم
+                              </span>
+                            </label>
+                            <input
+                              type="range"
+                              min="5"
+                              max="150"
+                              value={obstacleDistance}
+                              onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setObstacleDistance(val);
+                                if (val <= 25) {
+                                  setServoAngle(45);
+                                } else {
+                                  setServoAngle(0);
+                                }
+                              }}
+                              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                            />
+
+                            <div className="flex items-center gap-2 pt-2 text-xs">
+                              <button
+                                onClick={() => {
+                                  setObstacleDistance(15);
+                                  setServoAngle(45);
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 font-bold border border-rose-500/30 cursor-pointer"
+                              >
+                                ⚠️ محاكاة عائق مفاجئ (15 سم)
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setObstacleDistance(80);
+                                  setServoAngle(0);
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 font-bold border border-emerald-500/30 cursor-pointer"
+                              >
+                                🛣️ طريق مفتوح (80 سم)
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Motor & Decision Telemetry */}
+                          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
+                            <span className="font-bold text-slate-400 block">بيانات استجابة المتحكم ودرايفر المحركات L298N:</span>
+                            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80">
+                              <span>حالة الروبوت:</span>
+                              <span className={`font-black ${obstacleDistance <= 25 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                {obstacleDistance <= 25 ? 'عائق مرصود! توقف وتفحص المسار والانعطاف' : 'تقدم للأمام (FORWARD)'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80">
+                              <span>زاوية محرك السيرفو SG90:</span>
+                              <span className="font-mono font-bold text-cyan-400">{servoAngle === 0 ? '0° (للأمام)' : `${servoAngle}° (يمين)`}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80">
+                              <span>سرعة المحركين (PWM):</span>
+                              <span className="font-mono font-bold text-indigo-300">
+                                {obstacleDistance <= 25 ? 'L: 0 RPM | R: 180 RPM (دوران)' : 'L: 180 RPM | R: 180 RPM'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SMART TRAFFIC LIGHT SYSTEM WITH REAL HARDWARE VIDEO EMBED */}
+                    {(currentProject.category === 'automation' || currentProject.title.includes('إشارة') || currentProject.title.includes('مرور')) && (
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                            <span className="font-bold text-xs text-amber-300 flex items-center gap-2">
+                              <TrafficCone className="w-4 h-4 text-amber-400" />
+                              <span>الموديل الميداني التفاعلي لإشارات المرور والمدينة الذكية (Smart Traffic Sandbox)</span>
+                            </span>
+                            <span className="text-[10px] font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
+                              OLED Status: SMART CITY TRAFFIC - ACTIVE
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Real Hardware Video Embed */}
+                            <div className="rounded-2xl overflow-hidden border border-slate-700 bg-black aspect-video relative shadow-lg">
+                              <video
+                                src="/public/assets/aistudio/_____________________________________________eocontrol_____________________________________244c080c.mp4"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm text-emerald-300 font-mono text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                                <span>بث حقيقي للمدينة الذكية</span>
+                              </div>
+                            </div>
+
+                            {/* Live Controls */}
+                            <div className="space-y-3 text-xs">
+                              <div className="p-3 rounded-xl bg-slate-800 space-y-1">
+                                <label className="font-bold text-slate-300 block">كثافة سير المسار A:</label>
+                                <input
+                                  type="range"
+                                  min="1"
+                                  max="5"
+                                  value={trafficAIntensity}
+                                  onChange={(e) => setTrafficAIntensity(Number(e.target.value))}
+                                  className="w-full h-1.5 bg-slate-700 rounded cursor-pointer accent-amber-500"
+                                />
+                                <div className="flex justify-between text-[10px] text-slate-400">
+                                  <span>منخفضة</span>
+                                  <span className="font-mono text-amber-300 font-bold">{trafficAIntensity} سيارات/دقيقة</span>
+                                  <span>مكتظة</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => setIsAmbulanceActive(!isAmbulanceActive)}
+                                className={`w-full py-2.5 rounded-xl font-black text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+                                  isAmbulanceActive
+                                    ? 'bg-rose-600 text-white animate-pulse shadow-lg'
+                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                                }`}
+                              >
+                                🚑 <span>{isAmbulanceActive ? 'أولوية الإسعاف مفعلة (فتح المسار آلياً)' : 'محاكاة مرور سيارة إسعاف (Emergency Override)'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. DRONE SIMULATOR */}
+                    {(currentProject.category === 'drone' || currentProject.title.includes('درون') || currentProject.title.includes('Drone')) && (
+                      <div className="space-y-4">
+                        <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-800 text-xs text-blue-200">
+                          🚁 <strong>محاكاة اتزان الطيران (PID Flight Stabilization):</strong> تحكم بمعدل الخنق Throttle وزوايا الميل Roll و Pitch لرؤية استجابة المحركات الأربعة عديمة المسفرات وحلقة الـ PID.
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">الرفع (Throttle): {droneThrottle}%</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={droneThrottle}
+                              onChange={(e) => setDroneThrottle(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-blue-500 cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">الميل الجانبي (Roll): {droneRoll}°</label>
+                            <input
+                              type="range"
+                              min="-30"
+                              max="30"
+                              value={droneRoll}
+                              onChange={(e) => setDroneRoll(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-cyan-500 cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">الميل الطولي (Pitch): {dronePitch}°</label>
+                            <input
+                              type="range"
+                              min="-30"
+                              max="30"
+                              value={dronePitch}
+                              onChange={(e) => setDronePitch(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-indigo-500 cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">الدوران (Yaw): {droneYaw}°</label>
+                            <input
+                              type="range"
+                              min="-45"
+                              max="45"
+                              value={droneYaw}
+                              onChange={(e) => setDroneYaw(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-purple-500 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 4 BLDC Motors RPM Graphic */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                            <span className="text-slate-400 block text-[10px]">محرك 1 (أمامي أيسر CCW)</span>
+                            <span className="font-mono font-black text-emerald-400 text-sm">
+                              {Math.round(droneThrottle * 70 + dronePitch * 5 - droneRoll * 5)} RPM
+                            </span>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                            <span className="text-slate-400 block text-[10px]">محرك 2 (أمامي أيمن CW)</span>
+                            <span className="font-mono font-black text-emerald-400 text-sm">
+                              {Math.round(droneThrottle * 70 + dronePitch * 5 + droneRoll * 5)} RPM
+                            </span>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                            <span className="text-slate-400 block text-[10px]">محرك 3 (خلفي أيمن CCW)</span>
+                            <span className="font-mono font-black text-emerald-400 text-sm">
+                              {Math.round(droneThrottle * 70 - dronePitch * 5 + droneRoll * 5)} RPM
+                            </span>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
+                            <span className="text-slate-400 block text-[10px]">محرك 4 (خلفي أيسر CW)</span>
+                            <span className="font-mono font-black text-emerald-400 text-sm">
+                              {Math.round(droneThrottle * 70 - dronePitch * 5 - droneRoll * 5)} RPM
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. ROBOTIC ARM SIMULATOR */}
+                    {(currentProject.category === 'robotics' && currentProject.title.includes('ذراع')) && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">القاعدة (Base): {armBase}°</label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="180"
+                              value={armBase}
+                              onChange={(e) => setArmBase(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-blue-500 cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">الكتف (Shoulder): {armShoulder}°</label>
+                            <input
+                              type="range"
+                              min="30"
+                              max="150"
+                              value={armShoulder}
+                              onChange={(e) => setArmShoulder(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-indigo-500 cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">المرفق (Elbow): {armElbow}°</label>
+                            <input
+                              type="range"
+                              min="20"
+                              max="160"
+                              value={armElbow}
+                              onChange={(e) => setArmElbow(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-purple-500 cursor-pointer"
+                            />
+                          </div>
+
+                          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300 block">المخلب (Gripper): {armGrip}°</label>
+                            <input
+                              type="range"
+                              min="10"
+                              max="85"
+                              value={armGrip}
+                              onChange={(e) => setArmGrip(Number(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded accent-amber-500 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1 text-xs">
                           <button
                             onClick={() => {
-                              setObstacleDistance(15);
-                              setServoAngle(45);
+                              setArmBase(90);
+                              setArmShoulder(90);
+                              setArmElbow(90);
+                              setArmGrip(40);
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 font-bold border border-rose-500/30 cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold cursor-pointer"
                           >
-                            ⚠️ محاكاة عائق مفاجئ (15 سم)
+                            وضع الاستعداد (Standby)
                           </button>
                           <button
                             onClick={() => {
-                              setObstacleDistance(80);
-                              setServoAngle(0);
+                              setArmBase(45);
+                              setArmShoulder(120);
+                              setArmElbow(140);
+                              setArmGrip(80);
                             }}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 font-bold border border-emerald-500/30 cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold border border-blue-500/30 cursor-pointer"
                           >
-                            🛣️ طريق مفتوح (80 سم)
+                            التقاط جسم (Pick Object)
                           </button>
                         </div>
                       </div>
+                    )}
 
-                      {/* Motor & Decision Telemetry */}
-                      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 text-xs">
-                        <span className="font-bold text-slate-400 block">بيانات استجابة المتحكم ودرايفر المحركات L298N:</span>
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80">
-                          <span>حالة الروبوت:</span>
-                          <span className={`font-black ${obstacleDistance <= 25 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                            {obstacleDistance <= 25 ? 'عائق مرصود! توقف وتفحص المسار والانعطاف' : 'تقدم للأمام (FORWARD)'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80">
-                          <span>زاوية محرك السيرفو SG90:</span>
-                          <span className="font-mono font-bold text-cyan-400">{servoAngle === 0 ? '0° (للأمام)' : `${servoAngle}° (يمين)`}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/80">
-                          <span>سرعة المحركين (PWM):</span>
-                          <span className="font-mono font-bold text-indigo-300">
-                            {obstacleDistance <= 25 ? 'L: 0 RPM | R: 180 RPM (دوران)' : 'L: 180 RPM | R: 180 RPM'}
-                          </span>
+                    {/* 4. TEMPERATURE SYSTEM SIMULATOR */}
+                    {currentProject.category === 'control' && (
+                      <div className="space-y-4">
+                        <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
+                          <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                            <span>محاكاة تغير درجة الحرارة (DHT22):</span>
+                            <span className={`font-mono font-black text-sm ${simTemp >= 38 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                              {simTemp}°C
+                            </span>
+                          </label>
+                          <input
+                            type="range"
+                            min="15"
+                            max="55"
+                            step="0.5"
+                            value={simTemp}
+                            onChange={(e) => setSimTemp(Number(e.target.value))}
+                            className="w-full h-2 bg-slate-700 rounded cursor-pointer accent-emerald-500"
+                          />
+
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800 text-xs">
+                            <span>سرعة مروحة التبريد DC Fan:</span>
+                            <span className="font-mono font-black text-cyan-400">
+                              {simTemp < 26 ? '0% (متوقفة)' : `${Math.min(100, Math.round((simTemp - 26) * 7.5))}%`}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
 
-                {/* 2. DRONE SIMULATOR (Section 11) */}
-                {(currentProject.category === 'drone' || currentProject.title.includes('درون') || currentProject.title.includes('Drone')) && (
-                  <div className="space-y-4">
-                    <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-800 text-xs text-blue-200">
-                      🚁 <strong>محاكاة اتزان الطيران (PID Flight Stabilization):</strong> تحكم بمعدل الخنق Throttle وزوايا الميل Roll و Pitch لرؤية استجابة المحركات الأربعة عديمة المسفرات وحلقة الـ PID.
-                    </div>
+                {/* ======================================================== */}
+                {/* MODE 2: DIGITAL SIGNALS & SERIAL TERMINAL ENVIRONMENT */}
+                {/* ======================================================== */}
+                {simEnvironmentMode === 'digital' && (
+                  <div className="space-y-5 animate-fade-in">
+                    {/* DIGITAL LOGIC OSCILLOSCOPE WAVEFORMS */}
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-bold text-xs text-cyan-300 flex items-center gap-2">
+                          <FileCode2 className="w-4 h-4 text-cyan-400" />
+                          <span>راسم الإشارات الرقمية (Digital Logic Analyzer & PWM Oscilloscope)</span>
+                        </span>
+                        <div className="flex items-center gap-3 text-[10px] font-mono text-slate-400">
+                          <span>تردد الساعة: 16MHz</span>
+                          <span className="text-cyan-400 font-bold">PWM Duty: {pwmDutyCycle}%</span>
+                        </div>
+                      </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">الرفع (Throttle): {droneThrottle}%</label>
+                      {/* PWM Duty Cycle Interactive Control */}
+                      <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+                        <span className="font-bold text-slate-300 shrink-0">تحكم بعرض النبضة PWM (Pin D9):</span>
                         <input
                           type="range"
                           min="0"
                           max="100"
-                          value={droneThrottle}
-                          onChange={(e) => setDroneThrottle(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-blue-500 cursor-pointer"
+                          value={pwmDutyCycle}
+                          onChange={(e) => setPwmDutyCycle(Number(e.target.value))}
+                          className="w-full h-1.5 bg-slate-700 rounded cursor-pointer accent-cyan-400"
                         />
+                        <span className="font-mono font-bold text-cyan-300 w-12 text-left">{pwmDutyCycle}%</span>
                       </div>
 
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">الميل الجانبي (Roll): {droneRoll}°</label>
-                        <input
-                          type="range"
-                          min="-30"
-                          max="30"
-                          value={droneRoll}
-                          onChange={(e) => setDroneRoll(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-cyan-500 cursor-pointer"
-                        />
-                      </div>
+                      {/* SVG Digital Waveform Plotter */}
+                      <div className="bg-black p-3 rounded-xl border border-slate-800 space-y-2 font-mono text-[10px]">
+                        {/* Channel 1: PWM Motor Control */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-cyan-400">
+                            <span>CH1 (Pin D9 - PWM Motor Speed)</span>
+                            <span>{Math.round((pwmDutyCycle / 100) * 255)} / 255 (AnalogWrite)</span>
+                          </div>
+                          <svg className="w-full h-10 bg-slate-950 rounded border border-slate-900" viewBox="0 0 400 40">
+                            <path
+                              d={`M 0 32 L ${400 * (1 - pwmDutyCycle / 100) * 0.15} 32 L ${400 * (1 - pwmDutyCycle / 100) * 0.15} 8 L 60 8 L 60 32 L ${60 + 400 * (1 - pwmDutyCycle / 100) * 0.15} 32 L ${60 + 400 * (1 - pwmDutyCycle / 100) * 0.15} 8 L 120 8 L 120 32 L 180 32 L 180 8 L 240 8 L 240 32 L 300 32 L 300 8 L 360 8 L 360 32 L 400 32`}
+                              fill="none"
+                              stroke="#22d3ee"
+                              strokeWidth="2"
+                            />
+                          </svg>
+                        </div>
 
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">الميل الطولي (Pitch): {dronePitch}°</label>
-                        <input
-                          type="range"
-                          min="-30"
-                          max="30"
-                          value={dronePitch}
-                          onChange={(e) => setDronePitch(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-indigo-500 cursor-pointer"
-                        />
-                      </div>
+                        {/* Channel 2: Ultrasonic Trig Pulse */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-emerald-400">
+                            <span>CH2 (Pin D12 - Ultrasonic Trig Pulse)</span>
+                            <span>10µs High Burst @ 50Hz</span>
+                          </div>
+                          <svg className="w-full h-8 bg-slate-950 rounded border border-slate-900" viewBox="0 0 400 30">
+                            <path
+                              d="M 0 24 L 40 24 L 40 6 L 45 6 L 45 24 L 140 24 L 140 6 L 145 6 L 145 24 L 240 24 L 240 6 L 245 6 L 245 24 L 340 24 L 340 6 L 345 6 L 345 24 L 400 24"
+                              fill="none"
+                              stroke="#34d399"
+                              strokeWidth="2"
+                            />
+                          </svg>
+                        </div>
 
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">الدوران (Yaw): {droneYaw}°</label>
-                        <input
-                          type="range"
-                          min="-45"
-                          max="45"
-                          value={droneYaw}
-                          onChange={(e) => setDroneYaw(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-purple-500 cursor-pointer"
-                        />
+                        {/* Channel 3: Servo Motor Pulse */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-amber-400">
+                            <span>CH3 (Pin D10 - Servo Control SG90)</span>
+                            <span>{1.5 + (servoAngle / 90) * 0.5}ms High Pulse Width</span>
+                          </div>
+                          <svg className="w-full h-8 bg-slate-950 rounded border border-slate-900" viewBox="0 0 400 30">
+                            <path
+                              d="M 0 24 L 30 24 L 30 6 L 60 6 L 60 24 L 150 24 L 150 6 L 180 6 L 180 24 L 270 24 L 270 6 L 300 6 L 300 24 L 400 24"
+                              fill="none"
+                              stroke="#fbbf24"
+                              strokeWidth="2"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </div>
 
-                    {/* 4 BLDC Motors RPM Graphic */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                        <span className="text-slate-400 block text-[10px]">محرك 1 (أمامي أيسر CCW)</span>
-                        <span className="font-mono font-black text-emerald-400 text-sm">
-                          {Math.round(droneThrottle * 70 + dronePitch * 5 - droneRoll * 5)} RPM
+                    {/* LIVE SERIAL MONITOR & MCU TERMINAL */}
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 font-mono text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                        <span className="font-bold text-emerald-400 flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-emerald-400" />
+                          <span>المراقب التسلسلي للمتحكم (Live MCU Serial Terminal)</span>
                         </span>
+
+                        <div className="flex items-center gap-2 text-[10px]">
+                          <select
+                            value={selectedBaudRate}
+                            onChange={(e) => setSelectedBaudRate(Number(e.target.value))}
+                            className="bg-slate-800 border border-slate-700 text-white rounded px-2 py-1 font-bold"
+                          >
+                            <option value={9600}>9600 Baud</option>
+                            <option value={19200}>19200 Baud</option>
+                            <option value={57600}>57600 Baud</option>
+                            <option value={115200}>115200 Baud</option>
+                          </select>
+                          <button
+                            onClick={() => setSerialPackets([])}
+                            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold cursor-pointer"
+                          >
+                            مسح الشاشة
+                          </button>
+                        </div>
                       </div>
-                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                        <span className="text-slate-400 block text-[10px]">محرك 2 (أمامي أيمن CW)</span>
-                        <span className="font-mono font-black text-emerald-400 text-sm">
-                          {Math.round(droneThrottle * 70 + dronePitch * 5 + droneRoll * 5)} RPM
-                        </span>
+
+                      {/* Serial Terminal Log Area */}
+                      <div className="h-36 bg-black p-3 rounded-xl border border-slate-800 overflow-y-auto space-y-1.5 text-[11px]">
+                        {serialPackets.map((pkt, pIdx) => (
+                          <div key={pIdx} className="flex items-start gap-2">
+                            <span className="text-slate-500 shrink-0">[{pkt.time}]</span>
+                            <span className={pkt.type === 'tx' ? 'text-cyan-300 font-bold' : 'text-emerald-300'}>
+                              {pkt.text}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                        <span className="text-slate-400 block text-[10px]">محرك 3 (خلفي أيمن CCW)</span>
-                        <span className="font-mono font-black text-emerald-400 text-sm">
-                          {Math.round(droneThrottle * 70 - dronePitch * 5 + droneRoll * 5)} RPM
-                        </span>
+
+                      {/* Serial Command Sender Input */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={customSerialTx}
+                          onChange={(e) => setCustomSerialTx(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendSerialCommand()}
+                          placeholder="أدخل أمر تسلسلي (مثل: SET_SPEED 200 أو READ_SENSORS)..."
+                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-cyan-400"
+                        />
+                        <button
+                          onClick={handleSendSerialCommand}
+                          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer"
+                        >
+                          إرسال
+                        </button>
                       </div>
-                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-center space-y-1">
-                        <span className="text-slate-400 block text-[10px]">محرك 4 (خلفي أيسر CW)</span>
-                        <span className="font-mono font-black text-emerald-400 text-sm">
-                          {Math.round(droneThrottle * 70 - dronePitch * 5 - droneRoll * 5)} RPM
+                    </div>
+                  </div>
+                )}
+
+                {/* ======================================================== */}
+                {/* MODE 3: ANALOG SIGNALS & REAL SCHEMATICS ENVIRONMENT */}
+                {/* ======================================================== */}
+                {simEnvironmentMode === 'analog' && (
+                  <div className="space-y-5 animate-fade-in">
+                    {/* ANALOG OSCILLOSCOPE WAVEFORM */}
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-bold text-xs text-amber-300 flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-amber-400" />
+                          <span>راسم الذبذبات التماثلي (Real Analog Oscilloscope & ADC Plotter)</span>
                         </span>
+                        <div className="flex items-center gap-3 text-[10px] font-mono text-slate-400">
+                          <span>Vpeak: 5.00V</span>
+                          <span className="text-amber-400 font-bold">ADC A0: {Math.round((612 * (100 - analogNoiseLevel)) / 100)} / 1023</span>
+                        </div>
+                      </div>
+
+                      {/* Signal Frequency & Noise Controls */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-300 flex justify-between">
+                            <span>تردد الإشارة التماثلية:</span>
+                            <span className="font-mono text-amber-300">{signalFreq} Hz</span>
+                          </label>
+                          <input
+                            type="range"
+                            min="10"
+                            max="500"
+                            value={signalFreq}
+                            onChange={(e) => setSignalFreq(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-700 rounded cursor-pointer accent-amber-400"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-300 flex justify-between">
+                            <span>نسبة الضوضاء التماثلية (Analog Noise):</span>
+                            <span className="font-mono text-rose-300">{analogNoiseLevel}%</span>
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="25"
+                            value={analogNoiseLevel}
+                            onChange={(e) => setAnalogNoiseLevel(Number(e.target.value))}
+                            className="w-full h-1.5 bg-slate-700 rounded cursor-pointer accent-rose-400"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Analog Waveform SVG Plotter */}
+                      <div className="bg-black p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                          <span>قناة A0 (مستشعر الحرارة/المسافة) - 0.0V إلى 5.0V</span>
+                          <span>معدل العينات: 10kHz</span>
+                        </div>
+                        <svg className="w-full h-24 bg-slate-950 rounded border border-slate-900" viewBox="0 0 500 80">
+                          {/* Grid lines */}
+                          <line x1="0" y1="20" x2="500" y2="20" stroke="#1e293b" strokeDasharray="3,3" />
+                          <line x1="0" y1="40" x2="500" y2="40" stroke="#334155" strokeWidth="1" />
+                          <line x1="0" y1="60" x2="500" y2="60" stroke="#1e293b" strokeDasharray="3,3" />
+                          <line x1="250" y1="0" x2="250" y2="80" stroke="#1e293b" strokeDasharray="3,3" />
+
+                          {/* Analog Sine/Sensor Wave with noise */}
+                          <path
+                            d={`M 0 ${40 + Math.sin(0) * 25} L 50 ${40 + Math.sin(0.5 * (signalFreq / 20)) * 25 + (Math.random() - 0.5) * analogNoiseLevel} L 100 ${40 + Math.sin(1 * (signalFreq / 20)) * 25 + (Math.random() - 0.5) * analogNoiseLevel} L 150 ${40 + Math.sin(1.5 * (signalFreq / 20)) * 25} L 200 ${40 + Math.sin(2 * (signalFreq / 20)) * 25 + (Math.random() - 0.5) * analogNoiseLevel} L 250 ${40 + Math.sin(2.5 * (signalFreq / 20)) * 25} L 300 ${40 + Math.sin(3 * (signalFreq / 20)) * 25 + (Math.random() - 0.5) * analogNoiseLevel} L 350 ${40 + Math.sin(3.5 * (signalFreq / 20)) * 25} L 400 ${40 + Math.sin(4 * (signalFreq / 20)) * 25 + (Math.random() - 0.5) * analogNoiseLevel} L 450 ${40 + Math.sin(4.5 * (signalFreq / 20)) * 25} L 500 ${40 + Math.sin(5 * (signalFreq / 20)) * 25}`}
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="2.5"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* REAL SCHEMATICS & PRACTICAL WIRING GALLERY */}
+                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="font-bold text-xs text-emerald-300 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-emerald-400" />
+                          <span>معرض مخططات التوصيل والعتاد العملي (Real Breadboard & Schematic Inspector)</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400">صور حقيقية للتوصيلات واللوحة الأم</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Real Breadboard Wiring Image */}
+                        <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-center">
+                          <div className="rounded-lg overflow-hidden border border-slate-800 aspect-video bg-black flex items-center justify-center">
+                            <img
+                              src="/public/assets/aistudio/images__13__20e30bb9.jpeg"
+                              alt="مخطط لوحة التجارب Breadboard"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-300 block">
+                            توصيلات لوحة التجارب Breadboard مع Arduino & HC-SR04
+                          </span>
+                        </div>
+
+                        {/* Real LCD & Battery Circuit Image */}
+                        <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-center">
+                          <div className="rounded-lg overflow-hidden border border-slate-800 aspect-video bg-black flex items-center justify-center">
+                            <img
+                              src="/public/assets/aistudio/edbcb028717f1ae6a8dcac8aefa86457-large_5890acab.jpg"
+                              alt="دائرة التحكم وشاشة LCD 16x2"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-300 block">
+                            دائرة التبريد وشاشة LCD 16x2 وتغذية البطارية 9V
+                          </span>
+                        </div>
+
+                        {/* Real Arduino UNO Board Closeup Image */}
+                        <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-center">
+                          <div className="rounded-lg overflow-hidden border border-slate-800 aspect-video bg-black flex items-center justify-center">
+                            <img
+                              src="/public/assets/aistudio/images__12__84e8317f.jpeg"
+                              alt="لوحة أردوينو وينو UNO R3 الحقيقية"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-300 block">
+                            لوحة Arduino UNO R3 الدقيقة والمعالج ATmega328P
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* 3. ROBOTIC ARM SIMULATOR */}
-                {(currentProject.category === 'robotics' && currentProject.title.includes('ذراع')) && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">القاعدة (Base): {armBase}°</label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="180"
-                          value={armBase}
-                          onChange={(e) => setArmBase(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-blue-500 cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">الكتف (Shoulder): {armShoulder}°</label>
-                        <input
-                          type="range"
-                          min="30"
-                          max="150"
-                          value={armShoulder}
-                          onChange={(e) => setArmShoulder(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-indigo-500 cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">المرفق (Elbow): {armElbow}°</label>
-                        <input
-                          type="range"
-                          min="20"
-                          max="160"
-                          value={armElbow}
-                          onChange={(e) => setArmElbow(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-purple-500 cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300 block">المخلب (Gripper): {armGrip}°</label>
-                        <input
-                          type="range"
-                          min="10"
-                          max="85"
-                          value={armGrip}
-                          onChange={(e) => setArmGrip(Number(e.target.value))}
-                          className="w-full h-1.5 bg-slate-700 rounded accent-amber-500 cursor-pointer"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1 text-xs">
-                      <button
-                        onClick={() => {
-                          setArmBase(90);
-                          setArmShoulder(90);
-                          setArmElbow(90);
-                          setArmGrip(40);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold cursor-pointer"
-                      >
-                        وضع الاستعداد (Standby)
-                      </button>
-                      <button
-                        onClick={() => {
-                          setArmBase(45);
-                          setArmShoulder(120);
-                          setArmElbow(140);
-                          setArmGrip(80);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold border border-blue-500/30 cursor-pointer"
-                      >
-                        التقاط جسم (Pick Object)
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. TEMPERATURE SYSTEM SIMULATOR */}
-                {currentProject.category === 'control' && (
-                  <div className="space-y-4">
-                    <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
-                      <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                        <span>محاكاة تغير درجة الحرارة (DHT22):</span>
-                        <span className={`font-mono font-black text-sm ${simTemp >= 38 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                          {simTemp}°C
-                        </span>
-                      </label>
-                      <input
-                        type="range"
-                        min="15"
-                        max="55"
-                        step="0.5"
-                        value={simTemp}
-                        onChange={(e) => setSimTemp(Number(e.target.value))}
-                        className="w-full h-2 bg-slate-700 rounded cursor-pointer accent-emerald-500"
-                      />
-
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800 text-xs">
-                        <span>سرعة مروحة التبريد DC Fan:</span>
-                        <span className="font-mono font-black text-cyan-400">
-                          {simTemp < 26 ? '0% (متوقفة)' : `${Math.min(100, Math.round((simTemp - 26) * 7.5))}%`}
-                        </span>
-                      </div>
-                    </div>
+                {/* ======================================================== */}
+                {/* MODE 4: INTERACTIVE 3D MECHATRONICS EQUIPMENT BENCH */}
+                {/* ======================================================== */}
+                {simEnvironmentMode === 'tools' && (
+                  <div className="space-y-5 animate-fade-in">
+                    <Mechatronics3DToolsBench />
                   </div>
                 )}
               </div>

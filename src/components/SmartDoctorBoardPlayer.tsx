@@ -283,8 +283,12 @@ export const SmartDoctorBoardPlayer: React.FC<SmartDoctorBoardPlayerProps> = ({
                 • {doctor.specialty}
               </span>
             </h2>
-            <p className="text-[11px] text-slate-400 line-clamp-1">
-              موضوع الدرس: <strong className="text-slate-200">{lesson.lessonTitle}</strong>
+            <p className="text-[11px] text-slate-400 line-clamp-1 flex items-center gap-2">
+              <span>موضوع الدرس: <strong className="text-slate-200">{lesson.lessonTitle}</strong></span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-black hidden sm:inline-flex items-center gap-1">
+                <Volume2 className="w-3 h-3 text-emerald-400" />
+                <span>صوت رجل عربي فصيح 🎙️</span>
+              </span>
             </p>
           </div>
         </div>

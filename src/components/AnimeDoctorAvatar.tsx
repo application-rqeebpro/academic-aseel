@@ -66,19 +66,36 @@ export const AnimeDoctorAvatar: React.FC<AnimeDoctorAvatarProps> = ({
   // Head tilt based on action
   const headRotate = isPointing ? '-6deg' : '0deg';
 
-  // If doctor has custom uploaded photo
-  if (doctor.avatarType === 'photo' && doctor.photoUrl) {
+  // If doctor has custom uploaded photo or chosen academic icon
+  if ((doctor.avatarType === 'photo' && doctor.photoUrl) || doctor.avatarType === 'icon') {
+    const iconSymbol = doctor.iconSymbol || '🎓';
+
     return (
       <div className={`relative select-none transition-all duration-300 flex flex-col items-center justify-end ${sizeClasses} ${className}`}>
-        <div className="relative w-full h-full rounded-3xl overflow-hidden border-4 border-amber-400/80 shadow-2xl bg-slate-900 group">
-          <img
-            src={doctor.photoUrl}
-            alt={doctor.name}
-            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+        <div className={`relative w-full h-full rounded-3xl overflow-hidden border-4 shadow-2xl bg-slate-900 group flex flex-col items-center justify-between p-3 ${
+          isSpeaking ? 'border-amber-400 ring-4 ring-amber-400/30' : 'border-amber-400/80'
+        }`}>
+          {/* Avatar Image or Academic Icon */}
+          {doctor.avatarType === 'photo' && doctor.photoUrl ? (
+            <img
+              src={doctor.photoUrl}
+              alt={doctor.name}
+              className="w-full h-full object-cover object-top rounded-2xl transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full rounded-2xl bg-gradient-to-br from-slate-800 via-indigo-950 to-slate-900 flex flex-col items-center justify-center p-3 border border-amber-400/40 text-center space-y-2">
+              <span className="text-4xl sm:text-5xl drop-shadow-lg transform transition-transform group-hover:scale-110">
+                {iconSymbol}
+              </span>
+              <span className="text-[10px] font-black text-amber-300 bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30">
+                أيقونة المحاضر
+              </span>
+            </div>
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 pointer-events-none" />
           
-          <div className="absolute bottom-2 inset-x-2 p-2 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-amber-400/50 text-center text-white">
+          <div className="absolute bottom-2 inset-x-2 p-2 rounded-2xl bg-slate-900/95 backdrop-blur-md border border-amber-400/50 text-center text-white z-10 shadow-lg">
             <span className="block text-xs font-black text-amber-300 truncate">
               {doctor.name}
             </span>
@@ -88,15 +105,15 @@ export const AnimeDoctorAvatar: React.FC<AnimeDoctorAvatarProps> = ({
           </div>
 
           {/* Academic Badge Tag */}
-          <div className="absolute top-2 right-2 bg-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow-md border border-amber-300">
-            🎓 دكتور المحاضرة
+          <div className="absolute top-2 right-2 bg-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full shadow-md border border-amber-300 z-10">
+            🎓 دكتور المادة
           </div>
 
           {/* Speaking Indicator */}
           {isSpeaking && (
-            <div className="absolute top-2 left-2 bg-emerald-500 text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 animate-pulse">
+            <div className="absolute top-2 left-2 bg-emerald-500 text-white font-bold text-[9px] px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 animate-pulse z-10">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-              <span>يشرح...</span>
+              <span>يشرح الآن...</span>
             </div>
           )}
         </div>
@@ -105,7 +122,7 @@ export const AnimeDoctorAvatar: React.FC<AnimeDoctorAvatarProps> = ({
         {isSpeaking && (
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-lg border border-blue-400 flex items-center gap-1.5 animate-bounce z-20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>يتحدث الآن...</span>
+            <span>يتحدث بصوت رجالي فصيح...</span>
           </div>
         )}
       </div>

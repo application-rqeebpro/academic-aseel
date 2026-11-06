@@ -825,3 +825,74 @@ export interface EducationalPresentation {
   isGeneratedAlternative: boolean;
   disclaimer: string;
 }
+
+// ==========================================
+// 🎥 EDUCATIONAL VIDEO LIBRARY TYPES
+// ==========================================
+
+export type VideoPlatform = 'YouTube' | 'Facebook' | 'Instagram' | 'TikTok' | 'Other';
+export type VideoStatus = 'active' | 'unavailable' | 'pending_review';
+
+export interface EducationalVideo {
+  id: string;
+  title: string;
+  description: string;
+  platform: VideoPlatform;
+  originalUrl: string;
+  embedUrl?: string;
+  thumbnailUrl: string;
+  channelName: string;
+  subject: string;
+  topic: string;
+  level: StudyLevel;
+  university?: string;
+  language: 'العربية' | 'English' | 'مترجم';
+  tags: string[];
+  duration?: string;
+  status: VideoStatus;
+  verified: boolean;
+  isYemeniContent: boolean;
+  isBestExplanation?: boolean;
+  addedDate: string;
+  ratingScore?: number;
+  viewsCount: number;
+  savesCount: number;
+  doctorName?: string;
+  linkedLessonId?: string;
+}
+
+export interface VideoStudyList {
+  id: string;
+  studentId: string;
+  title: string;
+  description?: string;
+  videoIds: string[];
+  createdAt: string;
+}
+
+export interface VideoExplanationRequest {
+  id: string;
+  studentId?: string;
+  studentName?: string;
+  subject: string;
+  topic: string;
+  level: StudyLevel;
+  description: string;
+  status: 'pending' | 'fulfilled' | 'rejected';
+  createdAt: string;
+}
+
+export interface VideoAiSuggestResult {
+  title: string;
+  description: string;
+  channelName: string;
+  platform: VideoPlatform;
+  subject: string;
+  topic: string;
+  level: StudyLevel;
+  university?: string;
+  language: 'العربية' | 'English' | 'مترجم';
+  tags: string[];
+  isYemeniContent: boolean;
+  confidence: number;
+}

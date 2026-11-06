@@ -66,10 +66,11 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
   const [customAvatarStyle, setCustomAvatarStyle] = useState<'classic_professor' | 'young_professor' | 'glasses_expert' | 'female_expert'>('classic_professor');
   const [customBoardTheme, setCustomBoardTheme] = useState<'chalkboard_green' | 'dark_slate' | 'whiteboard'>('chalkboard_green');
 
-  // Custom Doctor Photo or Anime Avatar Choice
-  const [doctorAvatarType, setDoctorAvatarType] = useState<'anime' | 'photo'>('anime');
+  // Custom Doctor Photo, Icon, or Anime Avatar Choice
+  const [doctorAvatarType, setDoctorAvatarType] = useState<'anime' | 'photo' | 'icon'>('anime');
   const [customDoctorPhotoUrl, setCustomDoctorPhotoUrl] = useState<string>('');
   const [uploadedDoctorPhotoName, setUploadedDoctorPhotoName] = useState<string>('');
+  const [selectedDoctorIcon, setSelectedDoctorIcon] = useState<string>('🎓');
 
   // Form setup inputs
   const [lessonTitle, setLessonTitle] = useState<string>(initialTopic || 'تحليل المتجهات والمركبات السينية والصادية');
@@ -126,6 +127,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
         avatarStyle: avatarStyleMapped,
         avatarType: doctorAvatarType,
         photoUrl: doctorAvatarType === 'photo' ? customDoctorPhotoUrl : undefined,
+        iconSymbol: doctorAvatarType === 'icon' ? selectedDoctorIcon : undefined,
         coatColor: '#1e3a8a',
         hairColor: '#1e293b',
         accentColor: '#3b82f6',
@@ -153,6 +155,10 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
       university: finalUniversity,
       avatarType: doctorAvatarType,
       photoUrl: doctorAvatarType === 'photo' ? customDoctorPhotoUrl : baseDoc.photoUrl,
+      iconSymbol: doctorAvatarType === 'icon' ? selectedDoctorIcon : baseDoc.iconSymbol,
+      voiceGender: 'male' as const,
+      voicePitch: 0.88,
+      voiceRate: 0.90,
       bio: hasCustomDoctorName
         ? `شرح مخصص لمادة ${finalSubject} بقسم ${customMajorName.trim() || 'الميكاترونكس'} في ${finalUniversity} مع الدكتور ${finalDocName}.`
         : baseDoc.bio,
@@ -169,6 +175,7 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
     customBoardTheme,
     doctorAvatarType,
     customDoctorPhotoUrl,
+    selectedDoctorIcon,
   ]);
 
   // Fetch doctors and saved lessons on mount
@@ -662,29 +669,41 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                     <span>اختر تجسيد مظهر الدكتور أثناء الشرح:</span>
                   </label>
 
-                  <div className="flex items-center gap-2 bg-amber-500/10 p-1 rounded-2xl border border-amber-300 dark:border-amber-700">
+                  <div className="flex flex-wrap items-center gap-1.5 bg-amber-500/10 p-1 rounded-2xl border border-amber-300 dark:border-amber-700">
                     <button
                       type="button"
                       onClick={() => setDoctorAvatarType('anime')}
-                      className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
                         doctorAvatarType === 'anime'
                           ? 'bg-amber-500 text-slate-950 shadow-sm'
                           : 'text-slate-700 dark:text-slate-300 hover:text-amber-600'
                       }`}
                     >
-                      <span>🎨 رسم كرتوني Anime</span>
+                      <span>🎨 رسم كرتوني</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setDoctorAvatarType('photo')}
-                      className={`px-3.5 py-1.5 rounded-xl font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
                         doctorAvatarType === 'photo'
                           ? 'bg-amber-500 text-slate-950 shadow-sm'
                           : 'text-slate-700 dark:text-slate-300 hover:text-amber-600'
                       }`}
                     >
-                      <span>📸 صورة الدكتور الحقيقية</span>
+                      <span>📸 رفع صورة الدكتور</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDoctorAvatarType('icon')}
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                        doctorAvatarType === 'icon'
+                          ? 'bg-amber-500 text-slate-950 shadow-sm'
+                          : 'text-slate-700 dark:text-slate-300 hover:text-amber-600'
+                      }`}
+                    >
+                      <span>🎓 اختيار أيقونة</span>
                     </button>
                   </div>
                 </div>
@@ -742,9 +761,9 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                       {/* Photo Upload Input Button */}
                       <div className="flex-1 space-y-2 w-full">
                         <label className="font-bold text-slate-900 dark:text-white block">
-                          قم برفع صورة لدكتورك المحاضر من جهازك:
+                          قم برفع صورة لدكتورك المحاضر من جهازك أو هاتفك:
                         </label>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <input
                             type="file"
                             id="doctor-photo-upload"
@@ -789,6 +808,45 @@ export const SmartDoctorView: React.FC<SmartDoctorViewProps> = ({
                           </div>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Option C: Academic Doctor Icon Selection */}
+                {doctorAvatarType === 'icon' && (
+                  <div className="p-4 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-amber-200 dark:border-amber-800 space-y-3">
+                    <label className="font-bold text-slate-900 dark:text-white block">
+                      اختر أيقونة أكاديمية أو رمز تخصص لدكتورك:
+                    </label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        { symbol: '🎓', label: 'بروفيسور أكاديمي' },
+                        { symbol: '👨‍🏫', label: 'محاضر المادة' },
+                        { symbol: '⚡', label: 'مهندس ميكاترونكس' },
+                        { symbol: '🤖', label: 'دكتور الروبوتات' },
+                        { symbol: '🔬', label: 'أستاذ العلوم والفيزياء' },
+                        { symbol: '🏛️', label: 'صرح كلية الهندسة' },
+                        { symbol: '⚙️', label: 'دكتور الآلات والأنظمة' },
+                        { symbol: '💻', label: 'أستاذ البرمجة' },
+                      ].map((item) => (
+                        <button
+                          key={item.symbol}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDoctorIcon(item.symbol);
+                            setDoctorAvatarType('icon');
+                          }}
+                          className={`p-3 rounded-2xl border text-center transition cursor-pointer flex items-center gap-2.5 ${
+                            selectedDoctorIcon === item.symbol && doctorAvatarType === 'icon'
+                              ? 'bg-amber-500 text-slate-950 font-black border-amber-400 shadow-md ring-2 ring-amber-400/40'
+                              : 'bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          <span className="text-2xl">{item.symbol}</span>
+                          <span className="text-xs font-bold">{item.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
