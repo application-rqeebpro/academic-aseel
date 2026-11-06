@@ -3,18 +3,19 @@ import path from 'path';
 import { EducationalVideo, VideoPlatform, StudyLevel, VideoExplanationRequest, VideoStudyList } from '../src/types';
 import { GoogleGenAI } from '@google/genai';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'data') : path.join(process.cwd(), 'data');
 const VIDEOS_FILE = path.join(DATA_DIR, 'educational_videos.json');
 const REQUESTS_FILE = path.join(DATA_DIR, 'video_requests.json');
 const FAVORITES_FILE = path.join(DATA_DIR, 'video_favorites.json');
 
 // Ensure directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  try {
+try {
+  if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
-  } catch (err) {
-    console.warn('Could not create data dir:', err);
   }
+} catch (err) {
+  console.warn('Could not create data dir:', err);
 }
 
 // ----------------------------------------------------------------------------

@@ -11,13 +11,18 @@ import fs from 'fs';
 import path from 'path';
 
 // Storage file for customizations and saved lessons
-const DATA_DIR = path.join(process.cwd(), '.data');
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
+const DATA_DIR = isVercel ? path.join('/tmp', 'data') : path.join(process.cwd(), '.data');
 const LESSONS_FILE = path.join(DATA_DIR, 'smart_doctor_lessons.json');
 const DOCTORS_CUSTOM_FILE = path.join(DATA_DIR, 'smart_doctor_custom.json');
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (e) {
+    console.warn('Could not create smart doctor data dir:', e);
   }
 }
 
