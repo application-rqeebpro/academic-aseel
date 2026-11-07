@@ -594,12 +594,7 @@ export async function generateSmartDoctorLesson(params: {
   }
 
   try {
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: { 'User-Agent': 'aistudio-build' },
-      },
-    });
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `أنت تمثل شخصية الدكتور الجامعي باسم:
 «${doctor.name}» — ${doctor.title} (مادة ${doctor.specialty} في ${doctor.university} — قسم ${params.customDoctorInfo?.major || 'هندسة الميكاترونكس'}).
@@ -667,13 +662,20 @@ ${params.studentFileContent ? `[محتوى ملف الطالب المرفوع]:\
 }`;
 
     const { callGeminiWithResilience } = await import('./explainService');
-    const cascadeResult = await callGeminiWithResilience(ai, {
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Gemini API timeout 12s')), 12000)
+    );
+
+    const cascadePromise = callGeminiWithResilience(ai, {
       contents: prompt,
       config: {
         temperature: 0.3,
         responseMimeType: 'application/json',
       },
     });
+
+    const cascadeResult = await Promise.race([cascadePromise, timeoutPromise]);
 
     const text = cascadeResult.text || '';
     const parsed = safeExtractJson(text);
