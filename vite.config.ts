@@ -92,12 +92,17 @@ export default defineConfig(() => {
       hmr: false,
     },
     build: {
-      chunkSizeWarningLimit: 3000,
+      outDir: 'dist',
+      sourcemap: false,
+      minify: 'esbuild' as const,
+      target: 'es2020',
+      chunkSizeWarningLimit: 4000,
       rollupOptions: {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
             'vendor-icons': ['lucide-react'],
+            'vendor-three': ['three'],
             'vendor-pdf': ['jspdf', 'html2canvas'],
             'vendor-markdown': ['react-markdown'],
           },
