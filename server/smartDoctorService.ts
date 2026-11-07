@@ -506,6 +506,9 @@ export async function generateSmartDoctorLesson(params: {
     university: string;
     avatarStyle?: 'male_professor' | 'female_engineer' | 'young_innovator' | 'senior_sage' | 'modern_tech';
     boardTheme?: 'chalkboard_green' | 'blackboard_dark' | 'whiteboard_academic' | 'blueprint_cyan';
+    avatarType?: 'anime' | 'photo' | 'icon';
+    photoUrl?: string;
+    iconSymbol?: string;
   };
 }): Promise<SmartDoctorGeneratedLesson> {
   const doctors = getActiveSpecialistDoctors();
@@ -530,6 +533,9 @@ export async function generateSmartDoctorLesson(params: {
         bio: `دكتور محاضر لمادة ${subjectName} في ${uniName} — قسم ${majorName}`,
         avatarStyle: c.avatarStyle || baseDoc.avatarStyle,
         boardTheme: c.boardTheme || baseDoc.boardTheme,
+        avatarType: c.avatarType || baseDoc.avatarType || 'anime',
+        photoUrl: c.photoUrl || baseDoc.photoUrl,
+        iconSymbol: c.iconSymbol || baseDoc.iconSymbol,
       };
     } else {
       doctor = {
@@ -539,6 +545,9 @@ export async function generateSmartDoctorLesson(params: {
         specialty: subjectName,
         englishSpecialty: `${subjectName} (${majorName})`,
         avatarStyle: c.avatarStyle || 'male_professor',
+        avatarType: c.avatarType || 'anime',
+        photoUrl: c.photoUrl,
+        iconSymbol: c.iconSymbol,
         coatColor: '#1e3a8a',
         hairColor: '#1e293b',
         accentColor: '#3b82f6',

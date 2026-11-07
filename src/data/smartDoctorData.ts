@@ -412,6 +412,9 @@ export interface SmartDoctorGeneratedLesson {
   doctorName: string;
   doctorTitle: string;
   doctorAvatarStyle: string;
+  doctorAvatarType?: 'anime' | 'photo' | 'icon';
+  doctorPhotoUrl?: string;
+  doctorIconSymbol?: string;
   subject: string;
   lessonTitle: string;
   explanationLevel: 'beginner' | 'intermediate' | 'advanced' | 'formulas_only' | 'step_by_step_problems' | 'applied_examples' | 'exam_cram';
